@@ -63,7 +63,7 @@ Roles: los que pueden ver la obra.
 Errores: `404 OBRA_NO_ENCONTRADA` (también si el usuario no puede verla).
 
 ### GET /obras/{id}/material-previsto?periodo=AAAA-MM · 006
-Roles: `admin`, `residente`, `gerente`.
+Roles: `admin`, `gerente` y `residente` asignado (si no ve la obra: `404 OBRA_NO_ENCONTRADA`).
 `{ "periodo": "2027-02", "hayPlanilla": true, "items": [{ "partidaId": "…", "materialId": "…", "cantidadPrevista": 55.0 }] }`
 
 ### POST /obras/{obraId}/fotos/url-subida · 005
@@ -77,16 +77,16 @@ Devuelve `201` (o `200` si el `id` ya existía) `{ "id", "partidaId", "registrad
 Errores: `404 OBRA_NO_ENCONTRADA` · `422 PARTIDA_NO_ES_DE_LA_OBRA` · `422 CLAVE_ARCHIVO_INVALIDA`.
 
 ### GET /obras/{obraId}/fotos?partidaId=&desde=&hasta= · 005, 006, 007, 008
-Roles: los que pueden ver la obra; `cliente` solo recibe publicadas.
+Roles: los que pueden ver la obra; `cliente` solo recibe publicadas. Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `registradoEn desc`. Cada elemento:
 `[{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente", "urlDescarga" }]`
 
 ### POST /obras/{obraId}/planillas · 007
 Roles: `residente` asignado. Recibe `{ "periodo": "2027-03" }`. Devuelve `201` con el detalle (`GET /planillas/{id}`).
-Errores: `409 PLANILLA_ABIERTA_EXISTE` · `422 PERIODO_INVALIDO` · `422 OBRA_NO_EN_EJECUCION`.
+Errores: `409 PLANILLA_ABIERTA_EXISTE` · `422 PERIODO_NO_POSTERIOR` (no es posterior al de la última planilla) · `422 PERIODO_FUTURO` (mes futuro) · `422 OBRA_NO_EN_EJECUCION`.
 
 ### GET /obras/{obraId}/planillas · 006, 007, 008
 Roles: los que pueden ver la obra; `cliente` no recibe `BORRADOR`.
-`[{ "id", "numero", "periodo", "estado", "neto", "cobroId" }]`
+`[{ "id", "numero", "periodo", "estado", "neto", "cobroId", "cobroNumero" }]` (`cobroNumero`: número del cobro, `COB-AAAA-NNNN`, que Obras guarda al recibir `CobroEmitido`; `null` hasta que se aprueba)
 
 ### GET /planillas/{id} · 007, 008
 Roles: los que pueden ver la obra; `cliente` recibe `404` si es `BORRADOR`.
@@ -100,7 +100,7 @@ Roles: los que pueden ver la obra; `cliente` recibe `404` si es `BORRADOR`.
   }],
   "subtotal": 50460.00, "descuentoAnticipo": 5046.00, "retencion": 3532.20, "neto": 41881.80,
   "anticipoPct": 10, "retencionPct": 7,
-  "observacion": null, "cobroId": null, "fotoIds": ["uuid"]
+  "observacion": null, "cobroId": null, "cobroNumero": null, "fotoIds": ["uuid"]
 }
 ```
 
@@ -136,7 +136,7 @@ Sobre, exchange y claves según convenciones.
 | `evento.materiales.ConsumosCerrados` | escucha | `planillaId, obraId, periodo` |
 | `evento.materiales.CierreFallido` | escucha | `planillaId, motivo` |
 | `comando.finanzas.EmitirCobro` | publica | `planillaId, reservaId, monto` |
-| `evento.finanzas.CobroEmitido` | escucha | `planillaId, cobroId, numero, venceEn` |
+| `evento.finanzas.CobroEmitido` | escucha | `planillaId, cobroId, numero, venceEn` (guarda `cobro_id` y `cobro_numero` en la planilla) |
 | `evento.finanzas.CobroFallido` | escucha | `planillaId, motivo` |
 | `comando.finanzas.LiberarReserva` | publica | `planillaId, reservaId` |
 | `comando.materiales.ReabrirConsumos` | publica | `planillaId, obraId, periodo` |

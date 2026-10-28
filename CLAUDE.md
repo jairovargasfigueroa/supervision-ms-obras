@@ -59,3 +59,5 @@ Paquete raíz `com.constructora.obras`. Estructura prevista por contexto (`obra`
 ## Commits
 
 Conventional Commits en español e imperativo (`feat(planillas): agrega cálculo del neto`). Sin coautoría ni firmas de la IA.
+
+Trabajo en ramas `feat/NNN-nombre` con *pull request* y revisión; nunca hagas *push* a `main` (está protegida). Detalle y definición de terminado: `docs/flujo-trabajo.md` del repo `supervision-docs`.

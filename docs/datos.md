@@ -81,6 +81,7 @@ Base propia: `obras_db`. Ningún otro servicio la lee. Las referencias a otros s
 | neto | numeric | |
 | observacion | text | motivo del cliente o del fallo de la saga |
 | cobro_id | uuid | ref Finanzas, al aprobarse |
+| cobro_numero | varchar(20) | número del cobro (`COB-AAAA-NNNN`), copiado de `CobroEmitido` al aprobarse; lo ven todos los que ven la planilla (008) |
 | version | int | bloqueo optimista |
 
 Único: (`obra_id`, `numero`) y (`obra_id`, `periodo`).
