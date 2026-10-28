@@ -1,0 +1,60 @@
+# Servicio Obras
+
+Microservicio dueño de las obras, el presupuesto por partidas, las fotos de avance, el diario de obra y las planillas de avance. **Orquesta la saga «aprobar planilla».**
+
+Parte de la «Plataforma de supervisión de obras». Si existe `../../CLAUDE.md` (carpeta que agrupa todos los proyectos), léelo primero: tiene las reglas transversales, el plan y los contratos generales.
+
+**Estado:** esqueleto. No implementes una funcionalidad sin su especificación aprobada en `docs/specs/`.
+
+## Stack
+
+- Java 21 · Spring Boot 4.1 (Maven, wrapper incluido)
+- PostgreSQL · Flyway (migraciones en `src/main/resources/db/migration`) · JPA con `ddl-auto: validate`
+- RabbitMQ (AMQP) para la saga · OAuth2 Resource Server (tokens de Keycloak)
+- Puerto: `8081` (`OBRAS_PORT`)
+
+## Comandos
+
+```sh
+./mvnw spring-boot:run     # levantar (Windows: mvnw.cmd)
+./mvnw test                # pruebas
+./mvnw package             # compilar el .jar
+```
+
+Configuración local: copiar `.env.properties.example` a `.env.properties` y completar. **`.env.properties` nunca se sube.**
+
+## Arquitectura: DDD + Hexagonal
+
+Paquete raíz `com.constructora.obras`. Estructura prevista por contexto (`obra`, `planilla`, `avance`):
+
+```
+<contexto>/
+  dominio/        entidades, objetos de valor, reglas; sin Spring ni JPA
+  aplicacion/     casos de uso y puertos (interfaces de entrada y salida)
+  infraestructura/
+    web/          controladores REST (adaptador de entrada)
+    persistencia/ entidades JPA y repositorios (adaptador de salida)
+    mensajeria/   publicación y consumo de RabbitMQ (adaptador)
+```
+
+- El dominio no depende de ningún framework. Las reglas de la planilla (cálculo, límite contra lo contratado, estados) viven en `dominio`.
+- Agregados: `Obra` (con sus partidas e insumos previstos) y `Planilla` (con sus líneas). Se referencian por id, no por objeto.
+
+## Reglas del proyecto
+
+- Lo que este servicio guarda está en `docs/datos.md`; lo que expone y escucha, en `docs/contratos.md`.
+- Las fotos y registros del diario llegan con un id creado en el celular: si ya existe, se devuelve el registro existente.
+- Los eventos se escriben en `outbox_evento` dentro de la misma transacción.
+- La planilla usa bloqueo optimista (`version`).
+- Cada usuario solo ve sus obras (residente, maestro, almacenero o cliente asignado); se valida aquí, no solo en el gateway.
+
+## Documentación
+
+- `docs/servicio.md`: responsabilidades, casos de uso y qué no hace.
+- `docs/datos.md`: tablas.
+- `docs/contratos.md`: REST, eventos y herramientas MCP.
+- `docs/specs/`: especificaciones por funcionalidad (`requisitos.md`, `diseno.md`, `tareas.md`).
+
+## Commits
+
+Conventional Commits en español e imperativo (`feat(planillas): agrega cálculo del neto`). Sin coautoría ni firmas de la IA.
