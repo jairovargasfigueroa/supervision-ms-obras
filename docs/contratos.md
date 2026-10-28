@@ -1,6 +1,6 @@
 # Obras: contratos
 
-**Estado: pendiente.** Aquí va la parte de los contratos generales (`docs/contratos/` de la carpeta general) que toca a este servicio. Lo de abajo es lo conocido hasta ahora; los detalles (rutas exactas, cuerpos, errores) se definen en el diseño de cada funcionalidad.
+**Estado:** aquí va la parte de los contratos generales (`docs/contratos/` de la carpeta general) que toca a este servicio. Lo de abajo es lo conocido hasta ahora; los detalles (rutas exactas, cuerpos, errores) se definen en el diseño de cada funcionalidad.
 
 ## REST que expone
 
@@ -17,13 +17,15 @@
 
 | Servicio | Para qué |
 |---|---|
-| Finanzas | Obtener los datos del contrato al registrar la obra **[por confirmar: REST o evento]** |
-| Materiales | Material usado por partida y periodo, para comparar con lo previsto **[por confirmar: lo une el gateway]** |
+| Finanzas | Nada por REST: el contrato se registra por eventos (`ObraRegistrada` → `ContratoRegistrado`) |
+| Materiales | Nada: la comparación de material usado frente a previsto la arma el gateway con datos de ambos servicios |
 
 ## Eventos y comandos (RabbitMQ)
 
 | Mensaje | Dirección | Notas |
 |---|---|---|
+| ObraRegistrada | publica → Finanzas | al registrar la obra, con los datos del contrato |
+| ContratoRegistrado / ContratoRechazado | escucha ← Finanzas | guarda `contrato_id` y pasa a `EN_EJECUCION` |
 | Iniciar saga: reservar saldo | publica → Finanzas | paso 2 |
 | Saldo reservado / sin saldo | escucha ← Finanzas | |
 | Cerrar consumos del periodo | publica → Materiales | paso 3 |
@@ -35,4 +37,4 @@
 
 ## Herramientas MCP (capa 5, solo lectura)
 
-`avance_obra`, `buscar_diario`, `asistencia_obra` (si existe asistencia).
+`avance_obra`, `buscar_diario`, `planillas_estado`, `asistencia_obra` (si existe asistencia).

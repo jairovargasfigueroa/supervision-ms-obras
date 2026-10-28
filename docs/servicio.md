@@ -20,7 +20,7 @@
 | Elaborar y presentar planilla | Residente | Base |
 | Ver obra y planillas en el portal | Cliente | Base |
 | Aprobar u observar planilla (inicia la saga) | Cliente | Base |
-| Registrar entrada del diario de obra | Maestro de obra | Capa 1 **[por confirmar]** |
+| Registrar entrada del diario de obra | Maestro de obra | Capa 1 |
 | Herramientas MCP para los agentes | Servicio de IA | Capa 5 |
 
 ## Qué no hace

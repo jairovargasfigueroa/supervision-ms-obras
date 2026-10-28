@@ -117,7 +117,11 @@ Base propia: `obras_db`. Ningún otro servicio la lee. Las referencias a otros s
 | creado_en | timestamptz | |
 | publicado_en | timestamptz | nulo hasta publicarse |
 
-Pendiente de definir: tabla `mensaje_procesado` para las respuestas de la saga (igual que en Finanzas).
+### mensaje_procesado
+| Campo | Tipo | Notas |
+|---|---|---|
+| id_mensaje | uuid | PK; `id` del mensaje recibido (respuestas de la saga, `ContratoRegistrado`) |
+| procesado_en | timestamptz | |
 
 ## Tablas opcionales
 
