@@ -50,6 +50,7 @@ Paquete raíz `com.constructora.obras`. Estructura prevista por contexto (`obra`
 
 ## Documentación
 
+- `docs/estructura.md`: **librerías permitidas y estructura exacta de carpetas y archivos. Obligatorio leerlo antes de escribir código.**
 - `docs/servicio.md`: responsabilidades, casos de uso y qué no hace.
 - `docs/datos.md`: tablas.
 - `docs/contratos.md`: REST, eventos y herramientas MCP.
