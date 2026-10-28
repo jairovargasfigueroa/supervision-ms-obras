@@ -22,6 +22,7 @@ Base propia: `obras_db`. Ningún otro servicio la lee. Las referencias a otros s
 | anticipo_pct | numeric | copia del contrato |
 | retencion_pct | numeric | copia del contrato |
 | fecha_inicio | date | |
+| motivo_rechazo_contrato | text | si Finanzas rechazó el contrato (002) |
 
 ### partida
 | Campo | Tipo | Notas |
@@ -105,7 +106,8 @@ Base propia: `obras_db`. Ningún otro servicio la lee. Las referencias a otros s
 | planilla_id | uuid | FK planilla |
 | paso_actual | varchar | |
 | estado | varchar | `EN_CURSO`, `COMPLETADA`, `COMPENSADA` |
-| detalle | jsonb | respuestas de cada paso |
+| detalle | jsonb | `reservaId`, `cobroId`, motivo del fallo |
+| vence_en | timestamptz | límite para la respuesta del paso actual (60 s) |
 | actualizada_en | timestamptz | |
 
 ### outbox_evento
