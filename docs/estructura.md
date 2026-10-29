@@ -74,8 +74,20 @@ src/main/java/com/constructora/obras/
       persistencia/     SagaAprobacionEntity.java, SagaAprobacionJpaRepository.java (SELECT … FOR UPDATE), SagaAprobacionRepositorioJpa.java (detalle en JSON)
       mensajeria/       ConsumidoresSaga.java (un ManejadorMensaje por respuesta; busca la saga por correlacionId)
       programacion/     VencimientoSagaTarea.java (@Scheduled cada 10 s: pasos sin respuesta en 60 s)
+  semilla/                         # 011: datos de prueba (infraestructura; nada del servicio depende de él, lo verifica ArquitecturaTest)
+                    ConfiguracionSemilla.java (@Profile("semilla"): guarda antes de Flyway, CargaSemilla y SemillaRunner),
+                    SemillaRunner.java (ApplicationRunner: guarda, carga, resumen y System.exit con el código de salida),
+                    FechaRelativa.java (D±n, M±k, M-k/dd hh:mm, D-n hh:mm y meses previstos; zona America/La_Paz),
+                    DatosSemilla.java (registros de semilla/obras.json), PlanSemilla.java (filas resueltas con D: montos y
+                    totales con LineaPlanilla y TotalesPlanilla, número del cobro, comprobaciones del documento),
+                    CargaSemilla.java (JdbcTemplate en una transacción, INSERT … ON CONFLICT DO NOTHING; recargar: TRUNCATE
+                    de todas las tablas menos flyway_schema_history), ModoSemilla.java (cargar, recargar),
+                    ResumenSemilla.java (conteos y línea SEMILLA_RESUMEN para infra), GuardaSemilla.java (perfil prod o base no local)
 src/main/resources/
-  application.yaml, application-dev.yaml, application-test.yaml
+  application.yaml, application-dev.yaml, application-test.yaml,
+  application-semilla.yaml (011: sin web, listeners con auto-startup false,
+                    obras.mensajeria.publicador-activo y obras.saga.vencimiento-activo en false, semilla.fecha/modo/salir)
+  semilla/obras.json (011: copia de la parte de Obras de docs/datos-prueba.md con fechas relativas a D)
   db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
@@ -99,6 +111,9 @@ src/test/java/com/constructora/obras/
   soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java
+  semilla/FechaRelativaTest.java, DatosSemillaTest.java, PlanSemillaTest.java, GuardaSemillaTest.java # 011: unitarias (tabla del diseño, totales y cobros del documento, guardas)
+  semilla/SemillaPerfilIT.java                  # 011: la aplicación con el perfil semilla (sin web ni mensajería), dos cargas, recargar, prod y base no local
+  semilla/DatosPruebaIT.java                    # 011: la API con D = 2026-10-28 (reloj fijo): indicadores, planillas, material previsto, visibilidad y fotos
   ArquitecturaTest.java                         # ArchUnit
 ```
 

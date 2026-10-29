@@ -11,4 +11,4 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 - [x] Perfil `semilla` (`application-semilla.yaml`: sin servidor web, sin consumidores ni publicador del outbox) y `SemillaRunner`: carga en una transacción con `INSERT … ON CONFLICT DO NOTHING`, calcula montos y totales con la regla del dominio, registra el resumen y termina el proceso; guarda contra perfil `prod` y base no local
 - [x] Modo `semilla.modo=recargar`: vacía todas las tablas del negocio (no `flyway_schema_history`) y carga
 - [x] Pruebas IT (Testcontainers, D = 2026-10-28): dos cargas sin duplicar; indicadores de las 3 obras; totales de las 5 planillas; material previsto de la obra 1 en `2026-09`; visibilidad por usuario; `outbox_evento` vacía; guarda
-- [ ] README: cómo correr la semilla sola y con `recargar`
+- [x] README: cómo correr la semilla sola y con `recargar`
