@@ -105,6 +105,24 @@ class PlanillaIT extends PruebaIntegracion {
                 .andExpect(jsonPath("$.lineas[0].saldo").value(6));
     }
 
+    /** 008 · El número del cobro que Obras guarda al aprobarse sale en el detalle y en la lista. */
+    @Test
+    void elDetalleYLaListaTraenElCobroDeUnaAprobada() throws Exception {
+        UUID aprobada = PlanillasPrueba.insertar(jdbc, obra, 1, MES_ANTERIOR, "APROBADA", Map.of(losa, BigDecimal.ONE));
+        UUID cobroId = UUID.randomUUID();
+        jdbc.update("update planilla set cobro_id = ?, cobro_numero = 'COB-2026-0007' where id = ?", cobroId,
+                aprobada);
+
+        mvc.perform(conToken(get("/planillas/{id}", aprobada), cliente()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cobroId").value(cobroId.toString()))
+                .andExpect(jsonPath("$.cobroNumero").value("COB-2026-0007"));
+        mvc.perform(conToken(get("/obras/{id}/planillas", obra), residente()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].cobroId").value(cobroId.toString()))
+                .andExpect(jsonPath("$[0].cobroNumero").value("COB-2026-0007"));
+    }
+
     @Test
     void conUnaPlanillaSinAprobarNoSeCreaOtra() throws Exception {
         crear(obra, MES_ANTERIOR, residente()).andExpect(status().isCreated());

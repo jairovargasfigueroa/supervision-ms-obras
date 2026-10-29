@@ -148,10 +148,14 @@ Errores: `409 VERSION_DESACTUALIZADA` · `409 PLANILLA_NO_EDITABLE` · `422 SUBT
 ### POST /planillas/{id}/aprobar · 008
 Roles: `cliente` dueño de la obra. Sin cuerpo. Devuelve `202 { "estado": "APROBANDO" }`.
 Errores: `409 PLANILLA_NO_PRESENTADA`.
+- Orden: rol (`403 SIN_PERMISO`; con `azp` distinto de `portal` el rol `cliente` no cuenta) → planilla visible (`404 PLANILLA_NO_ENCONTRADA`: no existe, no ve su obra, el id no es un UUID o es un `BORRADOR` que ve solo como cliente) → cliente de esa obra (`403 SIN_PERMISO` si la ve con otro papel) → `PLANILLA_NO_PRESENTADA` (no está `PRESENTADA`, o otra petición la revisó a la vez).
+- En la misma transacción: la planilla pasa a `APROBANDO` (sube `version`), se crea la saga (`saga_aprobacion` `EN_CURSO`, paso `RESERVAR_SALDO`, vence a los 60 s) y se deja `comando.finanzas.ReservarSaldo` en el outbox con `monto` = neto y `correlacionId` = id de la saga. El resultado se consulta con `GET /planillas/{id}`.
 
 ### POST /planillas/{id}/observar · 008
 Roles: `cliente` dueño de la obra. Recibe `{ "motivo": "texto de 10 a 500 caracteres" }`. Devuelve `200` con el detalle (`OBSERVADA`).
 Errores: `409 PLANILLA_NO_PRESENTADA` · `422 MOTIVO_INVALIDO`.
+- Orden: rol (`403`, antes que el cuerpo) → cuerpo JSON (`400 DATOS_INVALIDOS` si no es JSON) → planilla visible (`404`) → cliente de esa obra (`403`) → `PLANILLA_NO_PRESENTADA` → `MOTIVO_INVALIDO` (falta, o tiene menos de 10 o más de 500 caracteres contados sin los espacios de los extremos; `errores[].campo = motivo`).
+- Guarda el motivo sin los espacios de los extremos en `observacion`, sube `version` y publica `PlanillaObservada` con `origen = "CLIENTE"` y `correlacionId` = id de la planilla. El residente la corrige y la vuelve a presentar (007).
 
 ## Eventos y comandos (RabbitMQ)
 
@@ -190,6 +194,16 @@ Sobre, exchange y claves según convenciones.
 | `x-error` | Clase y texto del error, recortado a 500 caracteres; sin el cuerpo del mensaje ni datos sensibles |
 | `x-cola-origen` | Cola de donde salió: `obras` |
 | `x-clave-origen` | Clave de enrutamiento original (por ejemplo `evento.finanzas.ContratoRegistrado`); se conserva entre reintentos porque el exchange por defecto la pierde |
+
+### Cómo orquesta la saga «aprobar planilla» (008)
+
+- **Comandos** con la clave `comando.<destino>.<Tipo>` (guardada en `outbox_evento.clave`), por el mismo outbox. `correlacionId` = id de la saga en todos los comandos y en `PlanillaAprobada` / `PlanillaObservada` de la saga; `PlanillaObservada` del cliente lleva el id de la planilla. Montos con 2 decimales (`monto` = neto de la planilla) y `periodo` `AAAA-MM`.
+- **Respuestas**: se busca la saga por el `correlacionId` del sobre (bloqueada con `SELECT … FOR UPDATE`) y se comprueba `datos.planillaId`. Sin `correlacionId`, con una saga que no existe, de otra planilla o con datos incompletos (`reservaId`; `cobroId` y `numero`; `motivo` de `CierreFallido` y `CobroFallido`), van directo a `plataforma.fallidos`. El `motivo` de `SaldoInsuficiente` no se usa: la planilla queda con «Saldo del contrato insuficiente». `venceEn` de `CobroEmitido` no se guarda (lo tiene Finanzas).
+- Con la saga `EN_CURSO` y la respuesta del paso que espera: `SaldoReservado` → guarda `reservaId` y envía `CerrarConsumos`; `ConsumosCerrados` → envía `EmitirCobro` con la reserva; `CobroEmitido` → planilla `APROBADA` con `cobro_id` y `cobro_numero` (= `numero`), saga `COMPLETADA` y `PlanillaAprobada`. Cada paso nuevo vence a los 60 s.
+- Fallo (`SaldoInsuficiente`, `CierreFallido`, `CobroFallido`): compensaciones de los pasos hechos en orden inverso, sin esperar respuesta (fallo en el paso 3: `LiberarReserva`; en el 4: `ReabrirConsumos` y `LiberarReserva`); planilla `OBSERVADA` con el motivo; saga `COMPENSADA`; `PlanillaObservada` con `origen = "SAGA"`.
+- Una respuesta de otro paso o con la saga `COMPLETADA` no cambia nada (queda en el registro); los repetidos con el mismo `id` los descarta `mensaje_procesado`.
+- **Vencimiento**: `VencimientoSagaTarea` corre cada 10 s (`obras.saga.intervalo-vencimiento-ms`) y trata como fallo del paso actual cada saga `EN_CURSO` con `vence_en` pasado, con el motivo «El paso X no respondió a tiempo» (X = 2, 3 o 4) y las mismas compensaciones. Cada saga se vence en su propia transacción y bloqueada, así que una respuesta que llega a la vez no se aplica dos veces.
+- **Respuestas tardías** (saga `COMPENSADA`): `SaldoReservado` → `LiberarReserva` de esa reserva; `ConsumosCerrados` → `ReabrirConsumos`; `CobroEmitido` → se registra como incidente (nivel `ERROR`, «INCIDENTE saga …») y la planilla sigue `OBSERVADA`; los fallos tardíos no cambian nada. La saga y la planilla no cambian.
 
 ## Herramientas MCP (capa 5, solo lectura)
 

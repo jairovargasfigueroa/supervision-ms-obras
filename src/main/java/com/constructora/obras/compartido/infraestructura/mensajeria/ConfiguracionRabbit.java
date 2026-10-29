@@ -27,10 +27,16 @@ public class ConfiguracionRabbit {
     public static final String EXCHANGE = "plataforma";
     public static final String COLA = "obras";
     public static final String COLA_FALLIDOS = "plataforma.fallidos";
-    /** Claves que escucha la cola de Obras en la 002 (las de la saga se agregan con la 008). */
+    /** Claves que escucha la cola de Obras: respuestas al contrato (002) y a los comandos de la saga (008). */
     static final String[] CLAVES_ESCUCHADAS = {
             "evento.finanzas.ContratoRegistrado",
             "evento.finanzas.ContratoRechazado",
+            "evento.finanzas.SaldoReservado",
+            "evento.finanzas.SaldoInsuficiente",
+            "evento.materiales.ConsumosCerrados",
+            "evento.materiales.CierreFallido",
+            "evento.finanzas.CobroEmitido",
+            "evento.finanzas.CobroFallido",
     };
 
     @Bean

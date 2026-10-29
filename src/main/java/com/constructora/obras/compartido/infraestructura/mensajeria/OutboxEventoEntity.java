@@ -17,6 +17,8 @@ public class OutboxEventoEntity {
     @Id
     private UUID id;
     private String tipo;
+    /** Clave de enrutamiento: evento.obras.&lt;Tipo&gt;, o comando.&lt;destino&gt;.&lt;Tipo&gt; en la saga (008). */
+    private String clave;
     @JdbcTypeCode(SqlTypes.JSON)
     private String payload;
     @Column(name = "creado_en")
@@ -27,15 +29,20 @@ public class OutboxEventoEntity {
     protected OutboxEventoEntity() {
     }
 
-    public OutboxEventoEntity(UUID id, String tipo, String payload, Instant creadoEn) {
+    public OutboxEventoEntity(UUID id, String tipo, String clave, String payload, Instant creadoEn) {
         this.id = id;
         this.tipo = tipo;
+        this.clave = clave;
         this.payload = payload;
         this.creadoEn = creadoEn;
     }
 
     public UUID getId() {
         return id;
+    }
+
+    public String getClave() {
+        return clave;
     }
 
     public String getTipo() {

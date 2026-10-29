@@ -64,6 +64,8 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(HttpMethod.POST, "/obras/*/planillas", "/planillas/*/presentar")
                         .hasRole("residente")
                         .requestMatchers(HttpMethod.PUT, "/planillas/*").hasRole("residente")
+                        .requestMatchers(HttpMethod.POST, "/planillas/*/aprobar", "/planillas/*/observar")
+                        .hasRole("cliente")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(servidor -> servidor
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(new ConvertidorRolesKeycloak()))

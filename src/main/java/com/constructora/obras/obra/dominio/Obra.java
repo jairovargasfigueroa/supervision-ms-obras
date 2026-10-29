@@ -153,6 +153,14 @@ public final class Obra {
     }
 
     /**
+     * Aprobar u observar una planilla (008): solo el cliente de la obra. Los roles ya son los efectivos (regla del
+     * azp: desde el portal solo cuenta cliente).
+     */
+    public boolean puedeRevisarPlanilla(Usuario usuario) {
+        return usuario.tiene("cliente") && usuario.id().equals(asignaciones.clienteId().toString());
+    }
+
+    /**
      * El usuario ve la obra solo por ser su cliente (por ejemplo desde el portal): no ve las planillas en BORRADOR
      * (007) ni las fotos sin publicar (005). Si además la ve con un rol interno, no cuenta como solo cliente.
      */

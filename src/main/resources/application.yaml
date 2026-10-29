@@ -39,6 +39,9 @@ obras:
   mensajeria:
     # Cada cuánto PublicadorOutbox envía los mensajes pendientes del outbox
     intervalo-outbox-ms: 1000
+  saga:
+    # Cada cuánto VencimientoSagaTarea busca pasos de la saga sin respuesta pasados sus 60 s (008)
+    intervalo-vencimiento-ms: 10000
   # Fotos de avance en S3 (ConfiguracionS3, docs/entorno-local.md). Si falta el bucket o una clave, el servicio
   # arranca igual y las rutas que firman URL responden 503 SERVICIO_NO_DISPONIBLE.
   s3:

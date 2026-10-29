@@ -22,16 +22,19 @@ public interface PlanillaPersistenciaMapper {
         entidad.setObraId(planilla.obraId());
         entidad.setNumero(planilla.numero());
         entidad.setPeriodo(planilla.periodo().primerDia());
-        entidad.setObservacion(planilla.observacion());
-        entidad.setCobroId(planilla.cobroId());
-        entidad.setCobroNumero(planilla.cobroNumero());
         actualizar(planilla, entidad);
         return entidad;
     }
 
-    /** Lo que cambia al guardar o presentar (007): estado, líneas, totales y fotos adjuntas. */
+    /**
+     * Lo que cambia al guardar o presentar (007): estado, líneas, totales y fotos adjuntas; y al revisarla (008):
+     * observación y cobro.
+     */
     default void actualizar(Planilla planilla, PlanillaEntity entidad) {
         entidad.setEstado(planilla.estado().name());
+        entidad.setObservacion(planilla.observacion());
+        entidad.setCobroId(planilla.cobroId());
+        entidad.setCobroNumero(planilla.cobroNumero());
         TotalesPlanilla totales = planilla.totales();
         entidad.setSubtotal(totales.subtotal().valor());
         entidad.setDescuentoAnticipo(totales.descuentoAnticipo().valor());

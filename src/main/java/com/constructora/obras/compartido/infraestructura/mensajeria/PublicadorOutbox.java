@@ -17,8 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Envía cada segundo los mensajes pendientes de outbox_evento al exchange plataforma con la clave
- * evento.obras.&lt;Tipo&gt; y los marca publicados. Espera la confirmación de RabbitMQ de cada mensaje antes de
+ * Envía cada segundo los mensajes pendientes de outbox_evento al exchange plataforma con su clave
+ * (evento.obras.&lt;Tipo&gt; o, para los comandos de la saga, comando.&lt;destino&gt;.&lt;Tipo&gt;) y los marca publicados. Espera la confirmación de RabbitMQ de cada mensaje antes de
  * marcarlo: si RabbitMQ no responde, el mensaje queda pendiente y se reintenta en la próxima vuelta (los
  * consumidores descartan repetidos por id).
  */
@@ -45,7 +45,7 @@ public class PublicadorOutbox {
         for (OutboxEventoEntity evento : pendientes) {
             try {
                 rabbit.invoke(operaciones -> {
-                    operaciones.send(ConfiguracionRabbit.EXCHANGE, claveDe(evento.getTipo()), mensaje(evento));
+                    operaciones.send(ConfiguracionRabbit.EXCHANGE, evento.getClave(), mensaje(evento));
                     operaciones.waitForConfirmsOrDie(ESPERA_CONFIRMACION_MS);
                     return null;
                 });
@@ -56,10 +56,6 @@ public class PublicadorOutbox {
             }
             evento.marcarPublicado(reloj.ahora());
         }
-    }
-
-    static String claveDe(String tipo) {
-        return "evento." + Sobre.ORIGEN + "." + tipo;
     }
 
     private static Message mensaje(OutboxEventoEntity evento) {
