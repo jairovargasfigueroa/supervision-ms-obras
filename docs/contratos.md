@@ -91,6 +91,11 @@ Errores: `404 OBRA_NO_ENCONTRADA` · `422 PARTIDA_NO_ES_DE_LA_OBRA` · `422 CLAV
 ### GET /obras/{obraId}/fotos?partidaId=&desde=&hasta= · 005, 006, 007, 008
 Roles: los que pueden ver la obra; `cliente` solo recibe publicadas. Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `registradoEn desc`. Cada elemento:
 `[{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente", "urlDescarga" }]`
+- `urlDescarga`: URL firmada de S3 para `GET`, vence a los 30 minutos.
+- `cliente`: con `azp = portal` solo recibe las que tienen `publicada_cliente = true` (un usuario que además ve la obra con un rol interno las recibe todas).
+- Paginación: `pagina` desde 1 (por defecto 1), `tamano` de 1 a 100 (por defecto 20), `orden` solo `registradoEn` (desempata por `id`), `direccion` `asc` o `desc` (por defecto `desc`). Fuera de eso: `400 PAGINACION_INVALIDA` con `errores[].campo` (`pagina`, `tamano`, `orden` o `direccion`). Un `partidaId` que no es UUID o un número mal escrito: `400 DATOS_INVALIDOS`.
+- Errores: `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o el id no es un UUID) · `503 SERVICIO_NO_DISPONIBLE` si hay fotos que firmar y S3 no está configurado (una página vacía responde igual).
+- Estado en la 005: `partidaId` filtra; `desde` y `hasta` se aceptan pero no filtran hasta la 007 (que fija su formato).
 
 ### POST /obras/{obraId}/planillas · 007
 Roles: `residente` asignado. Recibe `{ "periodo": "2027-03" }`. Devuelve `201` con el detalle (`GET /planillas/{id}`).

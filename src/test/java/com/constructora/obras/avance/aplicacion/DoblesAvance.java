@@ -3,6 +3,8 @@ package com.constructora.obras.avance.aplicacion;
 import com.constructora.obras.avance.aplicacion.puerto.salida.FotoAvanceRepositorio;
 import com.constructora.obras.avance.dominio.FotoAvance;
 import com.constructora.obras.compartido.dominio.Dinero;
+import com.constructora.obras.compartido.dominio.Pagina;
+import com.constructora.obras.compartido.dominio.Paginacion;
 import com.constructora.obras.obra.aplicacion.puerto.salida.ObraRepositorio;
 import com.constructora.obras.obra.dominio.Asignaciones;
 import com.constructora.obras.obra.dominio.ContratoCopia;
@@ -11,6 +13,7 @@ import com.constructora.obras.obra.dominio.Obra;
 import com.constructora.obras.obra.dominio.Partida;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +83,25 @@ final class DoblesAvance {
         @Override
         public Optional<FotoAvance> buscarPorId(UUID id) {
             return Optional.ofNullable(fotos.get(id));
+        }
+
+        /** Solo ordena por registradoEn (y por id para desempatar), como el adaptador JPA. */
+        @Override
+        public Pagina<FotoAvance> listar(UUID obraId, UUID partidaId, boolean soloPublicadas,
+                Paginacion paginacion) {
+            Comparator<FotoAvance> orden = Comparator.comparing(FotoAvance::registradoEn)
+                    .thenComparing(FotoAvance::id);
+            List<FotoAvance> todas = fotos.values().stream()
+                    .filter(foto -> foto.obraId().equals(obraId))
+                    .filter(foto -> partidaId == null || foto.partidaId().equals(partidaId))
+                    .filter(foto -> !soloPublicadas || foto.publicadaCliente())
+                    .sorted(paginacion.ascendente() ? orden : orden.reversed())
+                    .toList();
+            List<FotoAvance> pagina = todas.stream()
+                    .skip((long) (paginacion.pagina() - 1) * paginacion.tamano())
+                    .limit(paginacion.tamano())
+                    .toList();
+            return new Pagina<>(pagina, todas.size(), paginacion.pagina(), paginacion.tamano());
         }
     }
 }

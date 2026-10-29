@@ -13,7 +13,8 @@ src/main/java/com/constructora/obras/
   ObrasApplication.java
   compartido/                      # lo que usan todos los contextos
     dominio/        ReglaNegocioException.java, Dinero.java (redondeo HALF_UP a 2), Periodo.java (AAAA-MM), Reloj.java (puerto de la hora), Usuario.java (id y roles efectivos), EventoDominio.java,
-                    AlmacenArchivos.java (puerto del almacenamiento de objetos: URL firmadas de subida y descarga)
+                    AlmacenArchivos.java (puerto del almacenamiento de objetos: URL firmadas de subida y descarga),
+                    Paginacion.java (pagina, tamano, orden, direccion; PAGINACION_INVALIDA), Pagina.java (items, total, pagina, tamano)
     infraestructura/
       RelojSistema.java
       seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java (realm_access.roles → ROLE_<rol>), RolesEfectivos.java (regla del azp), UsuarioActual.java
@@ -36,19 +37,20 @@ src/main/java/com/constructora/obras/
   avance/                          # 005: fotos de avance (usa ObraRepositorio del contexto obra para la visibilidad)
     dominio/        FotoAvance.java (clave fotos/{obraId}/{fotoId}.jpg, partida de la obra)
     aplicacion/
-      puerto/entrada/   RegistrarFotoCasoUso.java
+      puerto/entrada/   RegistrarFotoCasoUso.java, ConsultarFotosCasoUso.java
       puerto/salida/    FotoAvanceRepositorio.java
-      servicio/         RegistrarFotoServicio.java
+      servicio/         RegistrarFotoServicio.java, ConsultarFotosServicio.java
     infraestructura/
-      web/              FotoController.java, dto/UrlSubidaRequest.java, dto/UrlSubidaResponse.java, dto/RegistrarFotoRequest.java, dto/FotoResponse.java, FotoWebMapper.java
-      persistencia/     FotoAvanceEntity.java, FotoAvanceJpaRepository.java, FotoAvanceRepositorioJpa.java, FotoAvancePersistenciaMapper.java
+      web/              FotoController.java, dto/UrlSubidaRequest.java, dto/UrlSubidaResponse.java, dto/RegistrarFotoRequest.java, dto/FotoResponse.java, dto/FotoListadaResponse.java, dto/FotoPaginaResponse.java, FotoWebMapper.java
+      persistencia/     FotoAvanceEntity.java, FotoAvanceJpaRepository.java (con Specification para los filtros), FotoAvanceRepositorioJpa.java, FotoAvancePersistenciaMapper.java
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml
   db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
-  avance/dominio/FotoAvanceTest.java, avance/aplicacion/RegistrarFotoServicioTest.java (dobles en DoblesAvance)
+  avance/dominio/FotoAvanceTest.java, avance/aplicacion/RegistrarFotoServicioTest.java, ConsultarFotosServicioTest.java (dobles en DoblesAvance)
+  compartido/dominio/PaginacionTest.java
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
   soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
