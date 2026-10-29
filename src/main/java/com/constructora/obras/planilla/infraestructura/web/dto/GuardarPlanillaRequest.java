@@ -14,7 +14,7 @@ import java.util.UUID;
  */
 public record GuardarPlanillaRequest(
         @NotNull Integer version,
-        @NotNull @Valid List<@NotNull Linea> lineas,
+        @NotNull List<@NotNull @Valid Linea> lineas,
         @NotNull List<@NotNull UUID> fotoIds) {
 
     public record Linea(
