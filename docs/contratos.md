@@ -145,6 +145,21 @@ Sobre, exchange y claves según convenciones.
 | `evento.obras.PlanillaAprobada` | publica | `planillaId, obraId, periodo, neto, cobroId, lineas[{partidaId, cantidadPeriodo, monto}]` |
 | `evento.obras.PlanillaObservada` | publica | `planillaId, obraId, motivo, origen ("CLIENTE" o "SAGA")` |
 
+### Cómo publica y consume (002)
+
+- **Publica** con outbox: el sobre completo se guarda en `outbox_evento` en la misma transacción que el dato y `PublicadorOutbox` lo envía cada 1 s al exchange `plataforma` con la clave `evento.obras.<Tipo>`, `contentType: application/json`, entrega persistente y `messageId` = `id` del sobre. Espera la confirmación de RabbitMQ antes de marcarlo publicado (si no llega, lo reintenta en la vuelta siguiente; los consumidores descartan repetidos por `id`). `correlacionId` de `ObraRegistrada` = `obraId`.
+- **Consume** la cola `obras`. Cada mensaje se procesa una sola vez: su `id` se guarda en `mensaje_procesado` en la misma transacción que su efecto; si ya estaba, se confirma sin hacer nada. Si la obra ya no está en `SIN_CONTRATO`, `ContratoRegistrado` y `ContratoRechazado` no la cambian.
+- **Mensajes que fallan.** El reintento y el envío a la cola `plataforma.fallidos` se publican por el exchange por defecto, con el cuerpo original sin tocar, y después se confirma el original:
+  - si procesar falla, vuelve a la cola `obras` con `x-intentos` + 1; al tercer fallo va a `plataforma.fallidos`;
+  - un sobre que no es JSON, con `version` distinta de 1, con datos incompletos o con un `tipo` sin consumidor en la cola `obras` va directo a `plataforma.fallidos`.
+
+| Encabezado | Valor |
+|---|---|
+| `x-intentos` | Número de intentos ya hechos (1 en el primer fallo; 3 cuando llega a fallidos por reintentos) |
+| `x-error` | Clase y texto del error, recortado a 500 caracteres; sin el cuerpo del mensaje ni datos sensibles |
+| `x-cola-origen` | Cola de donde salió: `obras` |
+| `x-clave-origen` | Clave de enrutamiento original (por ejemplo `evento.finanzas.ContratoRegistrado`); se conserva entre reintentos porque el exchange por defecto la pierde |
+
 ## Herramientas MCP (capa 5, solo lectura)
 
 `avance_obra`, `buscar_diario`, `planillas_estado`, `asistencia_obra` (si existe asistencia). Se especifican en la capa 5.
