@@ -1,5 +1,6 @@
 package com.constructora.obras.compartido.infraestructura.mensajeria;
 
+import com.constructora.obras.compartido.dominio.ComandoDominio;
 import com.constructora.obras.compartido.dominio.EventoDominio;
 import com.constructora.obras.compartido.dominio.Reloj;
 import java.time.Instant;
@@ -33,7 +34,16 @@ public class Outbox {
         Instant ahora = reloj.ahora().truncatedTo(ChronoUnit.MILLIS);
         Sobre sobre = new Sobre(id, evento.tipo(), Sobre.VERSION, ahora, Sobre.ORIGEN, evento.correlacionId(),
                 json.valueToTree(evento));
-        repositorio.save(new OutboxEventoEntity(id, evento.tipo(), json.writeValueAsString(sobre), ahora));
+        repositorio.save(new OutboxEventoEntity(id, evento.tipo(), claveDe(evento), json.writeValueAsString(sobre),
+                ahora));
         return id;
+    }
+
+    /** evento.obras.&lt;Tipo&gt; para los eventos; comando.&lt;destino&gt;.&lt;Tipo&gt; para los comandos de la saga. */
+    static String claveDe(EventoDominio evento) {
+        if (evento instanceof ComandoDominio comando) {
+            return "comando." + comando.destino() + "." + comando.tipo();
+        }
+        return "evento." + Sobre.ORIGEN + "." + evento.tipo();
     }
 }

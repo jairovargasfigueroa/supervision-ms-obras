@@ -101,6 +101,42 @@ class PlanillaTablasIT extends PruebaIntegracion {
     }
 
     @Test
+    void sagaAprobacionUnaEnCursoPorPlanillaYEstadosYPasosValidos() {
+        UUID planilla = PlanillasPrueba.insertar(jdbc, obra, 1, "2026-10", "APROBANDO", Map.of());
+
+        insertarSaga(planilla, "RESERVAR_SALDO", "COMPENSADA");
+        insertarSaga(planilla, "EMITIR_COBRO", "EN_CURSO");
+
+        assertThatThrownBy(() -> insertarSaga(planilla, "RESERVAR_SALDO", "EN_CURSO"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> insertarSaga(planilla, "APROBAR", "COMPLETADA"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> insertarSaga(planilla, "RESERVAR_SALDO", "FALLIDA"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> insertarSaga(UUID.randomUUID(), "RESERVAR_SALDO", "COMPLETADA"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThat(jdbc.queryForObject("select detalle::text from saga_aprobacion where planilla_id = ? limit 1",
+                String.class, planilla)).isEqualTo("{}");
+    }
+
+    @Test
+    void elOutboxGuardaLaClaveDeEnrutamiento() {
+        // La obra de @BeforeEach dejó ObraRegistrada en el outbox
+        assertThat(jdbc.queryForList("select clave from outbox_evento where tipo = 'ObraRegistrada'", String.class))
+                .isNotEmpty().allMatch("evento.obras.ObraRegistrada"::equals);
+        assertThatThrownBy(() -> jdbc.update("""
+                insert into outbox_evento (id, tipo, payload, creado_en)
+                values (?, 'ReservarSaldo', '{}'::jsonb, now())""", UUID.randomUUID()))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    private void insertarSaga(UUID planilla, String paso, String estado) {
+        jdbc.update("""
+                insert into saga_aprobacion (id, planilla_id, paso_actual, estado, vence_en, actualizada_en)
+                values (?, ?, ?, ?, now(), now())""", UUID.randomUUID(), planilla, paso, estado);
+    }
+
+    @Test
     void unaPlanillaSinLineasExisteEnSuPeriodo() {
         PlanillasPrueba.insertar(jdbc, obra, 1, "2026-10", "BORRADOR", Map.of());
 

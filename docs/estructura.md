@@ -12,14 +12,14 @@ Starters de Spring Boot 4.1 (web MVC, security OAuth2 resource server, data JPA,
 src/main/java/com/constructora/obras/
   ObrasApplication.java
   compartido/                      # lo que usan todos los contextos
-    dominio/        ReglaNegocioException.java, Dinero.java (redondeo HALF_UP a 2), Periodo.java (AAAA-MM), Reloj.java (puerto de la hora), Usuario.java (id y roles efectivos), EventoDominio.java,
+    dominio/        ReglaNegocioException.java, Dinero.java (redondeo HALF_UP a 2), Periodo.java (AAAA-MM), Reloj.java (puerto de la hora), Usuario.java (id y roles efectivos), EventoDominio.java, ComandoDominio.java (008: comando de la saga, clave comando.<destino>.<Tipo>),
                     AlmacenArchivos.java (puerto del almacenamiento de objetos: URL firmadas de subida y descarga),
                     Paginacion.java (pagina, tamano, orden, direccion; PAGINACION_INVALIDA), Pagina.java (items, total, pagina, tamano)
     infraestructura/
       RelojSistema.java
       seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java (realm_access.roles → ROLE_<rol>), RolesEfectivos.java (regla del azp), UsuarioActual.java
       web/          ManejadorErrores.java (ProblemDetail con "codigo" y "errores"), RespuestaProblema.java (401/403 desde los filtros), FiltroRequestId.java, SaludController.java
-      mensajeria/   ConfiguracionRabbit.java, Sobre.java, Outbox.java (guarda en outbox_evento), PublicadorOutbox.java (envía cada 1 s), OutboxEventoEntity.java, OutboxEventoJpaRepository.java,
+      mensajeria/   ConfiguracionRabbit.java, Sobre.java, Outbox.java (guarda en outbox_evento con su clave de enrutamiento), PublicadorOutbox.java (envía cada 1 s con la clave guardada), OutboxEventoEntity.java, OutboxEventoJpaRepository.java,
                     ReceptorMensajes.java (cola obras: inbox, reintentos y fallidos), ManejadorMensaje.java (un consumidor por tipo), MensajeInvalidoException.java,
                     MensajeProcesadoEntity.java, MensajeProcesadoJpaRepository.java
       archivos/     ConfiguracionS3.java (OBRAS_S3_*; sin bucket o claves arranca igual y las firmas responden 503),
@@ -58,7 +58,7 @@ src/main/java/com/constructora/obras/
                         PlanillaRepositorioJpa.java (adaptador de PlanillaRepositorio; @Version → VERSION_DESACTUALIZADA), PlanillaPersistenciaMapper.java
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml
-  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
+  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos

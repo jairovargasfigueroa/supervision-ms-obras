@@ -111,21 +111,24 @@ Migración de la 007: `V4__planilla_foto.sql`. Fotos de avance adjuntas como res
 | foto_id | uuid | PK, FK foto_avance |
 
 ### saga_aprobacion
+Migración de la 008: `V5__saga_aprobacion.sql`. Su `id` es el `correlacionId` de todos los mensajes de la saga. Una planilla observada por la saga se corrige, se vuelve a presentar y se puede aprobar otra vez (otra saga): hay a lo sumo **una saga `EN_CURSO` por planilla** (índice único parcial). Índice parcial por `vence_en` de las `EN_CURSO` para la tarea de vencimiento.
+
 | Campo | Tipo | Notas |
 |---|---|---|
 | id | uuid | PK |
 | planilla_id | uuid | FK planilla |
-| paso_actual | varchar | |
-| estado | varchar | `EN_CURSO`, `COMPLETADA`, `COMPENSADA` |
-| detalle | jsonb | `reservaId`, `cobroId`, motivo del fallo |
-| vence_en | timestamptz | límite para la respuesta del paso actual (60 s) |
+| paso_actual | varchar(20) | paso que espera respuesta: `RESERVAR_SALDO` (2), `CERRAR_CONSUMOS` (3) o `EMITIR_COBRO` (4); al terminar o compensar queda el último |
+| estado | varchar(20) | `EN_CURSO`, `COMPLETADA`, `COMPENSADA` |
+| detalle | jsonb | no nulo (`{}` al empezar): `reservaId`, `cobroId`, `cobroNumero` y `motivo` del fallo |
+| vence_en | timestamptz | límite para la respuesta del paso actual (60 s desde que se envió su comando) |
 | actualizada_en | timestamptz | |
 
 ### outbox_evento
 | Campo | Tipo | Notas |
 |---|---|---|
 | id | uuid | PK; es el `id` del mensaje (sobre) |
-| tipo | varchar | `ObraRegistrada`, …; la clave es `evento.obras.<tipo>` |
+| tipo | varchar | `ObraRegistrada`, `ReservarSaldo`, … |
+| clave | varchar(150) | clave de enrutamiento, no nula (V5, 008): `evento.obras.<tipo>` para los eventos y `comando.<destino>.<tipo>` para los comandos de la saga (`comando.finanzas.ReservarSaldo`) |
 | payload | jsonb | sobre completo (`id`, `tipo`, `version`, `ocurridoEn`, `origen`, `correlacionId`, `datos`) |
 | creado_en | timestamptz | |
 | publicado_en | timestamptz | nulo hasta publicarse |
@@ -146,4 +149,4 @@ Migración de la 007: `V4__planilla_foto.sql`. Fotos de avance adjuntas como res
 - obra 1 — 0..* foto_avance · obra 1 — 0..* entrada_diario
 - obra 1 — 0..* planilla · planilla 1 — 1..* linea_planilla (cada línea mide una partida)
 - planilla 1 — 0..* planilla_foto (cada una usa una foto_avance)
-- planilla 1 — 0..1 saga_aprobacion
+- planilla 1 — 0..* saga_aprobacion (a lo sumo una `EN_CURSO`; una nueva por cada vez que el cliente aprueba)
