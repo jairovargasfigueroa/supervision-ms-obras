@@ -1,0 +1,162 @@
+{
+  "_fuente": "docs/datos-prueba.md de supervision-docs (secciones 2, 6, 7 y 10). Si algo cambia, se cambia ahí primero. Fechas relativas a D (sección 1). Montos de líneas y totales de las planillas, y el número del cobro, los calcula la semilla.",
+  "materiales": {
+    "CEM-IP30": "e0000000-0000-4000-8000-000000000001",
+    "FIE-12": "e0000000-0000-4000-8000-000000000002",
+    "FIE-10": "e0000000-0000-4000-8000-000000000003",
+    "ARE-FIN": "e0000000-0000-4000-8000-000000000006",
+    "ARE-GRU": "e0000000-0000-4000-8000-000000000007",
+    "GRA-34": "e0000000-0000-4000-8000-000000000008",
+    "PIE-MAN": "e0000000-0000-4000-8000-000000000009",
+    "LAD-6H": "e0000000-0000-4000-8000-000000000010",
+    "CER-4545": "e0000000-0000-4000-8000-000000000013"
+  },
+  "recetas": {
+    "zapatas": { "CEM-IP30": 7.0, "ARE-GRU": 0.50, "GRA-34": 0.80, "FIE-12": 80 },
+    "columnas": { "CEM-IP30": 7.5, "ARE-GRU": 0.50, "GRA-34": 0.80, "FIE-12": 120 },
+    "losa-maciza": { "CEM-IP30": 1.05, "ARE-GRU": 0.075, "GRA-34": 0.12, "FIE-10": 9.0 },
+    "losa-alivianada": { "CEM-IP30": 0.65, "ARE-GRU": 0.05, "GRA-34": 0.07, "FIE-10": 3.5 },
+    "ciclopeo": { "CEM-IP30": 2.8, "ARE-GRU": 0.25, "GRA-34": 0.30, "PIE-MAN": 0.55 },
+    "muro": { "LAD-6H": 30, "CEM-IP30": 0.20, "ARE-FIN": 0.03 },
+    "revoque": { "CEM-IP30": 0.18, "ARE-FIN": 0.025 },
+    "piso": { "CER-4545": 1.05, "CEM-IP30": 0.30, "ARE-FIN": 0.03 }
+  },
+  "obras": [
+    {
+      "id": "b0000000-0000-4000-8000-000000000001",
+      "nombre": "Edificio Residencial Las Palmeras",
+      "ubicacion": "Av. Beni entre 3er y 4to anillo, Santa Cruz de la Sierra",
+      "estado": "EN_EJECUCION",
+      "clienteUsuarioId": "a0000000-0000-4000-8000-000000000007",
+      "residenteUsuarioId": "a0000000-0000-4000-8000-000000000003",
+      "maestroUsuarioId": "a0000000-0000-4000-8000-000000000005",
+      "almaceneroUsuarioId": "a0000000-0000-4000-8000-000000000006",
+      "contratoId": "c0000000-0000-4000-8000-000000000001",
+      "contrato": { "monto": 2773800.00, "plazoDias": 360, "anticipoPct": 10, "retencionPct": 7 },
+      "fechaInicio": "D-120",
+      "partidas": [
+        { "id": "b1000000-0000-4000-8000-000000000101", "codigo": "P-01", "nombre": "Excavación con maquinaria", "unidad": "m3", "cantidadContratada": 1200, "precioUnitario": 46.50, "meses": "M-3", "receta": null },
+        { "id": "b1000000-0000-4000-8000-000000000102", "codigo": "P-02", "nombre": "Hormigón armado en zapatas", "unidad": "m3", "cantidadContratada": 180, "precioUnitario": 2448.00, "meses": "M-3..M-2", "receta": "zapatas" },
+        { "id": "b1000000-0000-4000-8000-000000000103", "codigo": "P-03", "nombre": "Hormigón armado en columnas", "unidad": "m3", "cantidadContratada": 140, "precioUnitario": 3365.00, "meses": "M-2..M+2", "receta": "columnas" },
+        { "id": "b1000000-0000-4000-8000-000000000104", "codigo": "P-04", "nombre": "Losa maciza de hormigón armado", "unidad": "m2", "cantidadContratada": 2400, "precioUnitario": 418.50, "meses": "M-2..M+3", "receta": "losa-maciza" },
+        { "id": "b1000000-0000-4000-8000-000000000105", "codigo": "P-05", "nombre": "Muro de ladrillo de 6 huecos", "unidad": "m2", "cantidadContratada": 3200, "precioUnitario": 134.80, "meses": "M-1..M+5", "receta": "muro" },
+        { "id": "b1000000-0000-4000-8000-000000000106", "codigo": "P-06", "nombre": "Revoque grueso y fino", "unidad": "m2", "cantidadContratada": 6000, "precioUnitario": 61.75, "meses": "M+1..M+7", "receta": "revoque" }
+      ]
+    },
+    {
+      "id": "b0000000-0000-4000-8000-000000000002",
+      "nombre": "Condominio Las Lomas (12 viviendas)",
+      "ubicacion": "Av. Virgen de Cotoca, 6to anillo, Santa Cruz de la Sierra",
+      "estado": "EN_EJECUCION",
+      "clienteUsuarioId": "a0000000-0000-4000-8000-000000000009",
+      "residenteUsuarioId": "a0000000-0000-4000-8000-000000000004",
+      "maestroUsuarioId": "a0000000-0000-4000-8000-000000000005",
+      "almaceneroUsuarioId": "a0000000-0000-4000-8000-000000000006",
+      "contratoId": "c0000000-0000-4000-8000-000000000002",
+      "contrato": { "monto": 3185140.00, "plazoDias": 300, "anticipoPct": 15, "retencionPct": 7 },
+      "fechaInicio": "D-150",
+      "partidas": [
+        { "id": "b1000000-0000-4000-8000-000000000201", "codigo": "P-01", "nombre": "Excavación manual para cimientos", "unidad": "m3", "cantidadContratada": 420, "precioUnitario": 68.00, "meses": "M-4", "receta": null },
+        { "id": "b1000000-0000-4000-8000-000000000202", "codigo": "P-02", "nombre": "Cimiento de hormigón ciclópeo", "unidad": "m3", "cantidadContratada": 260, "precioUnitario": 985.00, "meses": "M-4..M-3", "receta": "ciclopeo" },
+        { "id": "b1000000-0000-4000-8000-000000000203", "codigo": "P-03", "nombre": "Hormigón armado en zapatas", "unidad": "m3", "cantidadContratada": 96, "precioUnitario": 2455.00, "meses": "M-3..M-2", "receta": "zapatas" },
+        { "id": "b1000000-0000-4000-8000-000000000204", "codigo": "P-04", "nombre": "Hormigón armado en columnas y vigas", "unidad": "m3", "cantidadContratada": 150, "precioUnitario": 3290.00, "meses": "M-2..M+1", "receta": "columnas" },
+        { "id": "b1000000-0000-4000-8000-000000000205", "codigo": "P-05", "nombre": "Losa alivianada con viguetas", "unidad": "m2", "cantidadContratada": 1800, "precioUnitario": 392.40, "meses": "M-1..M+2", "receta": "losa-alivianada" },
+        { "id": "b1000000-0000-4000-8000-000000000206", "codigo": "P-06", "nombre": "Muro de ladrillo de 6 huecos", "unidad": "m2", "cantidadContratada": 4200, "precioUnitario": 132.50, "meses": "M0..M+3", "receta": "muro" },
+        { "id": "b1000000-0000-4000-8000-000000000207", "codigo": "P-07", "nombre": "Revoque grueso y fino", "unidad": "m2", "cantidadContratada": 8400, "precioUnitario": 60.20, "meses": "M+1..M+4", "receta": "revoque" },
+        { "id": "b1000000-0000-4000-8000-000000000208", "codigo": "P-08", "nombre": "Contrapiso y piso cerámico", "unidad": "m2", "cantidadContratada": 1900, "precioUnitario": 212.00, "meses": "M+3..M+5", "receta": "piso" }
+      ]
+    },
+    {
+      "id": "b0000000-0000-4000-8000-000000000003",
+      "nombre": "Unidad Educativa Nueva Esperanza",
+      "ubicacion": "Plan Tres Mil, Distrito 8, Santa Cruz de la Sierra",
+      "estado": "EN_EJECUCION",
+      "clienteUsuarioId": "a0000000-0000-4000-8000-000000000007",
+      "residenteUsuarioId": "a0000000-0000-4000-8000-000000000009",
+      "maestroUsuarioId": "a0000000-0000-4000-8000-000000000005",
+      "almaceneroUsuarioId": "a0000000-0000-4000-8000-000000000006",
+      "contratoId": "c0000000-0000-4000-8000-000000000003",
+      "contrato": { "monto": 1900140.00, "plazoDias": 240, "anticipoPct": 10, "retencionPct": 5 },
+      "fechaInicio": "D-5",
+      "partidas": [
+        { "id": "b1000000-0000-4000-8000-000000000301", "codigo": "P-01", "nombre": "Limpieza y replanteo del terreno", "unidad": "m2", "cantidadContratada": 2500, "precioUnitario": 9.80, "meses": "M0", "receta": null },
+        { "id": "b1000000-0000-4000-8000-000000000302", "codigo": "P-02", "nombre": "Excavación para fundaciones", "unidad": "m3", "cantidadContratada": 380, "precioUnitario": 63.00, "meses": "M0..M+1", "receta": null },
+        { "id": "b1000000-0000-4000-8000-000000000303", "codigo": "P-03", "nombre": "Hormigón armado en zapatas", "unidad": "m3", "cantidadContratada": 85, "precioUnitario": 2470.00, "meses": "M+1", "receta": "zapatas" },
+        { "id": "b1000000-0000-4000-8000-000000000304", "codigo": "P-04", "nombre": "Hormigón armado en columnas y vigas", "unidad": "m3", "cantidadContratada": 120, "precioUnitario": 3310.00, "meses": "M+1..M+3", "receta": "columnas" },
+        { "id": "b1000000-0000-4000-8000-000000000305", "codigo": "P-05", "nombre": "Losa maciza de hormigón armado", "unidad": "m2", "cantidadContratada": 1350, "precioUnitario": 425.00, "meses": "M+2..M+4", "receta": "losa-maciza" },
+        { "id": "b1000000-0000-4000-8000-000000000306", "codigo": "P-06", "nombre": "Muro de ladrillo de 6 huecos", "unidad": "m2", "cantidadContratada": 2600, "precioUnitario": 136.00, "meses": "M+3..M+5", "receta": "muro" },
+        { "id": "b1000000-0000-4000-8000-000000000307", "codigo": "P-07", "nombre": "Revoque grueso y fino", "unidad": "m2", "cantidadContratada": 5200, "precioUnitario": 61.00, "meses": "M+5..M+7", "receta": "revoque" }
+      ]
+    }
+  ],
+  "fotos": [
+    { "id": "f1000000-0000-4000-8000-000000010301", "obraId": "b0000000-0000-4000-8000-000000000001", "partida": "P-03", "tomadaEn": "M-1/10 11:00", "publicadaCliente": false },
+    { "id": "f1000000-0000-4000-8000-000000010302", "obraId": "b0000000-0000-4000-8000-000000000001", "partida": "P-03", "tomadaEn": "M-1/15 11:00", "publicadaCliente": true },
+    { "id": "f1000000-0000-4000-8000-000000010401", "obraId": "b0000000-0000-4000-8000-000000000001", "partida": "P-04", "tomadaEn": "M-1/19 11:00", "publicadaCliente": false },
+    { "id": "f1000000-0000-4000-8000-000000010402", "obraId": "b0000000-0000-4000-8000-000000000001", "partida": "P-04", "tomadaEn": "M-1/22 11:00", "publicadaCliente": true },
+    { "id": "f1000000-0000-4000-8000-000000010501", "obraId": "b0000000-0000-4000-8000-000000000001", "partida": "P-05", "tomadaEn": "M-1/24 11:00", "publicadaCliente": false },
+    { "id": "f1000000-0000-4000-8000-000000010502", "obraId": "b0000000-0000-4000-8000-000000000001", "partida": "P-05", "tomadaEn": "M-1/27 11:00", "publicadaCliente": true },
+    { "id": "f1000000-0000-4000-8000-000000020401", "obraId": "b0000000-0000-4000-8000-000000000002", "partida": "P-04", "tomadaEn": "M-1/09 11:00", "publicadaCliente": true },
+    { "id": "f1000000-0000-4000-8000-000000020402", "obraId": "b0000000-0000-4000-8000-000000000002", "partida": "P-04", "tomadaEn": "M-1/19 11:00", "publicadaCliente": true },
+    { "id": "f1000000-0000-4000-8000-000000030101", "obraId": "b0000000-0000-4000-8000-000000000003", "partida": "P-01", "tomadaEn": "D-2 11:00", "publicadaCliente": false },
+    { "id": "f1000000-0000-4000-8000-000000030102", "obraId": "b0000000-0000-4000-8000-000000000003", "partida": "P-01", "tomadaEn": "D-1 11:00", "publicadaCliente": false }
+  ],
+  "fotosRegistradasPor": "a0000000-0000-4000-8000-000000000005",
+  "planillas": [
+    {
+      "id": "d0000000-0000-4000-8000-000000000101",
+      "obraId": "b0000000-0000-4000-8000-000000000001",
+      "numero": 1,
+      "periodo": "M-3",
+      "estado": "APROBADA",
+      "cantidades": { "P-01": 1200, "P-02": 120 },
+      "observacion": null,
+      "cobro": { "id": "c2000000-0000-4000-8000-000000000101", "emitidoEn": "D-40 10:00" },
+      "fotos": []
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000102",
+      "obraId": "b0000000-0000-4000-8000-000000000001",
+      "numero": 2,
+      "periodo": "M-2",
+      "estado": "APROBADA",
+      "cantidades": { "P-02": 60, "P-03": 50, "P-04": 300 },
+      "observacion": null,
+      "cobro": { "id": "c2000000-0000-4000-8000-000000000102", "emitidoEn": "D-12 10:00" },
+      "fotos": []
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000103",
+      "obraId": "b0000000-0000-4000-8000-000000000001",
+      "numero": 3,
+      "periodo": "M-1",
+      "estado": "PRESENTADA",
+      "cantidades": { "P-03": 40, "P-04": 500, "P-05": 400 },
+      "observacion": null,
+      "cobro": null,
+      "fotos": ["f1000000-0000-4000-8000-000000010302", "f1000000-0000-4000-8000-000000010402", "f1000000-0000-4000-8000-000000010502"]
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000201",
+      "obraId": "b0000000-0000-4000-8000-000000000002",
+      "numero": 1,
+      "periodo": "M-2",
+      "estado": "APROBADA",
+      "cantidades": { "P-01": 420, "P-02": 260, "P-03": 96 },
+      "observacion": null,
+      "cobro": { "id": "c2000000-0000-4000-8000-000000000201", "emitidoEn": "D-20 10:00" },
+      "fotos": []
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000202",
+      "obraId": "b0000000-0000-4000-8000-000000000002",
+      "numero": 2,
+      "periodo": "M-1",
+      "estado": "OBSERVADA",
+      "cantidades": { "P-04": 40 },
+      "observacion": "La medición de columnas y vigas (40 m³) no coincide con lo verificado en la visita de obra, que fue de unos 30 m³. Corrijan la cantidad y adjunten fotos de los vaciados.",
+      "cobro": null,
+      "fotos": ["f1000000-0000-4000-8000-000000020401", "f1000000-0000-4000-8000-000000020402"]
+    }
+  ]
+}
