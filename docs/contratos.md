@@ -76,16 +76,26 @@ Roles: `admin`, `gerente` y `residente` asignado (si no ve la obra: `404 OBRA_NO
 ### POST /obras/{obraId}/fotos/url-subida · 005
 Roles: `maestro`, `residente` asignados. Recibe `{ "fotoId": "uuid" }`.
 Devuelve `{ "url": "https://…", "claveArchivo": "fotos/{obraId}/{fotoId}.jpg", "expiraEn": "…" }`.
+- La URL es de S3, para `PUT`, vence a los 10 minutos (`expiraEn`, ISO 8601 en UTC) y lleva el `Content-Type: image/jpeg` dentro de la firma: la subida debe enviar ese mismo encabezado.
+- Errores: `403 SIN_PERMISO` (otro rol, comprobado antes que el cuerpo; o un usuario que ve la obra con otro papel, por ejemplo con los roles almacenero y maestro asignado solo como almacenero) · `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o el id no es un UUID) · `400 DATOS_INVALIDOS` (`fotoId` falta o no es un UUID) · `503 SERVICIO_NO_DISPONIBLE` si S3 no está configurado (`OBRAS_S3_BUCKET`, `OBRAS_S3_ACCESS_KEY` u `OBRAS_S3_SECRET_KEY` vacías; el servicio arranca igual).
 
 ### POST /obras/{obraId}/fotos · 005
 Roles: `maestro`, `residente` asignados.
 Recibe `{ "id": "uuid", "partidaId": "uuid", "claveArchivo": "fotos/…jpg", "tomadaEn": "2026-11-15T15:20:00Z" }`.
 Devuelve `201` (o `200` si el `id` ya existía) `{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente": false }`.
 Errores: `404 OBRA_NO_ENCONTRADA` · `422 PARTIDA_NO_ES_DE_LA_OBRA` · `422 CLAVE_ARCHIVO_INVALIDA`.
+- `registradoEn` = `tomadaEn` (al microsegundo) y `registradoPor` = `sub` del token. No necesita S3 (no comprueba que el archivo exista).
+- Orden: rol (`403 SIN_PERMISO`, antes que el cuerpo) → cuerpo (`400 DATOS_INVALIDOS`: `id`, `partidaId` y `tomadaEn` obligatorios; `claveArchivo` obligatoria, hasta 200 caracteres) → obra visible (`404`) → maestro o residente de esa obra (`403 SIN_PERMISO`) → `id` ya registrado: `200` con el registro guardado, sin volver a validar → partida (`422 PARTIDA_NO_ES_DE_LA_OBRA`, `errores[].campo = partidaId`) → clave igual a `fotos/{obraId}/{id}.jpg` (`422 CLAVE_ARCHIVO_INVALIDA`, `errores[].campo = claveArchivo`).
+- Si el `id` ya existe en **otra** obra: `422 CLAVE_ARCHIVO_INVALIDA` (la clave no puede corresponder a ese registro).
 
 ### GET /obras/{obraId}/fotos?partidaId=&desde=&hasta= · 005, 006, 007, 008
 Roles: los que pueden ver la obra; `cliente` solo recibe publicadas. Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `registradoEn desc`. Cada elemento:
 `[{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente", "urlDescarga" }]`
+- `urlDescarga`: URL firmada de S3 para `GET`, vence a los 30 minutos.
+- `cliente`: con `azp = portal` solo recibe las que tienen `publicada_cliente = true` (un usuario que además ve la obra con un rol interno las recibe todas).
+- Paginación: `pagina` desde 1 (por defecto 1), `tamano` de 1 a 100 (por defecto 20), `orden` solo `registradoEn` (desempata por `id`), `direccion` `asc` o `desc` (por defecto `desc`). Fuera de eso: `400 PAGINACION_INVALIDA` con `errores[].campo` (`pagina`, `tamano`, `orden` o `direccion`). Un `partidaId` que no es UUID o un número mal escrito: `400 DATOS_INVALIDOS`.
+- Errores: `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o el id no es un UUID) · `503 SERVICIO_NO_DISPONIBLE` si hay fotos que firmar y S3 no está configurado (una página vacía responde igual).
+- Estado en la 005: `partidaId` filtra; `desde` y `hasta` se aceptan pero no filtran hasta la 007 (que fija su formato).
 
 ### POST /obras/{obraId}/planillas · 007
 Roles: `residente` asignado. Recibe `{ "periodo": "2027-03" }`. Devuelve `201` con el detalle (`GET /planillas/{id}`).

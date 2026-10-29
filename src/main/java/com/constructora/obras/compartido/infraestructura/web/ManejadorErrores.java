@@ -1,5 +1,6 @@
 package com.constructora.obras.compartido.infraestructura.web;
 
+import com.constructora.obras.compartido.dominio.AlmacenArchivos.AlmacenNoDisponibleException;
 import com.constructora.obras.compartido.dominio.ReglaNegocioException;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,20 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problema);
     }
 
+    /**
+     * El almacenamiento de archivos (S3) no está configurado o no responde: 503 SERVICIO_NO_DISPONIBLE, que el
+     * cliente puede reintentar más tarde (convenciones, «Errores REST»).
+     */
+    @ExceptionHandler(AlmacenNoDisponibleException.class)
+    ResponseEntity<ProblemDetail> almacenNoDisponible(AlmacenNoDisponibleException error) {
+        logger.warn("Almacenamiento de archivos no disponible: " + error.getMessage());
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+                "El almacenamiento de fotos no está disponible por el momento.");
+        problema.setTitle("Servicio no disponible");
+        problema.setProperty("codigo", "SERVICIO_NO_DISPONIBLE");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problema);
+    }
+
     @ExceptionHandler(Exception.class)
     ResponseEntity<ProblemDetail> errorInesperado(Exception error) {
         logger.error("Error interno", error);
@@ -98,8 +113,17 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
         return ResponseEntity.internalServerError().body(problema);
     }
 
-    /** «No encontrado» (por ejemplo OBRA_NO_ENCONTRADA) → 404; conflictos → 409; el resto de reglas → 422. */
+    /**
+     * «No encontrado» (por ejemplo OBRA_NO_ENCONTRADA) → 404; conflictos → 409; SIN_PERMISO (el rol puede, pero el
+     * usuario ve la obra con otro papel) → 403; PAGINACION_INVALIDA → 400; el resto de reglas → 422.
+     */
     static HttpStatus estadoDe(String codigo) {
+        if ("SIN_PERMISO".equals(codigo)) {
+            return HttpStatus.FORBIDDEN;
+        }
+        if ("PAGINACION_INVALIDA".equals(codigo)) {
+            return HttpStatus.BAD_REQUEST;
+        }
         if (codigo.endsWith("_NO_ENCONTRADA") || codigo.endsWith("_NO_ENCONTRADO")) {
             return HttpStatus.NOT_FOUND;
         }
