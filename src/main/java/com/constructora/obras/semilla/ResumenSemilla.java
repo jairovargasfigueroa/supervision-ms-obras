@@ -13,11 +13,6 @@ import java.util.stream.Collectors;
 public record ResumenSemilla(LocalDate d, ModoSemilla modo, List<String> tablasVaciadas, Map<String, Conteo> conteos,
         long outboxEvento) {
 
-    /** Nombre de cada tabla en la línea para infra (en el orden de CargaSemilla.TABLAS). */
-    private static final Map<String, String> CLAVES = Map.of("obra", "obras", "partida", "partidas",
-            "insumo_previsto", "insumos", "foto_avance", "fotos", "planilla", "planillas", "linea_planilla", "lineas",
-            "planilla_foto", "fotosAdjuntas");
-
     public ResumenSemilla {
         tablasVaciadas = List.copyOf(tablasVaciadas);
         conteos = Map.copyOf(conteos);
@@ -48,11 +43,15 @@ public record ResumenSemilla(LocalDate d, ModoSemilla modo, List<String> tablasV
         return List.copyOf(lineas);
     }
 
-    /** {@code SEMILLA_RESUMEN servicio=obras fecha=2026-10-28 modo=cargar obras=3 partidas=21 …}. */
+    /**
+     * Línea que copia infra a su resumen (mismo formato que Materiales), con el total de cada tabla al terminar:
+     * {@code RESUMEN_SEMILLA {"servicio":"obras","fecha":"2026-10-28","totales":{"obra":3,"partida":21,…,"outbox_evento":0}}}.
+     */
     public String lineaInfra() {
-        return "SEMILLA_RESUMEN servicio=obras fecha=" + d + " modo=" + modo + " "
-                + CargaSemilla.TABLAS.stream().map(tabla -> CLAVES.get(tabla) + "=" + total(tabla))
-                        .collect(Collectors.joining(" "));
+        String totales = CargaSemilla.TABLAS.stream().map(tabla -> "\"" + tabla + "\":" + total(tabla))
+                .collect(Collectors.joining(","));
+        return "RESUMEN_SEMILLA {\"servicio\":\"obras\",\"fecha\":\"" + d + "\",\"totales\":{" + totales
+                + ",\"outbox_evento\":" + outboxEvento + "}}";
     }
 
     public record Conteo(int insertadas, long total) {

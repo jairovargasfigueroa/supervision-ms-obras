@@ -75,8 +75,13 @@ class SemillaPerfilIT {
             assertThat(runner.getExitCode()).isZero();
             CargaSemilla.TABLAS.forEach(tabla -> assertThat(runner.resumen().insertadas(tabla)).isZero());
             assertThat(runner.resumen().total("obra")).isEqualTo(3);
-            assertThat(runner.resumen().lineaInfra()).isEqualTo("SEMILLA_RESUMEN servicio=obras fecha=2026-10-28 "
-                    + "modo=cargar obras=3 partidas=21 insumos=58 fotos=10 planillas=5 lineas=34 fotosAdjuntas=5");
+            // infra copia las líneas con «resumen» (sin distinguir mayúsculas) o «D = AAAA-MM-DD»
+            assertThat(runner.resumen().lineaInfra()).isEqualTo("RESUMEN_SEMILLA {\"servicio\":\"obras\","
+                    + "\"fecha\":\"2026-10-28\",\"totales\":{\"obra\":3,\"partida\":21,\"insumo_previsto\":58,"
+                    + "\"foto_avance\":10,\"planilla\":5,\"linea_planilla\":34,\"planilla_foto\":5,"
+                    + "\"outbox_evento\":0}}");
+            assertThat(runner.resumen().lineas()).filteredOn(linea -> linea.toLowerCase().contains("resumen")
+                    || linea.matches(".*D = \\d{4}-\\d{2}-\\d{2}.*")).hasSize(2);
         }
         assertThat(contar("obra")).isEqualTo(3);
         assertThat(contar("linea_planilla")).isEqualTo(34);

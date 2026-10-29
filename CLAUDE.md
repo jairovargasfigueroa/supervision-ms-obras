@@ -27,11 +27,11 @@ Configuración local: copiar `.env.properties.example` a `.env.properties` y com
 Datos de prueba (011, `docs/datos-prueba.md` de `supervision-docs`): perfil `semilla`, sin web ni mensajería; carga y termina. Lo llama `infra/semilla/` con estas líneas exactas, desde esta carpeta (detalle en el README, «Datos de prueba»):
 
 ```sh
-SEMILLA_FECHA=AAAA-MM-DD ./mvnw -q spring-boot:run -Dspring-boot.run.profiles=semilla                       # cargar
-SEMILLA_FECHA=AAAA-MM-DD SEMILLA_MODO=recargar ./mvnw -q spring-boot:run -Dspring-boot.run.profiles=semilla  # vaciar y cargar
+SEMILLA_FECHA=AAAA-MM-DD ./mvnw spring-boot:run -Dspring-boot.run.profiles=semilla                                                   # cargar
+SEMILLA_FECHA=AAAA-MM-DD ./mvnw spring-boot:run -Dspring-boot.run.profiles=semilla -Dspring-boot.run.arguments=--semilla.modo=recargar  # vaciar y cargar
 ```
 
-En Windows: `$env:SEMILLA_FECHA = 'AAAA-MM-DD'; .\mvnw.cmd -q spring-boot:run "-Dspring-boot.run.profiles=semilla"` (y `$env:SEMILLA_MODO = 'recargar'`). Lee `.env.properties`; código de salida distinto de 0 si falla o la guarda la rechaza; imprime `SEMILLA_RESUMEN servicio=obras fecha=… obras=3 partidas=21 … fotos=10 planillas=5 …`. Los datos están en `src/main/resources/semilla/obras.json` (copia de `docs/datos-prueba.md`: si cambia, se cambia allí primero). Si una capa agrega tablas o campos a Obras, amplía esta semilla en el mismo trabajo.
+En Windows, `mvnw.cmd` con los mismos argumentos entre comillas y `$env:SEMILLA_FECHA = 'AAAA-MM-DD'`. Lee `.env.properties`; código de salida distinto de 0 si falla o la guarda la rechaza. Para el resumen de infra (que copia las líneas con «resumen» o «D = AAAA-MM-DD») imprime `Semilla de Obras terminada · D = … · modo …` y una sola línea `RESUMEN_SEMILLA {"servicio":"obras","fecha":"…","totales":{"obra":3,"partida":21,…,"outbox_evento":0}}` (formato de Materiales). Los datos están en `src/main/resources/semilla/obras.json` (copia de `docs/datos-prueba.md`: si cambia, se cambia allí primero). Si una capa agrega tablas o campos a Obras, amplía esta semilla en el mismo trabajo.
 
 ## Arquitectura: DDD + Hexagonal
 

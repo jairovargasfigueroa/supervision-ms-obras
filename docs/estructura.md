@@ -82,7 +82,7 @@ src/main/java/com/constructora/obras/
                     totales con LineaPlanilla y TotalesPlanilla, número del cobro, comprobaciones del documento),
                     CargaSemilla.java (JdbcTemplate en una transacción, INSERT … ON CONFLICT DO NOTHING; recargar: TRUNCATE
                     de todas las tablas menos flyway_schema_history), ModoSemilla.java (cargar, recargar),
-                    ResumenSemilla.java (conteos y línea SEMILLA_RESUMEN para infra), GuardaSemilla.java (perfil prod o base no local)
+                    ResumenSemilla.java (conteos y línea RESUMEN_SEMILLA en JSON para infra), GuardaSemilla.java (perfil prod o base no local)
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml,
   application-semilla.yaml (011: sin web, listeners con auto-startup false,
