@@ -6,7 +6,7 @@ Se implementa **después de la 009**, cuando existen todas las tablas del sistem
 
 Marca cada tarea al terminarla (con sus pruebas y su commit).
 
-- [ ] Resolvedor de fechas relativas (`D±n`, `M-k`, `M-k/dd hh:mm`, `D-n hh:mm`) en zona `America/La_Paz` con D desde `semilla.fecha` (`SEMILLA_FECHA`) o la fecha de hoy; pruebas unitarias con la tabla del diseño
+- [x] Resolvedor de fechas relativas (`D±n`, `M-k`, `M-k/dd hh:mm`, `D-n hh:mm`) en zona `America/La_Paz` con D desde `semilla.fecha` (`SEMILLA_FECHA`) o la fecha de hoy; pruebas unitarias con la tabla del diseño
 - [ ] `src/main/resources/semilla/obras.json` con la parte de Obras de `docs/datos-prueba.md`: 3 obras con copia del contrato y `contrato_id`, 21 partidas con insumos, 5 planillas con sus cantidades, 10 fotos y las fotos adjuntas
 - [ ] Perfil `semilla` (`application-semilla.yaml`: sin servidor web, sin consumidores ni publicador del outbox) y `SemillaRunner`: carga en una transacción con `INSERT … ON CONFLICT DO NOTHING`, calcula montos y totales con la regla del dominio, registra el resumen y termina el proceso; guarda contra perfil `prod` y base no local
 - [ ] Modo `semilla.modo=recargar`: vacía todas las tablas del negocio (no `flyway_schema_history`) y carga
