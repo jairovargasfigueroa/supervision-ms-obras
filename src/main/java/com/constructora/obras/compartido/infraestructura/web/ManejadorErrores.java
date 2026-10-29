@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -38,6 +39,15 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
             problema.setProperty("codigo", codigoGenerico(estado.value()));
         }
         return respuesta;
+    }
+
+    /** @PreAuthorize rechazó el rol (convenciones: 403 SIN_PERMISO, antes de mirar si la obra existe). */
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ProblemDetail> sinPermiso(AccessDeniedException error) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Tu rol no permite esta acción.");
+        problema.setTitle("Sin permiso");
+        problema.setProperty("codigo", "SIN_PERMISO");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problema);
     }
 
     @ExceptionHandler(Exception.class)
