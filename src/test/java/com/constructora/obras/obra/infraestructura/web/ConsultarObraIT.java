@@ -250,6 +250,92 @@ class ConsultarObraIT extends PruebaIntegracion {
         }
     }
 
+    /** 006, criterio 3: tabla de partidas con ejecutada acumulada y avance; indicadores de la obra. */
+    @Nested
+    class DetalleConAvance {
+
+        private Equipo equipoDetalle;
+        private UUID obra;
+        private UUID losa;
+        private UUID muro;
+
+        @BeforeEach
+        void obraConDosPartidas() throws Exception {
+            equipoDetalle = Equipo.nuevo();
+            obra = ObrasPrueba.registrarDosPartidas(mvc, "Edificio Detalle", equipoDetalle);
+            losa = PlanillasPrueba.partida(jdbc, obra, "P-01");
+            muro = PlanillasPrueba.partida(jdbc, obra, "P-02");
+        }
+
+        @Test
+        void partidasConEjecutadaAcumuladaYAvanceDeLasPlanillasAprobadas() throws Exception {
+            PlanillasPrueba.cambiarInicio(jdbc, obra, reloj.hoy().minusDays(30));
+            PlanillasPrueba.insertar(jdbc, obra, 1, "2026-07", "APROBADA",
+                    Map.of(losa, new BigDecimal("2"), muro, new BigDecimal("4")));
+            PlanillasPrueba.insertar(jdbc, obra, 2, "2026-08", "APROBADA",
+                    Map.of(losa, new BigDecimal("1.5"), muro, BigDecimal.ZERO));
+            PlanillasPrueba.insertar(jdbc, obra, 3, "2026-09", "APROBANDO",
+                    Map.of(losa, new BigDecimal("5"), muro, new BigDecimal("5")));
+
+            // Losa 3,5 de 10 (35 %), muro 4 de 20 (20 %); obra (3,5 × 100 + 4 × 50) / 2000 = 27,5 %; plazo 30 %
+            pedir("/obras/" + obra, TokensPrueba.valido(equipoDetalle.residente().toString(), "residente"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.avancePct").value(27.5))
+                    .andExpect(jsonPath("$.plazoPct").value(30.0))
+                    .andExpect(jsonPath("$.enRiesgo").value(false))
+                    .andExpect(jsonPath("$.partidas.length()").value(2))
+                    .andExpect(jsonPath("$.partidas[0].codigo").value("P-01"))
+                    .andExpect(jsonPath("$.partidas[0].unidad").value("m2"))
+                    .andExpect(jsonPath("$.partidas[0].cantidadContratada").value(10))
+                    .andExpect(jsonPath("$.partidas[0].precioUnitario").value(100))
+                    .andExpect(jsonPath("$.partidas[0].ejecutadaAcumulada").value(3.5))
+                    .andExpect(jsonPath("$.partidas[0].avancePct").value(35.0))
+                    .andExpect(jsonPath("$.partidas[1].codigo").value("P-02"))
+                    .andExpect(jsonPath("$.partidas[1].ejecutadaAcumulada").value(4))
+                    .andExpect(jsonPath("$.partidas[1].avancePct").value(20.0))
+                    .andExpect(jsonPath("$.contrato.monto").value(2000))
+                    .andExpect(jsonPath("$.contrato.plazoDias").value(100))
+                    .andExpect(jsonPath("$.asignaciones.residenteId").value(equipoDetalle.residente().toString()));
+        }
+
+        @Test
+        void lasPlanillasQueNoEstanAprobadasNoCuentan() throws Exception {
+            String[] estados = {"BORRADOR", "PRESENTADA", "APROBANDO", "OBSERVADA"};
+            for (int i = 0; i < estados.length; i++) {
+                PlanillasPrueba.insertar(jdbc, obra, i + 1, "2026-0" + (i + 5), estados[i],
+                        Map.of(losa, BigDecimal.ONE, muro, BigDecimal.ONE));
+            }
+
+            pedir("/obras/" + obra, TokensPrueba.valido(ObrasPrueba.ADMIN, "admin"))
+                    .andExpect(jsonPath("$.avancePct").value(0))
+                    .andExpect(jsonPath("$.partidas[0].ejecutadaAcumulada").value(0))
+                    .andExpect(jsonPath("$.partidas[0].avancePct").value(0))
+                    .andExpect(jsonPath("$.partidas[1].ejecutadaAcumulada").value(0));
+        }
+
+        @Test
+        void enRiesgoCuandoElPlazoSuperaAlAvancePorMasDeDiezPuntos() throws Exception {
+            // Iniciada hace 120 días con plazo de 100: plazo 100 %; avance 27,5 %
+            PlanillasPrueba.cambiarInicio(jdbc, obra, reloj.hoy().minusDays(120));
+            PlanillasPrueba.insertar(jdbc, obra, 1, "2026-07", "APROBADA",
+                    Map.of(losa, new BigDecimal("3.5"), muro, new BigDecimal("4")));
+
+            pedir("/obras/" + obra, TokensPrueba.valido("u-gerente", "gerente"))
+                    .andExpect(jsonPath("$.avancePct").value(27.5))
+                    .andExpect(jsonPath("$.plazoPct").value(100.0))
+                    .andExpect(jsonPath("$.enRiesgo").value(true));
+        }
+
+        @Test
+        void antesDeIniciarElPlazoEsCero() throws Exception {
+            PlanillasPrueba.cambiarInicio(jdbc, obra, reloj.hoy().plusDays(10));
+
+            pedir("/obras/" + obra, TokensPrueba.valido(ObrasPrueba.ADMIN, "admin"))
+                    .andExpect(jsonPath("$.plazoPct").value(0))
+                    .andExpect(jsonPath("$.enRiesgo").value(false));
+        }
+    }
+
     /** GET /obras con parámetros (nombre, valor, …) enviados tal cual, sin codificar a mano. */
     private ResultActions listar(String token, String... parametros) throws Exception {
         MockHttpServletRequestBuilder pedido = get("/obras").header("Authorization", "Bearer " + token);

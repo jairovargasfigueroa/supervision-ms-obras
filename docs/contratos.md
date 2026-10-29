@@ -69,7 +69,8 @@ Roles: los que pueden ver la obra.
   }]
 }
 ```
-Errores: `404 OBRA_NO_ENCONTRADA` (también si el usuario no puede verla) o si el id no es un UUID. En la 002 `ejecutadaAcumulada` y `avancePct` de cada partida son 0.
+Errores: `404 OBRA_NO_ENCONTRADA` (también si el usuario no puede verla) o si el id no es un UUID.
+- Partidas ordenadas por `codigo`. `ejecutadaAcumulada` (3 decimales) = suma de `cantidad_periodo` de sus líneas en planillas `APROBADA`; `avancePct` de la partida = ejecutada acumulada / cantidad contratada × 100 (2 decimales). `avancePct`, `plazoPct` y `enRiesgo` de la obra, como en `GET /obras` (006). En `POST /obras` (002) las partidas salen en el orden en que llegaron y con ejecutada y avance en 0.
 
 ### GET /obras/{id}/material-previsto?periodo=AAAA-MM · 006
 Roles: `admin`, `gerente` y `residente` asignado (si no ve la obra: `404 OBRA_NO_ENCONTRADA`).
