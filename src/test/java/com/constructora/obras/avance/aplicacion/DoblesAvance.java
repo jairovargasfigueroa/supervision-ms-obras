@@ -5,6 +5,7 @@ import com.constructora.obras.avance.dominio.FotoAvance;
 import com.constructora.obras.compartido.dominio.Dinero;
 import com.constructora.obras.compartido.dominio.Pagina;
 import com.constructora.obras.compartido.dominio.Paginacion;
+import com.constructora.obras.obra.aplicacion.puerto.entrada.FiltroObras;
 import com.constructora.obras.obra.aplicacion.puerto.salida.ObraRepositorio;
 import com.constructora.obras.obra.dominio.Asignaciones;
 import com.constructora.obras.obra.dominio.ContratoCopia;
@@ -60,13 +61,13 @@ final class DoblesAvance {
         }
 
         @Override
-        public List<Obra> listarTodas() {
+        public List<Obra> listarTodas(FiltroObras filtro) {
             return List.copyOf(obras.values());
         }
 
         @Override
         public List<Obra> listarAsignadas(UUID usuarioId, boolean comoResidente, boolean comoMaestro,
-                boolean comoAlmacenero, boolean comoCliente) {
+                boolean comoAlmacenero, boolean comoCliente, FiltroObras filtro) {
             throw new UnsupportedOperationException();
         }
     }

@@ -48,7 +48,9 @@ Roles: todos; filtra por visibilidad (convenciones).
 }]
 ```
 `ultimaPlanilla` es `null` si no hay planillas.
-Estado en la 002: devuelve las obras que el usuario ve, ordenadas por nombre; `avancePct` es 0 (todavía no hay planillas aprobadas), `plazoPct` y `enRiesgo` se calculan con docs/reglas-negocio.md («Avance y plazo») y `ultimaPlanilla` es `null`. Los filtros `estado` y `busqueda` se aceptan pero no filtran hasta la 006.
+- Devuelve las obras que el usuario ve (convenciones), ordenadas por nombre. `avancePct`, `plazoPct` y `enRiesgo` se calculan al leer con docs/reglas-negocio.md («Avance y plazo»): el avance solo cuenta las planillas `APROBADA`; el plazo usa la fecha de hoy en `America/La_Paz`. Porcentajes con 2 decimales.
+- `ultimaPlanilla`: la planilla de periodo más reciente de la obra, en cualquier estado (`periodo` `AAAA-MM`).
+- `estado` (006): uno de `SIN_CONTRATO`, `EN_EJECUCION`, `CONCLUIDA`; otro valor: `400 DATOS_INVALIDOS` con `errores[].campo = estado`. `busqueda` (006): el nombre contiene el texto (sin distinguir mayúsculas; `%` y `_` son texto literal). Vacíos (o solo espacios) no filtran; los dos se combinan.
 
 ### GET /obras/{id} · 002, 004, 006
 Roles: los que pueden ver la obra.

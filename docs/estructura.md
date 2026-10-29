@@ -27,12 +27,12 @@ src/main/java/com/constructora/obras/
   obra/                            # un paquete por contexto: obra, avance, planilla, saga, diario (capa 1)
     dominio/        Obra.java, Partida.java, InsumoPrevisto.java, EstadoObra.java, Asignaciones.java, ContratoCopia.java, ObraRegistrada.java (evento)
     aplicacion/
-      puerto/entrada/   RegistrarObraCasoUso.java, ConsultarObraCasoUso.java, RegistrarRespuestaContratoCasoUso.java, ObraDetalle.java
-      puerto/salida/    ObraRepositorio.java, PublicadorEventos.java
+      puerto/entrada/   RegistrarObraCasoUso.java, ConsultarObraCasoUso.java, RegistrarRespuestaContratoCasoUso.java, ObraDetalle.java (indicadores y última planilla), FiltroObras.java (estado y búsqueda de GET /obras)
+      puerto/salida/    ObraRepositorio.java, PublicadorEventos.java, PlanillasObraRepositorio.java (006: lectura de planillas para avance, última planilla y material previsto)
       servicio/         RegistrarObraServicio.java, ConsultarObraServicio.java, RespuestaContratoServicio.java
     infraestructura/
       web/              ObraController.java, dto/RegistrarObraRequest.java, dto/ObraResponse.java, dto/ObraResumenResponse.java, ObraWebMapper.java
-      persistencia/     ObraEntity.java, PartidaEntity.java, InsumoPrevistoEntity.java, ObraJpaRepository.java, ObraRepositorioJpa.java, ObraPersistenciaMapper.java
+      persistencia/     ObraEntity.java, PartidaEntity.java, InsumoPrevistoEntity.java, ObraJpaRepository.java (con Specification para visibilidad y filtros), ObraRepositorioJpa.java, ObraPersistenciaMapper.java
       mensajeria/       PublicadorEventosOutbox.java, ContratoRegistradoConsumidor.java, ContratoRechazadoConsumidor.java
   avance/                          # 005: fotos de avance (usa ObraRepositorio del contexto obra para la visibilidad)
     dominio/        FotoAvance.java (clave fotos/{obraId}/{fotoId}.jpg, partida de la obra)
@@ -43,9 +43,13 @@ src/main/java/com/constructora/obras/
     infraestructura/
       web/              FotoController.java, dto/UrlSubidaRequest.java, dto/UrlSubidaResponse.java, dto/RegistrarFotoRequest.java, dto/FotoResponse.java, dto/FotoListadaResponse.java, dto/FotoPaginaResponse.java, FotoWebMapper.java
       persistencia/     FotoAvanceEntity.java, FotoAvanceJpaRepository.java (con Specification para los filtros), FotoAvanceRepositorioJpa.java, FotoAvancePersistenciaMapper.java
+  planilla/                        # 006: tablas y lectura; 007: dominio Planilla, casos de uso y endpoints
+    dominio/        EstadoPlanilla.java, PlanillaCorta.java (periodo y estado)
+    infraestructura/
+      persistencia/     PlanillaEntity.java, LineaPlanillaEntity.java, PlanillaJpaRepository.java (solo lectura en la 006), PlanillasObraRepositorioJpa.java (adaptador de PlanillasObraRepositorio)
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml
-  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
+  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
@@ -54,7 +58,8 @@ src/test/java/com/constructora/obras/
   avance/infraestructura/web/FotoAvanceIT.java    # pruebas de la spec 005 con el doble AlmacenArchivosEnMemoria
   compartido/infraestructura/archivos/AlmacenArchivosS3Test.java # firma real del SDK, sin red
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
-  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, Esperar,
+  obra/infraestructura/web/ConsultarObraIT.java # 002 y 006: lista con filtros, indicadores, última planilla y detalle
+  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java
   ArquitecturaTest.java                         # ArchUnit

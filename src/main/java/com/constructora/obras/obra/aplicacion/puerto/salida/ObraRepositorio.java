@@ -1,5 +1,6 @@
 package com.constructora.obras.obra.aplicacion.puerto.salida;
 
+import com.constructora.obras.obra.aplicacion.puerto.entrada.FiltroObras;
 import com.constructora.obras.obra.dominio.Obra;
 import java.util.List;
 import java.util.Optional;
@@ -12,12 +13,12 @@ public interface ObraRepositorio {
 
     Optional<Obra> buscarPorId(UUID id);
 
-    /** Todas las obras, por nombre. */
-    List<Obra> listarTodas();
+    /** Todas las obras que cumplen el filtro, por nombre. */
+    List<Obra> listarTodas(FiltroObras filtro);
 
     /**
-     * Obras donde el usuario está asignado en alguno de los papeles indicados, por nombre.
+     * Obras que cumplen el filtro donde el usuario está asignado en alguno de los papeles indicados, por nombre.
      */
     List<Obra> listarAsignadas(UUID usuarioId, boolean comoResidente, boolean comoMaestro, boolean comoAlmacenero,
-            boolean comoCliente);
+            boolean comoCliente, FiltroObras filtro);
 }

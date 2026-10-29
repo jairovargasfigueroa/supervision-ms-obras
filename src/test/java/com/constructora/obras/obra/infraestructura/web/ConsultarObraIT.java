@@ -1,5 +1,6 @@
 package com.constructora.obras.obra.infraestructura.web;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -7,22 +8,33 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.constructora.obras.compartido.dominio.Reloj;
 import com.constructora.obras.soporte.ObrasPrueba;
 import com.constructora.obras.soporte.ObrasPrueba.Equipo;
+import com.constructora.obras.soporte.PlanillasPrueba;
 import com.constructora.obras.soporte.PruebaIntegracion;
 import com.constructora.obras.soporte.TokensPrueba;
+import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 /** Tarea 6: GET /obras/{id} y GET /obras con la visibilidad por rol (convenciones, «Autenticación y permisos»). */
 class ConsultarObraIT extends PruebaIntegracion {
 
     @Autowired
     private MockMvc mvc;
+    @Autowired
+    private JdbcTemplate jdbc;
+    @Autowired
+    private Reloj reloj;
 
     private Equipo equipo;
     private UUID obraId;
@@ -106,6 +118,145 @@ class ConsultarObraIT extends PruebaIntegracion {
                 .andExpect(jsonPath("$.length()").value(1));
         pedir("/obras", TokensPrueba.valido(UUID.randomUUID().toString(), "residente"))
                 .andExpect(content().json("[]"));
+    }
+
+    @Nested
+    class Filtros {
+
+        private Equipo mismoEquipo;
+        private UUID torre;
+        private UUID casa;
+        private String residente;
+
+        @BeforeEach
+        void dosObrasDelMismoResidente() throws Exception {
+            mismoEquipo = Equipo.nuevo();
+            torre = ObrasPrueba.registrar(mvc, "Torre Norte", mismoEquipo);
+            casa = ObrasPrueba.registrar(mvc, "Casa Sur 50%_A", mismoEquipo);
+            PlanillasPrueba.cambiarEstado(jdbc, casa, "EN_EJECUCION");
+            residente = TokensPrueba.valido(mismoEquipo.residente().toString(), "residente");
+        }
+
+        @Test
+        void sinFiltrosVeTodasLasSuyasPorNombre() throws Exception {
+            pedir("/obras", residente)
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.length()").value(2))
+                    .andExpect(jsonPath("$[0].id").value(casa.toString()))
+                    .andExpect(jsonPath("$[1].id").value(torre.toString()));
+            listar(residente, "estado", "", "busqueda", "  ").andExpect(jsonPath("$.length()").value(2));
+        }
+
+        @Test
+        void filtraPorEstado() throws Exception {
+            listar(residente, "estado", "EN_EJECUCION")
+                    .andExpect(jsonPath("$.length()").value(1))
+                    .andExpect(jsonPath("$[0].id").value(casa.toString()))
+                    .andExpect(jsonPath("$[0].estado").value("EN_EJECUCION"));
+            listar(residente, "estado", "SIN_CONTRATO")
+                    .andExpect(jsonPath("$.length()").value(1))
+                    .andExpect(jsonPath("$[0].id").value(torre.toString()));
+            listar(residente, "estado", "CONCLUIDA").andExpect(content().json("[]"));
+        }
+
+        @Test
+        void buscaPorNombreSinDistinguirMayusculas() throws Exception {
+            listar(residente, "busqueda", "torre")
+                    .andExpect(jsonPath("$.length()").value(1))
+                    .andExpect(jsonPath("$[0].id").value(torre.toString()));
+            listar(residente, "busqueda", " NORTE ")
+                    .andExpect(jsonPath("$[*].id", contains(torre.toString())));
+            listar(residente, "busqueda", "Santa").andExpect(content().json("[]"));
+        }
+
+        @Test
+        void losComodinesDeLaBusquedaSonTextoLiteral() throws Exception {
+            listar(residente, "busqueda", "50%_a")
+                    .andExpect(jsonPath("$[*].id", contains(casa.toString())));
+            listar(residente, "busqueda", "%")
+                    .andExpect(jsonPath("$[*].id", contains(casa.toString())));
+            listar(residente, "busqueda", "_")
+                    .andExpect(jsonPath("$[*].id", contains(casa.toString())));
+        }
+
+        @Test
+        void estadoYBusquedaSeCombinanYRespetanLaVisibilidad() throws Exception {
+            listar(residente, "estado", "EN_EJECUCION", "busqueda", "torre").andExpect(content().json("[]"));
+            // Otro residente no ve estas obras aunque busque su nombre
+            listar(TokensPrueba.valido(UUID.randomUUID().toString(), "residente"), "busqueda", "Torre Norte")
+                    .andExpect(content().json("[]"));
+            // El gerente las ve todas
+            listar(TokensPrueba.valido("u-gerente", "gerente"), "busqueda", "Torre Norte")
+                    .andExpect(jsonPath("$[*].id", hasItem(torre.toString())))
+                    .andExpect(jsonPath("$[*].id", not(hasItem(casa.toString()))));
+        }
+
+        @Test
+        void unEstadoQueNoExisteResponde400() throws Exception {
+            listar(residente, "estado", "ACTIVA")
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+                    .andExpect(jsonPath("$.codigo").value("DATOS_INVALIDOS"))
+                    .andExpect(jsonPath("$.errores[0].campo").value("estado"));
+        }
+    }
+
+    @Nested
+    class IndicadoresDeLaLista {
+
+        @Test
+        void soloLasPlanillasAprobadasCuentanParaElAvanceYLaUltimaEsLaDePeriodoMasReciente() throws Exception {
+            UUID partida = PlanillasPrueba.partida(jdbc, obraId, "P-01");
+            // Plazo de 100 días: iniciada hace 50 → plazo 50 %
+            PlanillasPrueba.cambiarInicio(jdbc, obraId, reloj.hoy().minusDays(50));
+            PlanillasPrueba.insertar(jdbc, obraId, 1, "2026-08", "APROBADA", Map.of(partida, new BigDecimal("2")));
+            PlanillasPrueba.insertar(jdbc, obraId, 2, "2026-09", "APROBADA", Map.of(partida, BigDecimal.ONE));
+            PlanillasPrueba.insertar(jdbc, obraId, 3, "2026-10", "PRESENTADA", Map.of(partida, new BigDecimal("5")));
+
+            // (2 + 1) × 100 / 1000 = 30 %; la PRESENTADA no cuenta; 50 − 30 = 20 puntos: en riesgo
+            pedir("/obras", TokensPrueba.valido(equipo.residente().toString(), "residente"))
+                    .andExpect(jsonPath("$[0].id").value(obraId.toString()))
+                    .andExpect(jsonPath("$[0].avancePct").value(30.0))
+                    .andExpect(jsonPath("$[0].plazoPct").value(50.0))
+                    .andExpect(jsonPath("$[0].enRiesgo").value(true))
+                    .andExpect(jsonPath("$[0].ultimaPlanilla.periodo").value("2026-10"))
+                    .andExpect(jsonPath("$[0].ultimaPlanilla.estado").value("PRESENTADA"));
+        }
+
+        @Test
+        void sinRiesgoCuandoElAvanceVaAlDiaYLaUltimaPuedeSerAprobada() throws Exception {
+            UUID partida = PlanillasPrueba.partida(jdbc, obraId, "P-01");
+            PlanillasPrueba.cambiarInicio(jdbc, obraId, reloj.hoy().minusDays(40));
+            PlanillasPrueba.insertar(jdbc, obraId, 1, "2026-09", "APROBADA", Map.of(partida, new BigDecimal("3")));
+
+            // plazo 40 %, avance 30 %: 10 puntos justos, no está en riesgo
+            pedir("/obras", TokensPrueba.desde("portal", equipo.cliente().toString(), "cliente"))
+                    .andExpect(jsonPath("$[0].avancePct").value(30.0))
+                    .andExpect(jsonPath("$[0].plazoPct").value(40.0))
+                    .andExpect(jsonPath("$[0].enRiesgo").value(false))
+                    .andExpect(jsonPath("$[0].ultimaPlanilla.periodo").value("2026-09"))
+                    .andExpect(jsonPath("$[0].ultimaPlanilla.estado").value("APROBADA"));
+        }
+
+        @Test
+        void lasPlanillasDeOtraObraNoCuentan() throws Exception {
+            UUID otra = ObrasPrueba.registrar(mvc, "Obra ajena", Equipo.nuevo());
+            PlanillasPrueba.insertar(jdbc, otra, 1, "2026-09", "APROBADA",
+                    Map.of(PlanillasPrueba.partida(jdbc, otra, "P-01"), BigDecimal.TEN));
+
+            pedir("/obras", TokensPrueba.valido(equipo.residente().toString(), "residente"))
+                    .andExpect(jsonPath("$[0].avancePct").value(0))
+                    .andExpect(jsonPath("$[0].ultimaPlanilla").isEmpty());
+        }
+    }
+
+    /** GET /obras con parámetros (nombre, valor, …) enviados tal cual, sin codificar a mano. */
+    private ResultActions listar(String token, String... parametros) throws Exception {
+        MockHttpServletRequestBuilder pedido = get("/obras").header("Authorization", "Bearer " + token);
+        for (int i = 0; i < parametros.length; i += 2) {
+            pedido.param(parametros[i], parametros[i + 1]);
+        }
+        return mvc.perform(pedido);
     }
 
     private ResultActions pedir(String ruta, String token) throws Exception {

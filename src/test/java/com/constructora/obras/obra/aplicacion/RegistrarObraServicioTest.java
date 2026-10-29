@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.constructora.obras.compartido.dominio.EventoDominio;
 import com.constructora.obras.compartido.dominio.ReglaNegocioException;
 import com.constructora.obras.compartido.dominio.Reloj;
+import com.constructora.obras.obra.aplicacion.puerto.entrada.FiltroObras;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.ObraDetalle;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso.Comando;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso.ContratoComando;
@@ -98,13 +99,13 @@ class RegistrarObraServicioTest {
         }
 
         @Override
-        public List<Obra> listarTodas() {
+        public List<Obra> listarTodas(FiltroObras filtro) {
             return List.copyOf(obras.values());
         }
 
         @Override
         public List<Obra> listarAsignadas(UUID usuarioId, boolean comoResidente, boolean comoMaestro,
-                boolean comoAlmacenero, boolean comoCliente) {
+                boolean comoAlmacenero, boolean comoCliente, FiltroObras filtro) {
             return List.of();
         }
     }

@@ -45,7 +45,7 @@ public class RegistrarObraServicio implements RegistrarObraCasoUso {
         repositorio.guardar(obra);
         publicador.publicar(ObraRegistrada.de(obra, datosContrato.firmadoEn()));
         // Obra recién registrada: todavía no hay planillas aprobadas, ninguna partida tiene cantidad ejecutada
-        return new ObraDetalle(obra, obra.indicadores(Map.of(), reloj.hoy()));
+        return new ObraDetalle(obra, obra.indicadores(Map.of(), reloj.hoy()), null);
     }
 
     private static Partida partida(PartidaComando datos) {

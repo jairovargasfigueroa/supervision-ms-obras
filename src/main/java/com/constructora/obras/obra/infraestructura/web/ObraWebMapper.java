@@ -10,6 +10,7 @@ import com.constructora.obras.obra.dominio.Partida;
 import com.constructora.obras.obra.infraestructura.web.dto.ObraResponse;
 import com.constructora.obras.obra.infraestructura.web.dto.ObraResumenResponse;
 import com.constructora.obras.obra.infraestructura.web.dto.RegistrarObraRequest;
+import com.constructora.obras.planilla.dominio.PlanillaCorta;
 import java.util.List;
 import org.mapstruct.Mapper;
 
@@ -47,12 +48,15 @@ public interface ObraWebMapper {
                 indicadores.avancePct(), indicadores.plazoPct(), indicadores.enRiesgo(), partidas);
     }
 
-    /** Fila de GET /obras. Las planillas llegan con la 007: hasta entonces no hay última planilla. */
+    /** Fila de GET /obras. ultimaPlanilla es null si la obra no tiene planillas. */
     default ObraResumenResponse aResumen(ObraDetalle detalle) {
         Obra obra = detalle.obra();
         Obra.Indicadores indicadores = detalle.indicadores();
+        PlanillaCorta ultima = detalle.ultimaPlanilla();
         return new ObraResumenResponse(obra.id(), obra.nombre(), obra.ubicacion(), obra.estado().name(),
-                obra.fechaInicio(), indicadores.avancePct(), indicadores.plazoPct(), indicadores.enRiesgo(), null);
+                obra.fechaInicio(), indicadores.avancePct(), indicadores.plazoPct(), indicadores.enRiesgo(),
+                ultima == null ? null
+                        : new ObraResumenResponse.PlanillaCorta(ultima.periodo().toString(), ultima.estado().name()));
     }
 
     private ObraResponse.Partida aRespuesta(Partida partida, Obra.Indicadores indicadores) {

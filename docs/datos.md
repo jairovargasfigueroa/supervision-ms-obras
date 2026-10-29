@@ -74,6 +74,8 @@ Migración de la 005: `V2__foto_avance.sql`. Índices por (`obra_id`, `registrad
 | registrado_por | uuid | ref Keycloak |
 
 ### planilla
+Migración de la 006: `V3__planilla.sql` (`planilla` y `linea_planilla`). La 006 solo las lee (avance, ejecutada acumulada, última planilla y material previsto); la 007 crea y guarda planillas sobre estas mismas tablas y agrega `planilla_foto` en su migración. Tipos: montos `numeric(14,2)`, `cantidad_periodo` `numeric(14,3)`, `estado` `varchar(20)` con *check* de los cinco estados, `periodo` con *check* de primer día del mes; `observacion`, `cobro_id` y `cobro_numero` admiten nulo.
+
 | Campo | Tipo | Notas |
 |---|---|---|
 | id | uuid | PK |
