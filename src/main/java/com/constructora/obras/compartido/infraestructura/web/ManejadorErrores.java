@@ -113,8 +113,14 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
         return ResponseEntity.internalServerError().body(problema);
     }
 
-    /** «No encontrado» (por ejemplo OBRA_NO_ENCONTRADA) → 404; conflictos → 409; el resto de reglas → 422. */
+    /**
+     * «No encontrado» (por ejemplo OBRA_NO_ENCONTRADA) → 404; conflictos → 409; SIN_PERMISO (el rol puede, pero el
+     * usuario ve la obra con otro papel) → 403; el resto de reglas → 422.
+     */
     static HttpStatus estadoDe(String codigo) {
+        if ("SIN_PERMISO".equals(codigo)) {
+            return HttpStatus.FORBIDDEN;
+        }
         if (codigo.endsWith("_NO_ENCONTRADA") || codigo.endsWith("_NO_ENCONTRADO")) {
             return HttpStatus.NOT_FOUND;
         }

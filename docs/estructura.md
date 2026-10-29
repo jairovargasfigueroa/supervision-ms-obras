@@ -33,12 +33,22 @@ src/main/java/com/constructora/obras/
       web/              ObraController.java, dto/RegistrarObraRequest.java, dto/ObraResponse.java, dto/ObraResumenResponse.java, ObraWebMapper.java
       persistencia/     ObraEntity.java, PartidaEntity.java, InsumoPrevistoEntity.java, ObraJpaRepository.java, ObraRepositorioJpa.java, ObraPersistenciaMapper.java
       mensajeria/       PublicadorEventosOutbox.java, ContratoRegistradoConsumidor.java, ContratoRechazadoConsumidor.java
+  avance/                          # 005: fotos de avance (usa ObraRepositorio del contexto obra para la visibilidad)
+    dominio/        FotoAvance.java (clave fotos/{obraId}/{fotoId}.jpg, partida de la obra)
+    aplicacion/
+      puerto/entrada/   RegistrarFotoCasoUso.java
+      puerto/salida/    FotoAvanceRepositorio.java
+      servicio/         RegistrarFotoServicio.java
+    infraestructura/
+      web/              FotoController.java, dto/UrlSubidaRequest.java, dto/UrlSubidaResponse.java, dto/RegistrarFotoRequest.java, dto/FotoResponse.java, FotoWebMapper.java
+      persistencia/     FotoAvanceEntity.java, FotoAvanceJpaRepository.java, FotoAvanceRepositorioJpa.java, FotoAvancePersistenciaMapper.java
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml
-  db/migration/V1__obra.sql, V2__planilla.sql, ...        # una migración por funcionalidad, nunca se edita una ya aplicada
+  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
+  avance/dominio/FotoAvanceTest.java, avance/aplicacion/RegistrarFotoServicioTest.java (dobles en DoblesAvance)
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
   soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)

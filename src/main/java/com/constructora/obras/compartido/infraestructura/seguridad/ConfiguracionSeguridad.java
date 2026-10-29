@@ -59,6 +59,8 @@ public class ConfiguracionSeguridad {
                         // que Spring hace antes de entrar al método con @PreAuthorize (convenciones, «Respuestas
                         // de permiso»). El controlador repite el rol con @PreAuthorize.
                         .requestMatchers(HttpMethod.POST, "/obras").hasRole("admin")
+                        .requestMatchers(HttpMethod.POST, "/obras/*/fotos", "/obras/*/fotos/url-subida")
+                        .hasAnyRole("maestro", "residente")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(servidor -> servidor
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(new ConvertidorRolesKeycloak()))

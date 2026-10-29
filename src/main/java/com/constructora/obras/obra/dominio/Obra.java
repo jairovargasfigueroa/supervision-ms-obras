@@ -134,6 +134,23 @@ public final class Obra {
     }
 
     /**
+     * Fotos de avance (005, criterio 7): las registran el maestro y el residente asignados a la obra. Los roles ya
+     * son los efectivos (regla del azp).
+     */
+    public boolean puedeRegistrarAvance(Usuario usuario) {
+        String id = usuario.id();
+        return usuario.tiene("residente") && id.equals(asignaciones.residenteId().toString())
+                || usuario.tiene("maestro") && id.equals(asignaciones.maestroId().toString());
+    }
+
+    /** Ids de las partidas de la obra. */
+    public Set<UUID> idsPartidas() {
+        Set<UUID> ids = new HashSet<>();
+        partidas.forEach(partida -> ids.add(partida.id()));
+        return Set.copyOf(ids);
+    }
+
+    /**
      * Avance, plazo transcurrido y riesgo (docs/reglas-negocio.md, «Avance y plazo»).
      *
      * @param ejecutadaPorPartida cantidad ejecutada acumulada de cada partida (planillas APROBADA); las que no

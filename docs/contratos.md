@@ -76,12 +76,17 @@ Roles: `admin`, `gerente` y `residente` asignado (si no ve la obra: `404 OBRA_NO
 ### POST /obras/{obraId}/fotos/url-subida · 005
 Roles: `maestro`, `residente` asignados. Recibe `{ "fotoId": "uuid" }`.
 Devuelve `{ "url": "https://…", "claveArchivo": "fotos/{obraId}/{fotoId}.jpg", "expiraEn": "…" }`.
+- La URL es de S3, para `PUT`, vence a los 10 minutos (`expiraEn`, ISO 8601 en UTC) y lleva el `Content-Type: image/jpeg` dentro de la firma: la subida debe enviar ese mismo encabezado.
+- Errores: `403 SIN_PERMISO` (otro rol, comprobado antes que el cuerpo; o un usuario que ve la obra con otro papel, por ejemplo con los roles almacenero y maestro asignado solo como almacenero) · `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o el id no es un UUID) · `400 DATOS_INVALIDOS` (`fotoId` falta o no es un UUID) · `503 SERVICIO_NO_DISPONIBLE` si S3 no está configurado (`OBRAS_S3_BUCKET`, `OBRAS_S3_ACCESS_KEY` u `OBRAS_S3_SECRET_KEY` vacías; el servicio arranca igual).
 
 ### POST /obras/{obraId}/fotos · 005
 Roles: `maestro`, `residente` asignados.
 Recibe `{ "id": "uuid", "partidaId": "uuid", "claveArchivo": "fotos/…jpg", "tomadaEn": "2026-11-15T15:20:00Z" }`.
 Devuelve `201` (o `200` si el `id` ya existía) `{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente": false }`.
 Errores: `404 OBRA_NO_ENCONTRADA` · `422 PARTIDA_NO_ES_DE_LA_OBRA` · `422 CLAVE_ARCHIVO_INVALIDA`.
+- `registradoEn` = `tomadaEn` (al microsegundo) y `registradoPor` = `sub` del token. No necesita S3 (no comprueba que el archivo exista).
+- Orden: rol (`403 SIN_PERMISO`, antes que el cuerpo) → cuerpo (`400 DATOS_INVALIDOS`: `id`, `partidaId` y `tomadaEn` obligatorios; `claveArchivo` obligatoria, hasta 200 caracteres) → obra visible (`404`) → maestro o residente de esa obra (`403 SIN_PERMISO`) → `id` ya registrado: `200` con el registro guardado, sin volver a validar → partida (`422 PARTIDA_NO_ES_DE_LA_OBRA`, `errores[].campo = partidaId`) → clave igual a `fotos/{obraId}/{id}.jpg` (`422 CLAVE_ARCHIVO_INVALIDA`, `errores[].campo = claveArchivo`).
+- Si el `id` ya existe en **otra** obra: `422 CLAVE_ARCHIVO_INVALIDA` (la clave no puede corresponder a ese registro).
 
 ### GET /obras/{obraId}/fotos?partidaId=&desde=&hasta= · 005, 006, 007, 008
 Roles: los que pueden ver la obra; `cliente` solo recibe publicadas. Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `registradoEn desc`. Cada elemento:

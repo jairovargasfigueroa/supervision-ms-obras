@@ -48,18 +48,20 @@ Migración de la 002: `V1__obra.sql` (`obra`, `partida`, `insumo_previsto`, `out
 | cantidad_por_unidad | numeric | material previsto por unidad de partida |
 
 ### foto_avance
+Migración de la 005: `V2__foto_avance.sql`. Índices por (`obra_id`, `registrado_en desc`) y (`partida_id`, `registrado_en desc`) para la lista.
+
 | Campo | Tipo | Notas |
 |---|---|---|
 | id | uuid | PK, creado en el celular |
 | obra_id | uuid | FK obra |
 | partida_id | uuid | FK partida |
-| clave_archivo | varchar | clave en el almacenamiento de objetos |
-| clave_archivo_cliente | varchar | versión con rostros difuminados (capa 3) |
-| personas_detectadas | int | capa 3 |
-| sin_casco | int | capa 3 |
-| publicada_cliente | boolean | |
-| registrado_por | uuid | ref Keycloak |
-| registrado_en | timestamptz | |
+| clave_archivo | varchar(200) | clave en el almacenamiento de objetos: `fotos/{obraId}/{id}.jpg` |
+| clave_archivo_cliente | varchar(200) | versión con rostros difuminados (capa 3); null hasta la 303 |
+| personas_detectadas | int | capa 3; null hasta la 301 |
+| sin_casco | int | capa 3; null hasta la 301 |
+| publicada_cliente | boolean | no nulo, `false` al registrarse; pasa a `true` al presentar la planilla que la adjunta (007) |
+| registrado_por | uuid | ref Keycloak (`sub` de quien la registró) |
+| registrado_en | timestamptz | fecha y hora en que se tomó (`tomadaEn` del celular) |
 
 ### entrada_diario
 | Campo | Tipo | Notas |
