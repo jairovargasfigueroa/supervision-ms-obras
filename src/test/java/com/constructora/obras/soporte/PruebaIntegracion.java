@@ -7,11 +7,14 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
-/** Base de las pruebas *IT: aplicación completa, PostgreSQL en Testcontainers y tokens de TokensPrueba. */
+/**
+ * Base de las pruebas *IT: aplicación completa, PostgreSQL y RabbitMQ en Testcontainers, tokens de TokensPrueba y
+ * el almacenamiento de archivos en memoria (AlmacenArchivosEnMemoria) en lugar de S3.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(ContenedoresPrueba.class)
+@Import({ContenedoresPrueba.class, AlmacenArchivosPrueba.class})
 public abstract class PruebaIntegracion {
 
     @DynamicPropertySource

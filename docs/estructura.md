@@ -12,7 +12,8 @@ Starters de Spring Boot 4.1 (web MVC, security OAuth2 resource server, data JPA,
 src/main/java/com/constructora/obras/
   ObrasApplication.java
   compartido/                      # lo que usan todos los contextos
-    dominio/        ReglaNegocioException.java, Dinero.java (redondeo HALF_UP a 2), Periodo.java (AAAA-MM), Reloj.java (puerto de la hora), Usuario.java (id y roles efectivos), EventoDominio.java
+    dominio/        ReglaNegocioException.java, Dinero.java (redondeo HALF_UP a 2), Periodo.java (AAAA-MM), Reloj.java (puerto de la hora), Usuario.java (id y roles efectivos), EventoDominio.java,
+                    AlmacenArchivos.java (puerto del almacenamiento de objetos: URL firmadas de subida y descarga)
     infraestructura/
       RelojSistema.java
       seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java (realm_access.roles → ROLE_<rol>), RolesEfectivos.java (regla del azp), UsuarioActual.java
@@ -20,7 +21,8 @@ src/main/java/com/constructora/obras/
       mensajeria/   ConfiguracionRabbit.java, Sobre.java, Outbox.java (guarda en outbox_evento), PublicadorOutbox.java (envía cada 1 s), OutboxEventoEntity.java, OutboxEventoJpaRepository.java,
                     ReceptorMensajes.java (cola obras: inbox, reintentos y fallidos), ManejadorMensaje.java (un consumidor por tipo), MensajeInvalidoException.java,
                     MensajeProcesadoEntity.java, MensajeProcesadoJpaRepository.java
-      archivos/     ConfiguracionS3.java, AlmacenArchivosS3.java
+      archivos/     ConfiguracionS3.java (OBRAS_S3_*; sin bucket o claves arranca igual y las firmas responden 503),
+                    AlmacenArchivosS3.java (firma con S3Presigner, sin red)
   obra/                            # un paquete por contexto: obra, avance, planilla, saga, diario (capa 1)
     dominio/        Obra.java, Partida.java, InsumoPrevisto.java, EstadoObra.java, Asignaciones.java, ContratoCopia.java, ObraRegistrada.java (evento)
     aplicacion/
@@ -38,7 +40,8 @@ src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
-  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, Esperar
+  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, Esperar,
+                                                #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java
   ArquitecturaTest.java                         # ArchUnit
 ```

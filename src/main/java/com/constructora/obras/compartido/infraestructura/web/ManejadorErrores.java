@@ -1,5 +1,6 @@
 package com.constructora.obras.compartido.infraestructura.web;
 
+import com.constructora.obras.compartido.dominio.AlmacenArchivos.AlmacenNoDisponibleException;
 import com.constructora.obras.compartido.dominio.ReglaNegocioException;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +87,20 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
         problema.setTitle("Sin permiso");
         problema.setProperty("codigo", "SIN_PERMISO");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problema);
+    }
+
+    /**
+     * El almacenamiento de archivos (S3) no está configurado o no responde: 503 SERVICIO_NO_DISPONIBLE, que el
+     * cliente puede reintentar más tarde (convenciones, «Errores REST»).
+     */
+    @ExceptionHandler(AlmacenNoDisponibleException.class)
+    ResponseEntity<ProblemDetail> almacenNoDisponible(AlmacenNoDisponibleException error) {
+        logger.warn("Almacenamiento de archivos no disponible: " + error.getMessage());
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+                "El almacenamiento de fotos no está disponible por el momento.");
+        problema.setTitle("Servicio no disponible");
+        problema.setProperty("codigo", "SERVICIO_NO_DISPONIBLE");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problema);
     }
 
     @ExceptionHandler(Exception.class)
