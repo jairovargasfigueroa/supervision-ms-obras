@@ -49,7 +49,7 @@ src/main/java/com/constructora/obras/
       persistencia/     PlanillaEntity.java, LineaPlanillaEntity.java, PlanillaJpaRepository.java (solo lectura en la 006), PlanillasObraRepositorioJpa.java (adaptador de PlanillasObraRepositorio)
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml
-  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
+  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
@@ -61,7 +61,7 @@ src/test/java/com/constructora/obras/
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
   obra/infraestructura/web/ConsultarObraIT.java # 002 y 006: lista con filtros, indicadores, última planilla y detalle
   obra/infraestructura/web/MaterialPrevistoIT.java # 006: material previsto con y sin planilla, roles y periodo
-  planilla/infraestructura/persistencia/PlanillaTablasIT.java # 006: restricciones de V3 y lectura de planillas
+  planilla/infraestructura/persistencia/PlanillaTablasIT.java # 006 y 007: restricciones de V3 y V4 y lectura de planillas
   soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java

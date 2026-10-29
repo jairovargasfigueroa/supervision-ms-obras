@@ -12,6 +12,7 @@ import com.constructora.obras.soporte.ObrasPrueba.Equipo;
 import com.constructora.obras.soporte.PlanillasPrueba;
 import com.constructora.obras.soporte.PruebaIntegracion;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -22,7 +23,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
-/** Migración V3 (docs/datos.md, planilla y linea_planilla) y su lectura (PlanillasObraRepositorioJpa). */
+/**
+ * Migraciones V3 (docs/datos.md, planilla y linea_planilla) y V4 (planilla_foto, 007) y la lectura de la 006
+ * (PlanillasObraRepositorioJpa).
+ */
 class PlanillaTablasIT extends PruebaIntegracion {
 
     @Autowired
@@ -77,6 +81,23 @@ class PlanillaTablasIT extends PruebaIntegracion {
         assertThat(planillas.cantidadesDelPeriodo(obra, Periodo.de("2026-11"))).isEmpty();
         assertThat(planillas.ejecutadaAcumulada(List.of())).isEmpty();
         assertThat(planillas.ultimas(List.of(UUID.randomUUID()))).isEmpty();
+    }
+
+    @Test
+    void planillaFotoUneUnaPlanillaConFotosQueExisten() {
+        UUID planilla = PlanillasPrueba.insertar(jdbc, obra, 1, "2026-10", "BORRADOR", Map.of());
+        UUID foto = PlanillasPrueba.insertarFoto(jdbc, obra, partida, Instant.parse("2026-10-15T14:00:00Z"));
+
+        PlanillasPrueba.adjuntarFoto(jdbc, planilla, foto);
+
+        assertThat(jdbc.queryForObject("select count(*) from planilla_foto where planilla_id = ?", Integer.class,
+                planilla)).isEqualTo(1);
+        assertThatThrownBy(() -> PlanillasPrueba.adjuntarFoto(jdbc, planilla, foto))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> PlanillasPrueba.adjuntarFoto(jdbc, planilla, UUID.randomUUID()))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> PlanillasPrueba.adjuntarFoto(jdbc, UUID.randomUUID(), foto))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test

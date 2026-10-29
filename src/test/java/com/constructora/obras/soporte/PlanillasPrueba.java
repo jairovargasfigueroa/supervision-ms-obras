@@ -1,6 +1,8 @@
 package com.constructora.obras.soporte;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
@@ -36,6 +38,28 @@ public final class PlanillasPrueba {
                 select ?, p.id, ?, round(? * p.precio_unitario, 2) from partida p where p.id = ?""",
                 id, cantidad, cantidad, partidaId));
         return id;
+    }
+
+    /**
+     * Inserta una foto de avance de la partida (sin publicar) tomada en ese instante, como si la hubiera registrado
+     * la app (005).
+     *
+     * @return id de la foto
+     */
+    public static UUID insertarFoto(JdbcTemplate jdbc, UUID obraId, UUID partidaId, Instant registradoEn) {
+        UUID id = UUID.randomUUID();
+        jdbc.update("""
+                insert into foto_avance (id, obra_id, partida_id, clave_archivo, publicada_cliente, registrado_por,
+                                         registrado_en)
+                values (?, ?, ?, ?, false, ?, ?)""",
+                id, obraId, partidaId, "fotos/" + obraId + "/" + id + ".jpg", UUID.randomUUID(),
+                Timestamp.from(registradoEn));
+        return id;
+    }
+
+    /** Adjunta la foto a la planilla directo en planilla_foto. */
+    public static void adjuntarFoto(JdbcTemplate jdbc, UUID planillaId, UUID fotoId) {
+        jdbc.update("insert into planilla_foto (planilla_id, foto_id) values (?, ?)", planillaId, fotoId);
     }
 
     /** Id de la partida de la obra con ese código. */
