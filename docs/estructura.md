@@ -44,7 +44,9 @@ src/main/java/com/constructora/obras/
       web/              FotoController.java, dto/UrlSubidaRequest.java, dto/UrlSubidaResponse.java, dto/RegistrarFotoRequest.java, dto/FotoResponse.java, dto/FotoListadaResponse.java, dto/FotoPaginaResponse.java, FotoWebMapper.java
       persistencia/     FotoAvanceEntity.java, FotoAvanceJpaRepository.java (con Specification para los filtros), FotoAvanceRepositorioJpa.java, FotoAvancePersistenciaMapper.java
   planilla/                        # 006: tablas y lectura; 007: dominio Planilla, casos de uso y endpoints
-    dominio/        EstadoPlanilla.java, PlanillaCorta.java (periodo y estado)
+    dominio/        EstadoPlanilla.java, PlanillaCorta.java (periodo y estado),
+                    Planilla.java (007: crear, actualizar líneas con el límite contra lo contratado, adjuntar fotos del periodo, presentar; estados editables),
+                    LineaPlanilla.java (cantidad del periodo y monto), TotalesPlanilla.java (subtotal, anticipo, retención y neto con redondeo HALF_UP a 2)
     infraestructura/
       persistencia/     PlanillaEntity.java, LineaPlanillaEntity.java, PlanillaJpaRepository.java (solo lectura en la 006), PlanillasObraRepositorioJpa.java (adaptador de PlanillasObraRepositorio)
 src/main/resources/
@@ -54,6 +56,7 @@ src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
   obra/aplicacion/ConsultarObraServicioTest.java # 006: lista, detalle y material previsto con Reloj fijo y dobles
+  planilla/dominio/PlanillaTest.java            # 007: caso fijo (anticipo 10 %, retención 7 %), redondeo, límite en el borde, estados, fotos
   avance/dominio/FotoAvanceTest.java, avance/aplicacion/RegistrarFotoServicioTest.java, ConsultarFotosServicioTest.java (dobles en DoblesAvance)
   compartido/dominio/PaginacionTest.java, PeriodoTest.java
   avance/infraestructura/web/FotoAvanceIT.java    # pruebas de la spec 005 con el doble AlmacenArchivosEnMemoria
