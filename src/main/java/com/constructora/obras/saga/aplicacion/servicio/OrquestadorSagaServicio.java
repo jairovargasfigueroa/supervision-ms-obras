@@ -9,6 +9,7 @@ import com.constructora.obras.saga.aplicacion.puerto.salida.SagaAprobacionReposi
 import com.constructora.obras.saga.dominio.Reaccion;
 import com.constructora.obras.saga.dominio.RespuestaSaga;
 import com.constructora.obras.saga.dominio.SagaAprobacion;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -50,6 +51,19 @@ public class OrquestadorSagaServicio implements OrquestarSagaCasoUso {
         aplicar(saga, planilla -> saga.recibir(respuesta, planilla, reloj.ahora()));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> sagasVencidas() {
+        return sagas.vencidas(reloj.ahora());
+    }
+
+    @Override
+    @Transactional
+    public void vencer(UUID sagaId) {
+        sagas.buscarParaActualizar(sagaId)
+                .ifPresent(saga -> aplicar(saga, planilla -> saga.vencer(planilla, reloj.ahora())));
+    }
+
     /** Ejecuta la transición y guarda lo que cambió; publica sus mensajes y registra la nota si la hay. */
     void aplicar(SagaAprobacion saga, Function<Planilla, Reaccion> transicion) {
         Planilla planilla = planillas.buscarPorId(saga.planillaId()).orElseThrow(() -> new IllegalStateException(
@@ -62,7 +76,9 @@ public class OrquestadorSagaServicio implements OrquestarSagaCasoUso {
             sagas.guardar(saga);
         }
         reaccion.mensajes().forEach(publicador::publicar);
-        if (reaccion.nota() != null) {
+        if (reaccion.incidente()) {
+            log.error("INCIDENTE saga {} (planilla {}): {}", saga.id(), saga.planillaId(), reaccion.nota());
+        } else if (reaccion.nota() != null) {
             log.info("Saga {} (planilla {}): {}", saga.id(), saga.planillaId(), reaccion.nota());
         } else {
             log.info("Saga {} (planilla {}): {} en el paso {}", saga.id(), saga.planillaId(), saga.estado(),

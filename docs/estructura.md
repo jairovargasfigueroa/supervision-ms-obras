@@ -67,12 +67,13 @@ src/main/java/com/constructora/obras/
                     EstadoSaga.java, PasoSaga.java (2, 3 y 4), ComandosSaga.java (ReservarSaldo, CerrarConsumos, EmitirCobro, LiberarReserva, ReabrirConsumos),
                     RespuestaSaga.java (SaldoReservado, SaldoInsuficiente, ConsumosCerrados, CierreFallido, CobroEmitido, CobroFallido), Reaccion.java (mensajes y qué cambió)
     aplicacion/
-      puerto/entrada/   OrquestarSagaCasoUso.java (recibir una respuesta; RespuestaSagaInvalidaException)
+      puerto/entrada/   OrquestarSagaCasoUso.java (recibir una respuesta, sagas vencidas y vencer una; RespuestaSagaInvalidaException)
       puerto/salida/    SagaAprobacionRepositorio.java (guardar, buscar con bloqueo, vencidas)
       servicio/         OrquestadorSagaServicio.java (además usa PlanillaRepositorio y PublicadorEventos)
     infraestructura/
       persistencia/     SagaAprobacionEntity.java, SagaAprobacionJpaRepository.java (SELECT … FOR UPDATE), SagaAprobacionRepositorioJpa.java (detalle en JSON)
       mensajeria/       ConsumidoresSaga.java (un ManejadorMensaje por respuesta; busca la saga por correlacionId)
+      programacion/     VencimientoSagaTarea.java (@Scheduled cada 10 s: pasos sin respuesta en 60 s)
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml
   db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
@@ -93,7 +94,7 @@ src/test/java/com/constructora/obras/
   planilla/infraestructura/web/PlanillaIT.java  # 007: pruebas de API de la spec (planilla abierta, periodos, versión, límite, fotos publicadas, roles y cliente)
   planilla/infraestructura/web/RevisarPlanillaIT.java # 008: aprobar (202, saga y ReservarSaldo en la cola de Finanzas) y observar, errores, roles, azp y CORS
   planilla/infraestructura/persistencia/PlanillaTablasIT.java # 006, 007 y 008: restricciones de V3, V4 y V5 y lectura de planillas
-  saga/infraestructura/mensajeria/SagaAprobacionIT.java # 008: saga con RabbitMQ real (Finanzas y Materiales simulados): camino feliz y avance, fallo con compensación, fallidos
+  saga/infraestructura/mensajeria/SagaAprobacionIT.java # 008: saga con RabbitMQ real (Finanzas y Materiales simulados): camino feliz y avance, fallo con compensación, fallidos, vencimiento y respuestas tardías
   soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java

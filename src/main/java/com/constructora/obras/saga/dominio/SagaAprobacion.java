@@ -74,12 +74,16 @@ public final class SagaAprobacion {
      * <li>CobroEmitido → planilla APROBADA con el cobro (paso 5), saga COMPLETADA y PlanillaAprobada;</li>
      * <li>SaldoInsuficiente, CierreFallido o CobroFallido → compensa lo hecho (ver fallar).</li>
      * </ul>
-     * Una respuesta de otro paso, o con la saga ya terminada, no cambia nada (por ejemplo, un repetido con otro id).
+     * Una respuesta de otro paso, o con la saga COMPLETADA, no cambia nada (por ejemplo, un repetido con otro id). Con
+     * la saga COMPENSADA es una respuesta tardía (ver tardia).
      *
      * @param planilla la planilla de la saga (se cambia aquí; el caso de uso la guarda si planillaCambio)
      */
     public Reaccion recibir(RespuestaSaga respuesta, Planilla planilla, Instant ahora) {
         verificarPlanilla(planilla);
+        if (estado == EstadoSaga.COMPENSADA) {
+            return tardia(respuesta, planilla);
+        }
         if (estado != EstadoSaga.EN_CURSO) {
             return Reaccion.ninguna(nombre(respuesta) + " con la saga " + estado + ": no cambia nada");
         }
@@ -102,11 +106,44 @@ public final class SagaAprobacion {
         };
     }
 
+    /**
+     * Vencimiento (criterio 11): si la saga sigue EN_CURSO y el plazo del paso actual ya pasó, se trata como un fallo
+     * de ese paso con el motivo «El paso X no respondió a tiempo» y se compensa lo hecho. Si no, no cambia nada (otra
+     * respuesta llegó antes).
+     */
+    public Reaccion vencer(Planilla planilla, Instant ahora) {
+        verificarPlanilla(planilla);
+        if (estado != EstadoSaga.EN_CURSO || !venceEn.isBefore(ahora)) {
+            return Reaccion.ninguna("Sin vencer: saga " + estado + ", vence " + venceEn);
+        }
+        return fallar("El paso " + paso.numero() + " no respondió a tiempo", planilla, ahora);
+    }
+
+    /**
+     * Respuesta que llega con la saga ya COMPENSADA (por ejemplo, después de vencer el paso): lo que el otro servicio
+     * hizo se deshace sin cambiar la saga ni la planilla. SaldoReservado → LiberarReserva de esa reserva;
+     * ConsumosCerrados → ReabrirConsumos; CobroEmitido → incidente en el registro (no debería pasar: el paso 4 solo se
+     * envía tras el 3). Los fallos tardíos no cambian nada.
+     */
+    private Reaccion tardia(RespuestaSaga respuesta, Planilla planilla) {
+        return switch (respuesta) {
+            case RespuestaSaga.SaldoReservado reservado -> Reaccion.compensacionTardia(
+                    new LiberarReserva(id, planillaId, reservado.reservaId()),
+                    "SaldoReservado tardío con la saga compensada: se libera la reserva " + reservado.reservaId());
+            case RespuestaSaga.ConsumosCerrados cerrados -> Reaccion.compensacionTardia(
+                    new ReabrirConsumos(id, planillaId, planilla.obraId(), planilla.periodo().toString()),
+                    "ConsumosCerrados tardío con la saga compensada: se reabren los consumos de " + planilla.periodo());
+            case RespuestaSaga.CobroEmitido emitido -> Reaccion.incidente("CobroEmitido " + emitido.numero() + " ("
+                    + emitido.cobroId() + ") con la saga compensada: la planilla sigue OBSERVADA; revisar el cobro");
+            default -> Reaccion.ninguna(nombre(respuesta) + " tardío con la saga compensada: no cambia nada");
+        };
+    }
+
     private Reaccion avanzar(PasoSaga siguiente, Instant ahora, EventoDominio comando) {
         paso = siguiente;
         venceEn = ahora.plus(ESPERA_PASO);
         actualizadaEn = ahora;
-        return new Reaccion(List.of(comando), true, false, null);
+        return Reaccion.de(List.of(comando), true, false);
     }
 
     /** Paso 5: la planilla queda APROBADA con el número de cobro y se publica PlanillaAprobada. */
@@ -116,7 +153,7 @@ public final class SagaAprobacion {
         estado = EstadoSaga.COMPLETADA;
         actualizadaEn = ahora;
         planilla.marcarAprobada(cobroId, cobroNumero);
-        return new Reaccion(List.of(PlanillaAprobada.de(id, planilla)), true, true, null);
+        return Reaccion.de(List.of(PlanillaAprobada.de(id, planilla)), true, true);
     }
 
     /**
@@ -138,7 +175,7 @@ public final class SagaAprobacion {
         actualizadaEn = ahora;
         planilla.observarPorSaga(motivoFallo);
         mensajes.add(PlanillaObservada.porSaga(id, planilla));
-        return new Reaccion(mensajes, true, true, null);
+        return Reaccion.de(mensajes, true, true);
     }
 
     private void verificarPlanilla(Planilla planilla) {

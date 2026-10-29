@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.constructora.obras.compartido.infraestructura.mensajeria.ConfiguracionRabbit;
+import com.constructora.obras.saga.infraestructura.programacion.VencimientoSagaTarea;
 import com.constructora.obras.soporte.Esperar;
 import com.constructora.obras.soporte.ObrasPrueba;
 import com.constructora.obras.soporte.ObrasPrueba.Equipo;
@@ -56,6 +57,8 @@ class SagaAprobacionIT extends PruebaIntegracion {
     private RabbitAdmin admin;
     @Autowired
     private JsonMapper json;
+    @Autowired
+    private VencimientoSagaTarea vencimiento;
 
     private Equipo equipo;
     private UUID obra;
@@ -173,6 +176,53 @@ class SagaAprobacionIT extends PruebaIntegracion {
         assertThat(estadoPlanilla(planilla)).isEqualTo("APROBANDO");
     }
 
+    @Test
+    void unPasoSinRespuestaVenceSeCompensaYLaRespuestaTardiaSeDeshace() throws Exception {
+        UUID planilla = aprobarPresentada(BigDecimal.ONE);
+        UUID saga = UUID.fromString(comando(finanzas, planilla, "ReservarSaldo").get("correlacionId").asString());
+        UUID reservaId = UUID.randomUUID();
+        responder("evento.finanzas.SaldoReservado", saga, Map.of("planillaId", planilla, "reservaId", reservaId));
+        comando(materiales, planilla, "CerrarConsumos");
+
+        // Pasaron los 60 s del paso 3 sin respuesta de Materiales
+        vencido(saga);
+        vencimiento.vencerPasos();
+
+        assertThat(comando(finanzas, planilla, "LiberarReserva").get("datos").get("reservaId").asString())
+                .isEqualTo(reservaId.toString());
+        assertThat(estadoSaga(saga)).isEqualTo("COMPENSADA");
+        mvc.perform(get("/planillas/{id}", planilla).header("Authorization", "Bearer " + cliente()))
+                .andExpect(jsonPath("$.estado").value("OBSERVADA"))
+                .andExpect(jsonPath("$.observacion").value("El paso 3 no respondió a tiempo"));
+
+        // Materiales responde tarde: se reabren los consumos y la planilla sigue OBSERVADA
+        responder("evento.materiales.ConsumosCerrados", saga,
+                Map.of("planillaId", planilla, "obraId", obra, "periodo", "2026-10"));
+        JsonNode reabrir = comando(materiales, planilla, "ReabrirConsumos");
+        assertThat(reabrir.get("correlacionId").asString()).isEqualTo(saga.toString());
+        assertThat(reabrir.get("datos").get("periodo").asString()).isEqualTo("2026-10");
+        assertThat(estadoPlanilla(planilla)).isEqualTo("OBSERVADA");
+        assertThat(estadoSaga(saga)).isEqualTo("COMPENSADA");
+    }
+
+    @Test
+    void unaReservaQueLlegaDespuesDeVencerElPaso2SeLibera() throws Exception {
+        UUID planilla = aprobarPresentada(BigDecimal.ONE);
+        UUID saga = UUID.fromString(comando(finanzas, planilla, "ReservarSaldo").get("correlacionId").asString());
+        vencido(saga);
+
+        vencimiento.vencerPasos();
+        Esperar.hasta(ESPERA, () -> "OBSERVADA".equals(estadoPlanilla(planilla)));
+        assertThat(jdbc.queryForObject("select observacion from planilla where id = ?", String.class, planilla))
+                .isEqualTo("El paso 2 no respondió a tiempo");
+
+        UUID tardia = UUID.randomUUID();
+        responder("evento.finanzas.SaldoReservado", saga, Map.of("planillaId", planilla, "reservaId", tardia));
+        assertThat(comando(finanzas, planilla, "LiberarReserva").get("datos").get("reservaId").asString())
+                .isEqualTo(tardia.toString());
+        assertThat(estadoSaga(saga)).isEqualTo("COMPENSADA");
+    }
+
     // --- ayudas ---
 
     private Queue cola(String clave) {
@@ -180,6 +230,12 @@ class SagaAprobacionIT extends PruebaIntegracion {
         admin.declareQueue(cola);
         admin.declareBinding(BindingBuilder.bind(cola).to(new TopicExchange(ConfiguracionRabbit.EXCHANGE)).with(clave));
         return cola;
+    }
+
+    /** Como si hubieran pasado los 60 s del paso actual (con la hora de la aplicación, no la de la base). */
+    private void vencido(UUID saga) {
+        jdbc.update("update saga_aprobacion set vence_en = ? where id = ?",
+                java.sql.Timestamp.from(Instant.now().minusSeconds(5)), saga);
     }
 
     /** Planilla PRESENTADA del periodo 2026-10 con esa cantidad de losa, aprobada por el cliente (202). */
