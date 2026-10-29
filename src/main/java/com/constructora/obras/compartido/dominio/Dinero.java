@@ -23,6 +23,10 @@ public record Dinero(BigDecimal valor) implements Comparable<Dinero> {
         return new Dinero(valor);
     }
 
+    public Dinero sumar(Dinero otro) {
+        return new Dinero(valor.add(otro.valor));
+    }
+
     public Dinero restar(Dinero otro) {
         return new Dinero(valor.subtract(otro.valor));
     }

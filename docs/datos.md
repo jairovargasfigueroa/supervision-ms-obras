@@ -103,6 +103,8 @@ Migración de la 006: `V3__planilla.sql` (`planilla` y `linea_planilla`). La 006
 | monto | numeric | cantidad × precio unitario |
 
 ### planilla_foto
+Migración de la 007: `V4__planilla_foto.sql`. Fotos de avance adjuntas como respaldo; al presentar la planilla, sus fotos pasan a `publicada_cliente = true`.
+
 | Campo | Tipo | Notas |
 |---|---|---|
 | planilla_id | uuid | PK, FK planilla |

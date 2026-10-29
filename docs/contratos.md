@@ -49,7 +49,7 @@ Roles: todos; filtra por visibilidad (convenciones).
 ```
 `ultimaPlanilla` es `null` si no hay planillas.
 - Devuelve las obras que el usuario ve (convenciones), ordenadas por nombre. `avancePct`, `plazoPct` y `enRiesgo` se calculan al leer con docs/reglas-negocio.md («Avance y plazo»): el avance solo cuenta las planillas `APROBADA`; el plazo usa la fecha de hoy en `America/La_Paz`. Porcentajes con 2 decimales.
-- `ultimaPlanilla`: la planilla de periodo más reciente de la obra, en cualquier estado (`periodo` `AAAA-MM`).
+- `ultimaPlanilla`: la planilla de periodo más reciente de la obra, en cualquier estado (`periodo` `AAAA-MM`). Para quien ve la obra solo como `cliente` (desde el portal, `azp = portal`) no cuenta las `BORRADOR`, igual que `GET /obras/{obraId}/planillas` (007).
 - `estado` (006): uno de `SIN_CONTRATO`, `EN_EJECUCION`, `CONCLUIDA`; otro valor: `400 DATOS_INVALIDOS` con `errores[].campo = estado`. `busqueda` (006): el nombre contiene el texto (sin distinguir mayúsculas; `%` y `_` son texto literal). Vacíos (o solo espacios) no filtran; los dos se combinan.
 
 ### GET /obras/{id} · 002, 004, 006
@@ -106,10 +106,13 @@ Roles: los que pueden ver la obra; `cliente` solo recibe publicadas. Paginado (c
 ### POST /obras/{obraId}/planillas · 007
 Roles: `residente` asignado. Recibe `{ "periodo": "2027-03" }`. Devuelve `201` con el detalle (`GET /planillas/{id}`).
 Errores: `409 PLANILLA_ABIERTA_EXISTE` · `422 PERIODO_NO_POSTERIOR` (no es posterior al de la última planilla) · `422 PERIODO_FUTURO` (mes futuro) · `422 OBRA_NO_EN_EJECUCION`.
+- Orden: rol (`403 SIN_PERMISO`, antes que el cuerpo) → `periodo` (`400 DATOS_INVALIDOS` si falta o no es `AAAA-MM`; `errores[].campo = periodo`) → obra visible (`404 OBRA_NO_ENCONTRADA`, también si el id no es un UUID) → residente de esa obra (`403 SIN_PERMISO` si la ve con otro papel) → `OBRA_NO_EN_EJECUCION` → `PLANILLA_ABIERTA_EXISTE` (hay una planilla que no está `APROBADA`) → `PERIODO_NO_POSTERIOR` (`errores[].campo = periodo`) → `PERIODO_FUTURO` (posterior al mes de hoy en `America/La_Paz`).
+- `numero` = el mayor de la obra + 1 (empieza en 1); una línea por partida en 0 y totales en 0; `version: 0`. Devuelve `Location: /planillas/{id}`. No publica eventos (la 010 agregará `PlanillaPresentada` al presentar).
 
 ### GET /obras/{obraId}/planillas · 006, 007, 008
 Roles: los que pueden ver la obra; `cliente` no recibe `BORRADOR`.
 `[{ "id", "numero", "periodo", "estado", "neto", "cobroId", "cobroNumero" }]` (`cobroNumero`: número del cobro, `COB-AAAA-NNNN`, que Obras guarda al recibir `CobroEmitido`; `null` hasta que se aprueba)
+- Ordenadas por `numero` ascendente. El `cliente` que ve la obra solo como cliente (desde el portal) no recibe las `BORRADOR`. Errores: `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o el id no es un UUID).
 
 ### GET /planillas/{id} · 007, 008
 Roles: los que pueden ver la obra; `cliente` recibe `404` si es `BORRADOR`.
@@ -126,14 +129,21 @@ Roles: los que pueden ver la obra; `cliente` recibe `404` si es `BORRADOR`.
   "observacion": null, "cobroId": null, "cobroNumero": null, "fotoIds": ["uuid"]
 }
 ```
+- Errores: `404 PLANILLA_NO_ENCONTRADA` (no existe, no ve su obra, el id no es un UUID o es `BORRADOR` y la ve solo como cliente).
+- Líneas por `codigo` de partida. `acumuladoAnterior` = suma de `cantidad_periodo` de la partida en las planillas `APROBADA` de la obra con periodo anterior; `acumuladoTotal` = anterior + periodo; `saldo` = contratada − acumulado total. Cantidades con 3 decimales, montos con 2. `anticipoPct` y `retencionPct` son los de la copia del contrato de la obra. `fotoIds` ordenados por id.
 
 ### PUT /planillas/{id} · 007
 Roles: `residente` asignado. Recibe `{ "version": 2, "lineas": [{ "partidaId": "uuid", "cantidadPeriodo": 120 }], "fotoIds": ["uuid"] }`.
 Devuelve `200` con el detalle. Errores: `409 VERSION_DESACTUALIZADA` · `409 PLANILLA_NO_EDITABLE` · `422 SUPERA_CANTIDAD_CONTRATADA` (con `errores[]`, `campo` = `partidaId`) · `422 FOTO_FUERA_DEL_PERIODO`.
+- Orden: rol (`403`, antes que el cuerpo) → cuerpo (`400 DATOS_INVALIDOS`: `version`, `lineas` y `fotoIds` obligatorios; cada línea con `partidaId` y `cantidadPeriodo` ≥ 0 con hasta 3 decimales; una partida que no es de la planilla o repetida: `errores[].campo = lineas[i].partidaId`) → planilla visible (`404 PLANILLA_NO_ENCONTRADA`) → residente de esa obra (`403 SIN_PERMISO`) → `PLANILLA_NO_EDITABLE` (no está en `BORRADOR` ni `OBSERVADA`; `detail`: «La planilla ya no se puede editar (estado X)») → `VERSION_DESACTUALIZADA` (la `version` no es la guardada, o otra petición la guardó a la vez) → `SUPERA_CANTIDAD_CONTRATADA` → `FOTO_FUERA_DEL_PERIODO`.
+- Las partidas que no vienen en `lineas` quedan como estaban. Cada guardado sube `version` en 1.
+- `SUPERA_CANTIDAD_CONTRATADA`: un elemento de `errores[]` por partida que se pasa, con `campo` = el id de la partida y `mensaje` = «Supera lo contratado (saldo: X)» (X = contratada − acumulado anterior).
+- `fotoIds` reemplaza las fotos adjuntas (los repetidos cuentan una vez). `FOTO_FUERA_DEL_PERIODO`: una foto que no existe, no es de la obra o no se registró dentro del mes del periodo (`registradoEn` en `America/La_Paz`); un elemento de `errores[]` por foto, con `campo` = el id de la foto. Si algo falla no se guarda nada.
 
 ### POST /planillas/{id}/presentar · 007
 Roles: `residente` asignado. Recibe `{ "version": 3 }`. Devuelve `200` con el detalle (`PRESENTADA`).
 Errores: `409 VERSION_DESACTUALIZADA` · `409 PLANILLA_NO_EDITABLE` · `422 SUBTOTAL_CERO`.
+- Orden como en `PUT /planillas/{id}`: rol → cuerpo (`version` obligatoria) → planilla visible → residente → `PLANILLA_NO_EDITABLE` → `VERSION_DESACTUALIZADA` → `SUBTOTAL_CERO`. Se presenta desde `BORRADOR` u `OBSERVADA` (corregida; la `observacion` se conserva). Pasa a `PRESENTADA`, sube `version` y marca `publicada_cliente = true` en las fotos adjuntas. Todavía no publica `PlanillaPresentada` (010).
 
 ### POST /planillas/{id}/aprobar · 008
 Roles: `cliente` dueño de la obra. Sin cuerpo. Devuelve `202 { "estado": "APROBANDO" }`.

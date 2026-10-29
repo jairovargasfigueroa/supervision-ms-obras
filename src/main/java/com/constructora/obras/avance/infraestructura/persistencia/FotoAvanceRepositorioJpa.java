@@ -4,6 +4,8 @@ import com.constructora.obras.avance.aplicacion.puerto.salida.FotoAvanceReposito
 import com.constructora.obras.avance.dominio.FotoAvance;
 import com.constructora.obras.compartido.dominio.Pagina;
 import com.constructora.obras.compartido.dominio.Paginacion;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,6 +38,18 @@ public class FotoAvanceRepositorioJpa implements FotoAvanceRepositorio {
     @Override
     public Optional<FotoAvance> buscarPorId(UUID id) {
         return jpa.findById(id).map(mapper::aDominio);
+    }
+
+    @Override
+    public List<FotoAvance> buscarPorIds(Collection<UUID> ids) {
+        return ids.isEmpty() ? List.of() : jpa.findAllById(ids).stream().map(mapper::aDominio).toList();
+    }
+
+    @Override
+    public void publicar(Collection<UUID> ids) {
+        if (!ids.isEmpty()) {
+            jpa.publicar(ids);
+        }
     }
 
     @Override
