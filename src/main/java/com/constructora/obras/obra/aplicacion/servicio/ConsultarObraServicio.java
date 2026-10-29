@@ -4,9 +4,13 @@ import com.constructora.obras.compartido.dominio.ReglaNegocioException;
 import com.constructora.obras.compartido.dominio.Reloj;
 import com.constructora.obras.compartido.dominio.Usuario;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.ConsultarObraCasoUso;
+import com.constructora.obras.obra.aplicacion.puerto.entrada.FiltroObras;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.ObraDetalle;
 import com.constructora.obras.obra.aplicacion.puerto.salida.ObraRepositorio;
+import com.constructora.obras.obra.aplicacion.puerto.salida.PlanillasObraRepositorio;
 import com.constructora.obras.obra.dominio.Obra;
+import com.constructora.obras.planilla.dominio.PlanillaCorta;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -16,17 +20,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Detalle y lista de obras según quién pregunta. Una obra que el usuario no ve responde igual que una que no
- * existe (OBRA_NO_ENCONTRADA), para no revelar que existe.
+ * Detalle y lista de obras según quién pregunta, con los indicadores calculados al leer (006): avance con las
+ * planillas APROBADA, plazo transcurrido a la fecha del Reloj y riesgo. Una obra que el usuario no ve responde igual
+ * que una que no existe (OBRA_NO_ENCONTRADA), para no revelar que existe.
  */
 @Service
 public class ConsultarObraServicio implements ConsultarObraCasoUso {
 
     private final ObraRepositorio repositorio;
+    private final PlanillasObraRepositorio planillas;
     private final Reloj reloj;
 
-    public ConsultarObraServicio(ObraRepositorio repositorio, Reloj reloj) {
+    public ConsultarObraServicio(ObraRepositorio repositorio, PlanillasObraRepositorio planillas, Reloj reloj) {
         this.repositorio = repositorio;
+        this.planillas = planillas;
         this.reloj = reloj;
     }
 
@@ -36,19 +43,18 @@ public class ConsultarObraServicio implements ConsultarObraCasoUso {
         Obra obra = repositorio.buscarPorId(obraId)
                 .filter(encontrada -> encontrada.esVisiblePara(usuario))
                 .orElseThrow(() -> new ReglaNegocioException(OBRA_NO_ENCONTRADA, "Obra no encontrada"));
-        return detalle(obra, reloj.hoy());
+        return detalles(List.of(obra)).getFirst();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ObraDetalle> listar(Usuario usuario) {
-        LocalDate hoy = reloj.hoy();
-        return visibles(usuario).stream().map(obra -> detalle(obra, hoy)).toList();
+    public List<ObraDetalle> listar(Usuario usuario, FiltroObras filtro) {
+        return detalles(visibles(usuario, filtro));
     }
 
-    private List<Obra> visibles(Usuario usuario) {
+    private List<Obra> visibles(Usuario usuario, FiltroObras filtro) {
         if (usuario.tiene("admin") || usuario.tiene("gerente")) {
-            return repositorio.listarTodas();
+            return repositorio.listarTodas(filtro);
         }
         boolean residente = usuario.tiene("residente");
         boolean maestro = usuario.tiene("maestro");
@@ -58,15 +64,23 @@ public class ConsultarObraServicio implements ConsultarObraCasoUso {
         if (id.isEmpty() || !(residente || maestro || almacenero || cliente)) {
             return List.of();
         }
-        return repositorio.listarAsignadas(id.get(), residente, maestro, almacenero, cliente);
+        return repositorio.listarAsignadas(id.get(), residente, maestro, almacenero, cliente, filtro);
     }
 
-    /**
-     * Las planillas aprobadas llegan con la 007 y la 008: hasta entonces ninguna partida tiene cantidad ejecutada,
-     * así que el avance es 0; el plazo y el riesgo se calculan con la regla de docs/reglas-negocio.md.
-     */
-    private static ObraDetalle detalle(Obra obra, LocalDate hoy) {
-        return new ObraDetalle(obra, obra.indicadores(Map.of(), hoy));
+    /** Indicadores y última planilla de cada obra, con dos consultas a las planillas para toda la lista. */
+    private List<ObraDetalle> detalles(List<Obra> obras) {
+        if (obras.isEmpty()) {
+            return List.of();
+        }
+        List<UUID> ids = obras.stream().map(Obra::id).toList();
+        Map<UUID, Map<UUID, BigDecimal>> ejecutadas = planillas.ejecutadaAcumulada(ids);
+        Map<UUID, PlanillaCorta> ultimas = planillas.ultimas(ids);
+        LocalDate hoy = reloj.hoy();
+        return obras.stream()
+                .map(obra -> new ObraDetalle(obra,
+                        obra.indicadores(ejecutadas.getOrDefault(obra.id(), Map.of()), hoy),
+                        ultimas.get(obra.id())))
+                .toList();
     }
 
     /** Los ids de Keycloak son UUID; un sub que no lo es no puede estar asignado a ninguna obra. */

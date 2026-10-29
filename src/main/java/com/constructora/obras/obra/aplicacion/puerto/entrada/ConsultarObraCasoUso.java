@@ -12,6 +12,6 @@ public interface ConsultarObraCasoUso {
     /** Detalle de una obra que el usuario puede ver; si no existe o no la ve: OBRA_NO_ENCONTRADA. */
     ObraDetalle obtener(UUID obraId, Usuario usuario);
 
-    /** Obras que el usuario puede ver, por nombre. */
-    List<ObraDetalle> listar(Usuario usuario);
+    /** Obras que el usuario puede ver y cumplen el filtro, por nombre. */
+    List<ObraDetalle> listar(Usuario usuario, FiltroObras filtro);
 }

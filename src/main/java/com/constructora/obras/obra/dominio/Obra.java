@@ -9,6 +9,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -143,6 +144,34 @@ public final class Obra {
                 || usuario.tiene("maestro") && id.equals(asignaciones.maestroId().toString());
     }
 
+    /**
+     * Material previsto (006): lo consultan admin y gerente, y el residente asignado a la obra. Los roles ya son los
+     * efectivos (regla del azp).
+     */
+    public boolean puedeVerMaterialPrevisto(Usuario usuario) {
+        return usuario.tiene("admin") || usuario.tiene("gerente")
+                || usuario.tiene("residente") && usuario.id().equals(asignaciones.residenteId().toString());
+    }
+
+    /**
+     * Material previsto del periodo (docs/reglas-negocio.md, «Presupuesto por partidas»; 006, criterio 5): por cada
+     * partida y cada material previsto por unidad, cantidad medida en el periodo × cantidad por unidad, redondeado a
+     * 3 decimales. Ordenado por código de partida y material.
+     *
+     * @param cantidadPeriodoPorPartida cantidad de cada partida en la planilla del periodo; las que no figuran
+     *                                  cuentan 0
+     */
+    public List<MaterialPrevisto> materialPrevisto(Map<UUID, BigDecimal> cantidadPeriodoPorPartida) {
+        List<MaterialPrevisto> previstos = new ArrayList<>();
+        partidas.stream().sorted(Comparator.comparing(Partida::codigo)).forEach(partida -> {
+            BigDecimal cantidad = cantidadPeriodoPorPartida.getOrDefault(partida.id(), BigDecimal.ZERO);
+            partida.insumos().stream().sorted(Comparator.comparing(InsumoPrevisto::materialId))
+                    .forEach(insumo -> previstos.add(new MaterialPrevisto(partida.id(), insumo.materialId(),
+                            cantidad.multiply(insumo.cantidadPorUnidad()).setScale(3, RoundingMode.HALF_UP))));
+        });
+        return List.copyOf(previstos);
+    }
+
     /** Ids de las partidas de la obra. */
     public Set<UUID> idsPartidas() {
         Set<UUID> ids = new HashSet<>();
@@ -151,29 +180,68 @@ public final class Obra {
     }
 
     /**
-     * Avance, plazo transcurrido y riesgo (docs/reglas-negocio.md, «Avance y plazo»).
+     * Cantidad ejecutada acumulada de cada partida de la obra, con 3 decimales (docs/reglas-negocio.md, «Avance y
+     * plazo»: suma de cantidad_periodo de sus líneas en planillas APROBADA).
+     *
+     * @param ejecutadaPorPartida suma de las planillas aprobadas por partida; las partidas que no figuran cuentan 0
+     *                            y las que no son de esta obra se ignoran
+     */
+    public Map<UUID, BigDecimal> ejecutadaAcumulada(Map<UUID, BigDecimal> ejecutadaPorPartida) {
+        Map<UUID, BigDecimal> ejecutadas = new HashMap<>();
+        for (Partida partida : partidas) {
+            ejecutadas.put(partida.id(), ejecutadaPorPartida.getOrDefault(partida.id(), BigDecimal.ZERO)
+                    .setScale(3, RoundingMode.HALF_UP));
+        }
+        return Map.copyOf(ejecutadas);
+    }
+
+    /**
+     * Avance de la obra (%) = Σ (ejecutada acumulada × precio unitario) / monto del contrato × 100, con 2 decimales.
+     *
+     * @param ejecutadaPorPartida cantidad ejecutada acumulada de cada partida (planillas APROBADA)
+     */
+    public BigDecimal avance(Map<UUID, BigDecimal> ejecutadaPorPartida) {
+        Map<UUID, BigDecimal> ejecutadas = ejecutadaAcumulada(ejecutadaPorPartida);
+        BigDecimal ejecutadoBs = partidas.stream()
+                .map(partida -> ejecutadas.get(partida.id()).multiply(partida.precioUnitario()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return porcentaje(ejecutadoBs, contrato.monto().valor());
+    }
+
+    /**
+     * Plazo transcurrido (%) = días desde la fecha de inicio hasta hoy / plazo en días × 100, entre 0 y 100, con 2
+     * decimales. Antes de iniciar es 0; desde el último día del plazo en adelante, 100.
+     *
+     * @param hoy fecha de hoy en la zona del negocio (Reloj.hoy())
+     */
+    public BigDecimal plazoTranscurrido(LocalDate hoy) {
+        BigDecimal dias = BigDecimal.valueOf(ChronoUnit.DAYS.between(fechaInicio, hoy));
+        return porcentaje(dias, BigDecimal.valueOf(contrato.plazoDias()))
+                .max(BigDecimal.ZERO.setScale(2)).min(CIEN.setScale(2));
+    }
+
+    /** Obra en riesgo (decisión del equipo): plazo transcurrido − avance > 10 puntos. */
+    public static boolean enRiesgo(BigDecimal avancePct, BigDecimal plazoPct) {
+        return plazoPct.subtract(avancePct).compareTo(UMBRAL_RIESGO) > 0;
+    }
+
+    /**
+     * Avance, plazo transcurrido y riesgo de la obra y, por partida, ejecutada acumulada y avance (%)
+     * (docs/reglas-negocio.md, «Avance y plazo»).
      *
      * @param ejecutadaPorPartida cantidad ejecutada acumulada de cada partida (planillas APROBADA); las que no
      *                            figuran cuentan 0
-     * @param hoy                 fecha de hoy en la zona del negocio
+     * @param hoy                 fecha de hoy en la zona del negocio (Reloj.hoy())
      */
     public Indicadores indicadores(Map<UUID, BigDecimal> ejecutadaPorPartida, LocalDate hoy) {
-        BigDecimal ejecutadoBs = BigDecimal.ZERO;
+        Map<UUID, BigDecimal> ejecutadas = ejecutadaAcumulada(ejecutadaPorPartida);
         Map<UUID, BigDecimal> avancePorPartida = new HashMap<>();
-        Map<UUID, BigDecimal> ejecutadas = new HashMap<>();
         for (Partida partida : partidas) {
-            BigDecimal ejecutada = ejecutadaPorPartida.getOrDefault(partida.id(), BigDecimal.ZERO)
-                    .setScale(3, RoundingMode.HALF_UP);
-            ejecutadas.put(partida.id(), ejecutada);
-            ejecutadoBs = ejecutadoBs.add(ejecutada.multiply(partida.precioUnitario()));
-            avancePorPartida.put(partida.id(), porcentaje(ejecutada, partida.cantidadContratada()));
+            avancePorPartida.put(partida.id(), porcentaje(ejecutadas.get(partida.id()), partida.cantidadContratada()));
         }
-        BigDecimal avance = porcentaje(ejecutadoBs, contrato.monto().valor());
-        BigDecimal dias = BigDecimal.valueOf(ChronoUnit.DAYS.between(fechaInicio, hoy));
-        BigDecimal plazo = porcentaje(dias, BigDecimal.valueOf(contrato.plazoDias()))
-                .max(BigDecimal.ZERO.setScale(2)).min(CIEN.setScale(2));
-        boolean enRiesgo = plazo.subtract(avance).compareTo(UMBRAL_RIESGO) > 0;
-        return new Indicadores(avance, plazo, enRiesgo, Map.copyOf(ejecutadas), Map.copyOf(avancePorPartida));
+        BigDecimal avance = avance(ejecutadas);
+        BigDecimal plazo = plazoTranscurrido(hoy);
+        return new Indicadores(avance, plazo, enRiesgo(avance, plazo), ejecutadas, Map.copyOf(avancePorPartida));
     }
 
     private static BigDecimal porcentaje(BigDecimal parte, BigDecimal total) {

@@ -1,15 +1,24 @@
 package com.constructora.obras.obra.infraestructura.persistencia;
 
+import com.constructora.obras.obra.aplicacion.puerto.entrada.FiltroObras;
 import com.constructora.obras.obra.aplicacion.puerto.salida.ObraRepositorio;
 import com.constructora.obras.obra.dominio.Obra;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 /** Adaptador de ObraRepositorio sobre JPA. Corre dentro de la transacción del caso de uso. */
 @Repository
 public class ObraRepositorioJpa implements ObraRepositorio {
+
+    private static final Sort POR_NOMBRE = Sort.by("nombre", "id");
+    private static final char ESCAPE = '\\';
 
     private final ObraJpaRepository jpa;
     private final ObraPersistenciaMapper mapper;
@@ -32,14 +41,48 @@ public class ObraRepositorioJpa implements ObraRepositorio {
     }
 
     @Override
-    public List<Obra> listarTodas() {
-        return jpa.findAllByOrderByNombreAsc().stream().map(mapper::aDominio).toList();
+    public List<Obra> listarTodas(FiltroObras filtro) {
+        return jpa.findAll(filtros(filtro), POR_NOMBRE).stream().map(mapper::aDominio).toList();
     }
 
     @Override
     public List<Obra> listarAsignadas(UUID usuarioId, boolean comoResidente, boolean comoMaestro,
-            boolean comoAlmacenero, boolean comoCliente) {
-        return jpa.buscarAsignadas(usuarioId, comoResidente, comoMaestro, comoAlmacenero, comoCliente).stream()
-                .map(mapper::aDominio).toList();
+            boolean comoAlmacenero, boolean comoCliente, FiltroObras filtro) {
+        Specification<ObraEntity> asignada = (obra, consulta, cb) -> {
+            List<Predicate> papeles = new ArrayList<>();
+            if (comoResidente) {
+                papeles.add(cb.equal(obra.get("residenteUsuarioId"), usuarioId));
+            }
+            if (comoMaestro) {
+                papeles.add(cb.equal(obra.get("maestroUsuarioId"), usuarioId));
+            }
+            if (comoAlmacenero) {
+                papeles.add(cb.equal(obra.get("almaceneroUsuarioId"), usuarioId));
+            }
+            if (comoCliente) {
+                papeles.add(cb.equal(obra.get("clienteUsuarioId"), usuarioId));
+            }
+            return papeles.isEmpty() ? cb.disjunction() : cb.or(papeles.toArray(Predicate[]::new));
+        };
+        return jpa.findAll(asignada.and(filtros(filtro)), POR_NOMBRE).stream().map(mapper::aDominio).toList();
+    }
+
+    /** Estado exacto y nombre que contiene la búsqueda, sin distinguir mayúsculas (los comodines van literales). */
+    private static Specification<ObraEntity> filtros(FiltroObras filtro) {
+        return (obra, consulta, cb) -> {
+            List<Predicate> condiciones = new ArrayList<>();
+            if (filtro.estado() != null) {
+                condiciones.add(cb.equal(obra.get("estado"), filtro.estado().name()));
+            }
+            if (filtro.busqueda() != null) {
+                String patron = "%" + escaparComodines(filtro.busqueda().toLowerCase(Locale.ROOT)) + "%";
+                condiciones.add(cb.like(cb.lower(obra.get("nombre")), patron, ESCAPE));
+            }
+            return cb.and(condiciones.toArray(Predicate[]::new));
+        };
+    }
+
+    private static String escaparComodines(String texto) {
+        return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 }

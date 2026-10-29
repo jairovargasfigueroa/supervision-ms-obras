@@ -230,39 +230,138 @@ class ObraTest {
         }
     }
 
+
+    /** 006: docs/reglas-negocio.md, «Avance y plazo». El contrato de prueba tiene un plazo de 300 días. */
     @Nested
     class AvanceYPlazo {
 
         private final Obra obra = registrar(contrato("100.00"), partida("P-01", "10", "10"));
 
+        private UUID partidaId() {
+            return obra.partidas().getFirst().id();
+        }
+
         @Test
         void sinPlanillasAprobadasElAvanceEsCero() {
             Obra.Indicadores indicadores = obra.indicadores(Map.of(), INICIO);
             assertThat(indicadores.avancePct()).isEqualByComparingTo("0");
-            assertThat(indicadores.avancePorPartida().get(obra.partidas().getFirst().id())).isEqualByComparingTo("0");
+            assertThat(indicadores.ejecutadaPorPartida().get(partidaId())).isEqualByComparingTo("0");
+            assertThat(indicadores.avancePorPartida().get(partidaId())).isEqualByComparingTo("0");
             assertThat(indicadores.plazoPct()).isEqualByComparingTo("0");
             assertThat(indicadores.enRiesgo()).isFalse();
         }
 
         @Test
-        void elPlazoVaDeCeroACien() {
-            assertThat(obra.indicadores(Map.of(), INICIO.minusDays(5)).plazoPct()).isEqualByComparingTo("0");
-            assertThat(obra.indicadores(Map.of(), INICIO.plusDays(123)).plazoPct()).isEqualByComparingTo("41.00");
-            assertThat(obra.indicadores(Map.of(), INICIO.plusDays(400)).plazoPct()).isEqualByComparingTo("100");
+        void elAvanceEsLoEjecutadoValorizadoSobreElMontoDelContrato() {
+            Obra conDos = registrar(contrato("1500.00"), partida("P-01", "10", "100"), partida("P-02", "5", "100"));
+            UUID p1 = conDos.partidas().get(0).id();
+            UUID p2 = conDos.partidas().get(1).id();
+            // (4 × 100 + 1 × 100) / 1500 = 33,33 %; una partida que no es de la obra no cuenta
+            Map<UUID, BigDecimal> ejecutadas = Map.of(p1, new BigDecimal("4"), p2, BigDecimal.ONE,
+                    UUID.randomUUID(), new BigDecimal("999"));
+
+            assertThat(conDos.avance(ejecutadas)).isEqualByComparingTo("33.33");
+            Obra.Indicadores indicadores = conDos.indicadores(ejecutadas, INICIO);
+            assertThat(indicadores.avancePct()).isEqualByComparingTo("33.33");
+            assertThat(indicadores.ejecutadaPorPartida()).containsOnlyKeys(p1, p2);
+            assertThat(indicadores.ejecutadaPorPartida().get(p1)).isEqualByComparingTo("4");
+            assertThat(indicadores.avancePorPartida().get(p1)).isEqualByComparingTo("40");
+            assertThat(indicadores.avancePorPartida().get(p2)).isEqualByComparingTo("20");
         }
 
         @Test
-        void avanceConCantidadEjecutadaYRiesgoSiElPlazoLoSuperaPorMasDeDiezPuntos() {
-            UUID partidaId = obra.partidas().getFirst().id();
-            // 3 de 10 → avance 30 %; plazo 41 % → diferencia 11 puntos: en riesgo
-            Obra.Indicadores indicadores = obra.indicadores(Map.of(partidaId, BigDecimal.valueOf(3)),
-                    INICIO.plusDays(123));
-            assertThat(indicadores.avancePct()).isEqualByComparingTo("30");
-            assertThat(indicadores.avancePorPartida().get(partidaId)).isEqualByComparingTo("30");
-            assertThat(indicadores.enRiesgo()).isTrue();
-            // plazo 40 % → diferencia 10 puntos: no está en riesgo (debe ser > 10)
-            assertThat(obra.indicadores(Map.of(partidaId, BigDecimal.valueOf(3)), INICIO.plusDays(120)).enRiesgo())
+        void todoEjecutadoEsCienPorCiento() {
+            Obra.Indicadores indicadores = obra.indicadores(Map.of(partidaId(), BigDecimal.TEN), INICIO);
+            assertThat(indicadores.avancePct()).isEqualByComparingTo("100");
+            assertThat(indicadores.avancePorPartida().get(partidaId())).isEqualByComparingTo("100");
+        }
+
+        @Test
+        void antesDeIniciarYElDiaDeInicioElPlazoEsCero() {
+            assertThat(obra.plazoTranscurrido(INICIO.minusDays(30))).isEqualByComparingTo("0");
+            assertThat(obra.plazoTranscurrido(INICIO.minusDays(1))).isEqualByComparingTo("0");
+            assertThat(obra.plazoTranscurrido(INICIO)).isEqualByComparingTo("0");
+            assertThat(obra.plazoTranscurrido(INICIO.plusDays(1))).isEqualByComparingTo("0.33");
+        }
+
+        @Test
+        void desdeElUltimoDiaDelPlazoEsCien() {
+            assertThat(obra.plazoTranscurrido(INICIO.plusDays(150))).isEqualByComparingTo("50");
+            assertThat(obra.plazoTranscurrido(INICIO.plusDays(299))).isEqualByComparingTo("99.67");
+            assertThat(obra.plazoTranscurrido(INICIO.plusDays(300))).isEqualByComparingTo("100");
+            assertThat(obra.plazoTranscurrido(INICIO.plusDays(301))).isEqualByComparingTo("100");
+            assertThat(obra.plazoTranscurrido(INICIO.plusDays(1000))).isEqualByComparingTo("100");
+        }
+
+        @Test
+        void enRiesgoSoloSiElPlazoSuperaAlAvancePorMasDeDiezPuntos() {
+            assertThat(Obra.enRiesgo(new BigDecimal("30"), new BigDecimal("40"))).isFalse();
+            assertThat(Obra.enRiesgo(new BigDecimal("30"), new BigDecimal("40.01"))).isTrue();
+            assertThat(Obra.enRiesgo(new BigDecimal("29.99"), new BigDecimal("40"))).isTrue();
+            assertThat(Obra.enRiesgo(new BigDecimal("50"), new BigDecimal("40"))).isFalse();
+        }
+
+        @Test
+        void riesgoEnElBordeCalculadoConFechasFijas() {
+            Map<UUID, BigDecimal> tres = Map.of(partidaId(), new BigDecimal("3"));
+            // avance 30 %; día 120 → plazo 40 %: diferencia de 10 puntos justos, no está en riesgo
+            assertThat(obra.indicadores(tres, INICIO.plusDays(120)).enRiesgo()).isFalse();
+            // día 121 → plazo 40,33 %: 10,33 puntos, en riesgo
+            assertThat(obra.indicadores(tres, INICIO.plusDays(121)).enRiesgo()).isTrue();
+            // 2,999 de 10 → avance 29,99 %; día 120 → 10,01 puntos, en riesgo
+            Obra.Indicadores casi = obra.indicadores(Map.of(partidaId(), new BigDecimal("2.999")),
+                    INICIO.plusDays(120));
+            assertThat(casi.avancePct()).isEqualByComparingTo("29.99");
+            assertThat(casi.enRiesgo()).isTrue();
+        }
+
+        @Test
+        void antesDeIniciarNuncaEstaEnRiesgo() {
+            assertThat(obra.indicadores(Map.of(), INICIO.minusDays(10)).enRiesgo()).isFalse();
+        }
+
+        @Test
+        void materialPrevistoEsLaCantidadDelPeriodoPorElMaterialPorUnidad() {
+            Obra conInsumos = registrar(contrato("1500.00"),
+                    partida("P-02", "5", "100", new InsumoPrevisto("ladrillo", new BigDecimal("30"))),
+                    partida("P-01", "10", "100", new InsumoPrevisto("fierro", new BigDecimal("2.5")),
+                            new InsumoPrevisto("cemento", new BigDecimal("1.1"))));
+            UUID muro = conInsumos.partidas().get(0).id();
+            UUID losa = conInsumos.partidas().get(1).id();
+
+            // La losa sin cantidad en el periodo tiene previsto 0; 1,333 × 30 = 39,99; ordenado por partida y material
+            assertThat(conInsumos.materialPrevisto(Map.of(muro, new BigDecimal("1.333")))).containsExactly(
+                    new MaterialPrevisto(losa, "cemento", new BigDecimal("0.000")),
+                    new MaterialPrevisto(losa, "fierro", new BigDecimal("0.000")),
+                    new MaterialPrevisto(muro, "ladrillo", new BigDecimal("39.990")));
+            assertThat(conInsumos.materialPrevisto(Map.of(losa, new BigDecimal("0.555"))).get(0).cantidadPrevista())
+                    .isEqualByComparingTo("0.611"); // 0,6105 redondeado HALF_UP
+        }
+
+        @Test
+        void unaPartidaSinMaterialPrevistoNoAgregaFilas() {
+            assertThat(obra.materialPrevisto(Map.of(partidaId(), BigDecimal.TEN))).isEmpty();
+        }
+
+        @Test
+        void materialPrevistoLoVenAdminGerenteYElResidenteAsignado() {
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario("otro", Set.of("admin")))).isTrue();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario("otro", Set.of("gerente")))).isTrue();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario(RESIDENTE.toString(), Set.of("residente")))).isTrue();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario(UUID.randomUUID().toString(), Set.of("residente"))))
                     .isFalse();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario(MAESTRO.toString(), Set.of("maestro", "residente"))))
+                    .isFalse();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario(CLIENTE.toString(), Set.of("cliente")))).isFalse();
+        }
+
+        @Test
+        void despuesDelPlazoSinTerminarEstaEnRiesgo() {
+            Obra.Indicadores indicadores = obra.indicadores(Map.of(partidaId(), new BigDecimal("8.9")),
+                    INICIO.plusDays(400));
+            assertThat(indicadores.plazoPct()).isEqualByComparingTo("100");
+            assertThat(indicadores.avancePct()).isEqualByComparingTo("89");
+            assertThat(indicadores.enRiesgo()).isTrue();
         }
     }
 }
