@@ -195,6 +195,14 @@ Sobre, exchange y claves según convenciones.
 | `x-cola-origen` | Cola de donde salió: `obras` |
 | `x-clave-origen` | Clave de enrutamiento original (por ejemplo `evento.finanzas.ContratoRegistrado`); se conserva entre reintentos porque el exchange por defecto la pierde |
 
+### Cómo orquesta la saga «aprobar planilla» (008)
+
+- **Comandos** con la clave `comando.<destino>.<Tipo>` (guardada en `outbox_evento.clave`), por el mismo outbox. `correlacionId` = id de la saga en todos los comandos y en `PlanillaAprobada` / `PlanillaObservada` de la saga; `PlanillaObservada` del cliente lleva el id de la planilla. Montos con 2 decimales (`monto` = neto de la planilla) y `periodo` `AAAA-MM`.
+- **Respuestas**: se busca la saga por el `correlacionId` del sobre (bloqueada con `SELECT … FOR UPDATE`) y se comprueba `datos.planillaId`. Sin `correlacionId`, con una saga que no existe, de otra planilla o con datos incompletos (`reservaId`; `cobroId` y `numero`; `motivo` de `CierreFallido` y `CobroFallido`), van directo a `plataforma.fallidos`. El `motivo` de `SaldoInsuficiente` no se usa: la planilla queda con «Saldo del contrato insuficiente». `venceEn` de `CobroEmitido` no se guarda (lo tiene Finanzas).
+- Con la saga `EN_CURSO` y la respuesta del paso que espera: `SaldoReservado` → guarda `reservaId` y envía `CerrarConsumos`; `ConsumosCerrados` → envía `EmitirCobro` con la reserva; `CobroEmitido` → planilla `APROBADA` con `cobro_id` y `cobro_numero` (= `numero`), saga `COMPLETADA` y `PlanillaAprobada`. Cada paso nuevo vence a los 60 s.
+- Fallo (`SaldoInsuficiente`, `CierreFallido`, `CobroFallido`): compensaciones de los pasos hechos en orden inverso, sin esperar respuesta (fallo en el paso 3: `LiberarReserva`; en el 4: `ReabrirConsumos` y `LiberarReserva`); planilla `OBSERVADA` con el motivo; saga `COMPENSADA`; `PlanillaObservada` con `origen = "SAGA"`.
+- Una respuesta de otro paso o con la saga ya terminada no cambia nada (queda en el registro); los repetidos con el mismo `id` los descarta `mensaje_procesado`.
+
 ## Herramientas MCP (capa 5, solo lectura)
 
 `avance_obra`, `buscar_diario`, `planillas_estado`, `asistencia_obra` (si existe asistencia). Se especifican en la capa 5.

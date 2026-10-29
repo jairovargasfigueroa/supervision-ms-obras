@@ -122,10 +122,11 @@ class RespuestaContratoIT extends PruebaIntegracion {
         assertDirectoAFallidos(recibirFallido(incompleto), RECHAZADO);
 
         UUID sinConsumidor = UUID.randomUUID();
-        publicar(REGISTRADO, sobre(sinConsumidor, "SaldoReservado", "{}"));
+        // ReservaLiberada la publica Finanzas, pero Obras no la consume (docs/contratos.md)
+        publicar(REGISTRADO, sobre(sinConsumidor, "ReservaLiberada", "{}"));
         Message fallido = recibirFallido(sinConsumidor);
         assertDirectoAFallidos(fallido, REGISTRADO);
-        assertThat(fallido.getMessageProperties().getHeaders().get("x-error").toString()).contains("SaldoReservado");
+        assertThat(fallido.getMessageProperties().getHeaders().get("x-error").toString()).contains("ReservaLiberada");
     }
 
     private static void assertDirectoAFallidos(Message fallido, String clave) {
