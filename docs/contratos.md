@@ -101,7 +101,7 @@ Roles: los que pueden ver la obra; `cliente` solo recibe publicadas. Paginado (c
 - `cliente`: con `azp = portal` solo recibe las que tienen `publicada_cliente = true` (un usuario que además ve la obra con un rol interno las recibe todas).
 - Paginación: `pagina` desde 1 (por defecto 1), `tamano` de 1 a 100 (por defecto 20), `orden` solo `registradoEn` (desempata por `id`), `direccion` `asc` o `desc` (por defecto `desc`). Fuera de eso: `400 PAGINACION_INVALIDA` con `errores[].campo` (`pagina`, `tamano`, `orden` o `direccion`). Un `partidaId` que no es UUID o un número mal escrito: `400 DATOS_INVALIDOS`.
 - Errores: `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o el id no es un UUID) · `503 SERVICIO_NO_DISPONIBLE` si hay fotos que firmar y S3 no está configurado (una página vacía responde igual).
-- Estado en la 005: `partidaId` filtra; `desde` y `hasta` se aceptan pero no filtran hasta la 007 (que fija su formato).
+- `partidaId` filtra; `desde` y `hasta` se aceptan pero no filtran (ninguna funcionalidad del sistema base los usa). La galería del periodo de la 007 pide páginas en orden `registradoEn desc` hasta pasar del periodo y filtra en el ERP; el periodo de las fotos adjuntas lo valida `PUT /planillas/{id}` (`422 FOTO_FUERA_DEL_PERIODO`).
 
 ### POST /obras/{obraId}/planillas · 007
 Roles: `residente` asignado. Recibe `{ "periodo": "2027-03" }`. Devuelve `201` con el detalle (`GET /planillas/{id}`).
