@@ -46,6 +46,11 @@ public final class TokensPrueba {
         return firmar(CLAVES, datos(usuarioId, roles).build());
     }
 
+    /** Token válido emitido para otra aplicación (azp): portal, app-obra o un cliente de servicio. */
+    public static String desde(String azp, String usuarioId, String... roles) {
+        return firmar(CLAVES, datos(usuarioId, roles).claim("azp", azp).build());
+    }
+
     public static JWTClaimsSet.Builder datos(String usuarioId, String... roles) {
         Instant ahora = Instant.now();
         return new JWTClaimsSet.Builder()
