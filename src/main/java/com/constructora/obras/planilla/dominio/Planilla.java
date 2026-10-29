@@ -43,15 +43,20 @@ public final class Planilla {
     public static final String SUBTOTAL_CERO = "SUBTOTAL_CERO";
     public static final String FOTO_FUERA_DEL_PERIODO = "FOTO_FUERA_DEL_PERIODO";
     public static final String DATOS_INVALIDOS = "DATOS_INVALIDOS";
+    public static final String PLANILLA_NO_PRESENTADA = "PLANILLA_NO_PRESENTADA";
+    public static final String MOTIVO_INVALIDO = "MOTIVO_INVALIDO";
+    /** Largo del motivo con que el cliente observa (008, criterio 4), contado sin los espacios de los extremos. */
+    public static final int MOTIVO_MINIMO = 10;
+    public static final int MOTIVO_MAXIMO = 500;
 
     private final UUID id;
     private final UUID obraId;
     private final int numero;
     private final Periodo periodo;
     private final int version;
-    private final String observacion;
-    private final UUID cobroId;
-    private final String cobroNumero;
+    private String observacion;
+    private UUID cobroId;
+    private String cobroNumero;
     private EstadoPlanilla estado;
     /** partidaId → línea, en el orden en que se armaron. */
     private final Map<UUID, LineaPlanilla> lineas;
@@ -261,6 +266,63 @@ public final class Planilla {
                 })
                 .sorted(Comparator.comparing(detalle -> detalle.partida().codigo()))
                 .toList();
+    }
+
+    /**
+     * El cliente aprueba la planilla en el portal (008, criterio 5): solo si está PRESENTADA (si no,
+     * PLANILLA_NO_PRESENTADA). Queda APROBANDO mientras corre la saga.
+     */
+    public void aprobarPorCliente() {
+        exigirPresentada();
+        estado = EstadoPlanilla.APROBANDO;
+    }
+
+    /**
+     * El cliente observa la planilla con un motivo obligatorio de 10 a 500 caracteres (008, criterio 4): solo si está
+     * PRESENTADA (PLANILLA_NO_PRESENTADA, se comprueba primero) y con el motivo válido (MOTIVO_INVALIDO). Queda
+     * OBSERVADA con el motivo (sin los espacios de los extremos) en la observación.
+     */
+    public void observarPorCliente(String motivo) {
+        exigirPresentada();
+        String texto = motivo == null ? "" : motivo.strip();
+        int largo = texto.codePointCount(0, texto.length());
+        if (largo < MOTIVO_MINIMO || largo > MOTIVO_MAXIMO) {
+            throw new ReglaNegocioException(MOTIVO_INVALIDO, "El motivo debe tener entre 10 y 500 caracteres.",
+                    List.of(new ErrorCampo("motivo", "Debe tener entre 10 y 500 caracteres")));
+        }
+        estado = EstadoPlanilla.OBSERVADA;
+        observacion = texto;
+    }
+
+    /**
+     * Paso 5 de la saga (008, criterio 7): todos los pasos terminaron bien. Queda APROBADA con el cobro que emitió
+     * Finanzas; desde ahora cuenta para la ejecutada acumulada y el avance de la obra (criterio 13).
+     */
+    public void marcarAprobada(UUID cobroId, String cobroNumero) {
+        exigirAprobando();
+        this.estado = EstadoPlanilla.APROBADA;
+        this.cobroId = Objects.requireNonNull(cobroId, "cobroId");
+        this.cobroNumero = Objects.requireNonNull(cobroNumero, "cobroNumero");
+    }
+
+    /** Falló un paso de la saga (008, criterios 8 a 11): queda OBSERVADA con el motivo del fallo. */
+    public void observarPorSaga(String motivo) {
+        exigirAprobando();
+        estado = EstadoPlanilla.OBSERVADA;
+        observacion = Objects.requireNonNull(motivo, "motivo");
+    }
+
+    private void exigirPresentada() {
+        if (estado != EstadoPlanilla.PRESENTADA) {
+            throw new ReglaNegocioException(PLANILLA_NO_PRESENTADA,
+                    "Esta planilla ya no está esperando tu revisión. Recarga para ver su estado actual.");
+        }
+    }
+
+    private void exigirAprobando() {
+        if (estado != EstadoPlanilla.APROBANDO) {
+            throw new IllegalStateException("La planilla " + id + " no está APROBANDO (estado " + estado + ")");
+        }
     }
 
     /** Planilla sin aprobar: cuenta para «solo una planilla abierta por obra». */

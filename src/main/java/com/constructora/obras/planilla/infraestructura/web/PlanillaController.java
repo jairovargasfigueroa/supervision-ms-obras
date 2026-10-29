@@ -8,8 +8,12 @@ import com.constructora.obras.obra.aplicacion.puerto.entrada.ConsultarObraCasoUs
 import com.constructora.obras.planilla.aplicacion.puerto.entrada.ConsultarPlanillaCasoUso;
 import com.constructora.obras.planilla.aplicacion.puerto.entrada.ElaborarPlanillaCasoUso;
 import com.constructora.obras.planilla.aplicacion.puerto.entrada.PlanillaDetalle;
+import com.constructora.obras.planilla.aplicacion.puerto.entrada.RevisarPlanillaCasoUso;
+import com.constructora.obras.planilla.dominio.EstadoPlanilla;
+import com.constructora.obras.planilla.infraestructura.web.dto.AprobacionResponse;
 import com.constructora.obras.planilla.infraestructura.web.dto.CrearPlanillaRequest;
 import com.constructora.obras.planilla.infraestructura.web.dto.GuardarPlanillaRequest;
+import com.constructora.obras.planilla.infraestructura.web.dto.ObservarPlanillaRequest;
 import com.constructora.obras.planilla.infraestructura.web.dto.PlanillaResponse;
 import com.constructora.obras.planilla.infraestructura.web.dto.PlanillaResumenResponse;
 import com.constructora.obras.planilla.infraestructura.web.dto.PresentarPlanillaRequest;
@@ -28,25 +32,28 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 007 · Elaborar y presentar planilla. Elabora, guarda y presenta solo el residente asignado; leen los que ven la
- * obra (el cliente, sin los BORRADOR). El rol de las escrituras también se exige en ConfiguracionSeguridad para que el
- * 403 llegue antes que la validación del cuerpo.
+ * obra (el cliente, sin los BORRADOR). 008 · El cliente de la obra la aprueba u observa. El rol de las escrituras
+ * también se exige en ConfiguracionSeguridad para que el 403 llegue antes que la validación del cuerpo.
  */
 @RestController
 public class PlanillaController {
 
     private static final String ELABORA = "hasRole('residente')";
+    private static final String REVISA = "hasRole('cliente')";
     private static final String TODOS_LOS_ROLES =
             "hasAnyRole('admin','residente','gerente','maestro','almacenero','cliente')";
 
     private final ElaborarPlanillaCasoUso elaborar;
     private final ConsultarPlanillaCasoUso consultar;
+    private final RevisarPlanillaCasoUso revisar;
     private final UsuarioActual usuarioActual;
     private final PlanillaWebMapper mapper;
 
     public PlanillaController(ElaborarPlanillaCasoUso elaborar, ConsultarPlanillaCasoUso consultar,
-            UsuarioActual usuarioActual, PlanillaWebMapper mapper) {
+            RevisarPlanillaCasoUso revisar, UsuarioActual usuarioActual, PlanillaWebMapper mapper) {
         this.elaborar = elaborar;
         this.consultar = consultar;
+        this.revisar = revisar;
         this.usuarioActual = usuarioActual;
         this.mapper = mapper;
     }
@@ -93,6 +100,27 @@ public class PlanillaController {
     @PreAuthorize(ELABORA)
     public PlanillaResponse presentar(@PathVariable String id, @Valid @RequestBody PresentarPlanillaRequest pedido) {
         return mapper.aRespuesta(elaborar.presentar(uuidPlanilla(id), pedido.version(), usuarioActual.obtener()));
+    }
+
+    /**
+     * 008 · El cliente aprueba la planilla PRESENTADA: pasa a APROBANDO y empieza la saga. Orden: rol (403) →
+     * planilla visible (404) → cliente de la obra (403) → PRESENTADA (409 PLANILLA_NO_PRESENTADA).
+     */
+    @PostMapping("/planillas/{id}/aprobar")
+    @PreAuthorize(REVISA)
+    public ResponseEntity<AprobacionResponse> aprobar(@PathVariable String id) {
+        EstadoPlanilla estado = revisar.aprobar(uuidPlanilla(id), usuarioActual.obtener());
+        return ResponseEntity.accepted().body(new AprobacionResponse(estado.name()));
+    }
+
+    /**
+     * 008 · El cliente observa la planilla PRESENTADA con un motivo. Orden: rol (403) → cuerpo JSON (400) → planilla
+     * visible (404) → cliente de la obra (403) → PRESENTADA (409) → motivo de 10 a 500 caracteres (422).
+     */
+    @PostMapping("/planillas/{id}/observar")
+    @PreAuthorize(REVISA)
+    public PlanillaResponse observar(@PathVariable String id, @RequestBody ObservarPlanillaRequest pedido) {
+        return mapper.aRespuesta(revisar.observar(uuidPlanilla(id), pedido.motivo(), usuarioActual.obtener()));
     }
 
     private static Periodo periodo(String periodo) {

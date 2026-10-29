@@ -33,7 +33,7 @@ public class Outbox {
         UUID id = UUID.randomUUID();
         Instant ahora = reloj.ahora().truncatedTo(ChronoUnit.MILLIS);
         Sobre sobre = new Sobre(id, evento.tipo(), Sobre.VERSION, ahora, Sobre.ORIGEN, evento.correlacionId(),
-                json.valueToTree(evento));
+                json.valueToTree(evento.datos()));
         repositorio.save(new OutboxEventoEntity(id, evento.tipo(), claveDe(evento), json.writeValueAsString(sobre),
                 ahora));
         return id;

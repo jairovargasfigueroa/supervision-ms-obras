@@ -148,10 +148,14 @@ Errores: `409 VERSION_DESACTUALIZADA` · `409 PLANILLA_NO_EDITABLE` · `422 SUBT
 ### POST /planillas/{id}/aprobar · 008
 Roles: `cliente` dueño de la obra. Sin cuerpo. Devuelve `202 { "estado": "APROBANDO" }`.
 Errores: `409 PLANILLA_NO_PRESENTADA`.
+- Orden: rol (`403 SIN_PERMISO`; con `azp` distinto de `portal` el rol `cliente` no cuenta) → planilla visible (`404 PLANILLA_NO_ENCONTRADA`: no existe, no ve su obra, el id no es un UUID o es un `BORRADOR` que ve solo como cliente) → cliente de esa obra (`403 SIN_PERMISO` si la ve con otro papel) → `PLANILLA_NO_PRESENTADA` (no está `PRESENTADA`, o otra petición la revisó a la vez).
+- En la misma transacción: la planilla pasa a `APROBANDO` (sube `version`), se crea la saga (`saga_aprobacion` `EN_CURSO`, paso `RESERVAR_SALDO`, vence a los 60 s) y se deja `comando.finanzas.ReservarSaldo` en el outbox con `monto` = neto y `correlacionId` = id de la saga. El resultado se consulta con `GET /planillas/{id}`.
 
 ### POST /planillas/{id}/observar · 008
 Roles: `cliente` dueño de la obra. Recibe `{ "motivo": "texto de 10 a 500 caracteres" }`. Devuelve `200` con el detalle (`OBSERVADA`).
 Errores: `409 PLANILLA_NO_PRESENTADA` · `422 MOTIVO_INVALIDO`.
+- Orden: rol (`403`, antes que el cuerpo) → cuerpo JSON (`400 DATOS_INVALIDOS` si no es JSON) → planilla visible (`404`) → cliente de esa obra (`403`) → `PLANILLA_NO_PRESENTADA` → `MOTIVO_INVALIDO` (falta, o tiene menos de 10 o más de 500 caracteres contados sin los espacios de los extremos; `errores[].campo = motivo`).
+- Guarda el motivo sin los espacios de los extremos en `observacion`, sube `version` y publica `PlanillaObservada` con `origen = "CLIENTE"` y `correlacionId` = id de la planilla. El residente la corrige y la vuelve a presentar (007).
 
 ## Eventos y comandos (RabbitMQ)
 
