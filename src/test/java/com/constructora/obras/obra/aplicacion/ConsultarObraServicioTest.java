@@ -106,6 +106,31 @@ class ConsultarObraServicioTest {
     }
 
     @Test
+    void elClienteSoloComoClienteNoVeUnBorradorComoUltimaPlanilla() {
+        obras.con(obra);
+        planillas.ultimas.put(obra.id(), new PlanillaCorta(Periodo.de("2027-03"), EstadoPlanilla.BORRADOR));
+        planillas.ultimasSinBorrador.put(obra.id(),
+                new PlanillaCorta(Periodo.de("2027-02"), EstadoPlanilla.APROBADA));
+        String cliente = asignaciones.clienteId().toString();
+
+        // 007: desde el portal (solo el rol cliente) la última planilla salta los BORRADOR
+        assertThat(servicio("2027-03-11T16:00:00Z").listar(new Usuario(cliente, Set.of("cliente")),
+                FiltroObras.NINGUNO).getFirst().ultimaPlanilla())
+                .isEqualTo(new PlanillaCorta(Periodo.de("2027-02"), EstadoPlanilla.APROBADA));
+        // Quien además la ve con un rol interno (el mismo usuario es su residente) ve el BORRADOR
+        Obra propia = obra("Obra propia", EstadoObra.EN_EJECUCION, new Asignaciones(UUID.fromString(cliente),
+                UUID.randomUUID(), UUID.randomUUID(), UUID.fromString(cliente)));
+        obras.con(propia);
+        planillas.ultimas.put(propia.id(), new PlanillaCorta(Periodo.de("2027-03"), EstadoPlanilla.BORRADOR));
+        assertThat(servicio("2027-03-11T16:00:00Z").obtener(propia.id(),
+                new Usuario(cliente, Set.of("cliente", "residente"))).ultimaPlanilla().estado())
+                .isEqualTo(EstadoPlanilla.BORRADOR);
+        assertThat(servicio("2027-03-11T16:00:00Z").listar(ADMIN, FiltroObras.NINGUNO))
+                .extracting(detalle -> detalle.ultimaPlanilla().estado())
+                .containsOnly(EstadoPlanilla.BORRADOR);
+    }
+
+    @Test
     void elFiltroLlegaAlRepositorio() {
         obras.con(obra).con(obra("Casa Sur", EstadoObra.SIN_CONTRATO, asignaciones));
 
@@ -219,6 +244,7 @@ class ConsultarObraServicioTest {
 
         private final Map<UUID, Map<UUID, BigDecimal>> ejecutadas = new HashMap<>();
         private final Map<UUID, PlanillaCorta> ultimas = new HashMap<>();
+        private final Map<UUID, PlanillaCorta> ultimasSinBorrador = new HashMap<>();
         private final Map<Periodo, Map<UUID, BigDecimal>> periodos = new HashMap<>();
 
         @Override
@@ -228,7 +254,18 @@ class ConsultarObraServicioTest {
 
         @Override
         public Map<UUID, PlanillaCorta> ultimas(Collection<UUID> obraIds) {
-            return ultimas;
+            return de(ultimas, obraIds);
+        }
+
+        @Override
+        public Map<UUID, PlanillaCorta> ultimasSinBorrador(Collection<UUID> obraIds) {
+            return de(ultimasSinBorrador, obraIds);
+        }
+
+        private static Map<UUID, PlanillaCorta> de(Map<UUID, PlanillaCorta> todas, Collection<UUID> obraIds) {
+            Map<UUID, PlanillaCorta> pedidas = new HashMap<>(todas);
+            pedidas.keySet().retainAll(obraIds);
+            return pedidas;
         }
 
         @Override

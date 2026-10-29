@@ -43,13 +43,13 @@ public class ConsultarObraServicio implements ConsultarObraCasoUso {
         Obra obra = repositorio.buscarPorId(obraId)
                 .filter(encontrada -> encontrada.esVisiblePara(usuario))
                 .orElseThrow(() -> new ReglaNegocioException(OBRA_NO_ENCONTRADA, "Obra no encontrada"));
-        return detalles(List.of(obra)).getFirst();
+        return detalles(List.of(obra), usuario).getFirst();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ObraDetalle> listar(Usuario usuario, FiltroObras filtro) {
-        return detalles(visibles(usuario, filtro));
+        return detalles(visibles(usuario, filtro), usuario);
     }
 
     private List<Obra> visibles(Usuario usuario, FiltroObras filtro) {
@@ -67,19 +67,26 @@ public class ConsultarObraServicio implements ConsultarObraCasoUso {
         return repositorio.listarAsignadas(id.get(), residente, maestro, almacenero, cliente, filtro);
     }
 
-    /** Indicadores y última planilla de cada obra, con dos consultas a las planillas para toda la lista. */
-    private List<ObraDetalle> detalles(List<Obra> obras) {
+    /**
+     * Indicadores y última planilla de cada obra, con pocas consultas a las planillas para toda la lista. En las obras
+     * que el usuario ve solo como cliente (por ejemplo desde el portal), la última planilla no cuenta los BORRADOR,
+     * igual que la lista de planillas (007).
+     */
+    private List<ObraDetalle> detalles(List<Obra> obras, Usuario usuario) {
         if (obras.isEmpty()) {
             return List.of();
         }
         List<UUID> ids = obras.stream().map(Obra::id).toList();
+        List<UUID> soloCliente = obras.stream().filter(obra -> obra.veSoloComoCliente(usuario)).map(Obra::id).toList();
+        List<UUID> internas = ids.stream().filter(id -> !soloCliente.contains(id)).toList();
         Map<UUID, Map<UUID, BigDecimal>> ejecutadas = planillas.ejecutadaAcumulada(ids);
-        Map<UUID, PlanillaCorta> ultimas = planillas.ultimas(ids);
+        Map<UUID, PlanillaCorta> ultimas = planillas.ultimas(internas);
+        Map<UUID, PlanillaCorta> ultimasCliente = planillas.ultimasSinBorrador(soloCliente);
         LocalDate hoy = reloj.hoy();
         return obras.stream()
                 .map(obra -> new ObraDetalle(obra,
                         obra.indicadores(ejecutadas.getOrDefault(obra.id(), Map.of()), hoy),
-                        ultimas.get(obra.id())))
+                        soloCliente.contains(obra.id()) ? ultimasCliente.get(obra.id()) : ultimas.get(obra.id())))
                 .toList();
     }
 

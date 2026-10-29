@@ -7,12 +7,13 @@ import com.constructora.obras.planilla.dominio.PlanillaCorta;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
-/** Adaptador de PlanillasObraRepositorio (lectura para la 006) sobre JPA. */
+/** Adaptador de PlanillasObraRepositorio (lectura para la consulta de obras, 006 y 007) sobre JPA. */
 @Repository
 public class PlanillasObraRepositorioJpa implements PlanillasObraRepositorio {
 
@@ -36,11 +37,17 @@ public class PlanillasObraRepositorioJpa implements PlanillasObraRepositorio {
 
     @Override
     public Map<UUID, PlanillaCorta> ultimas(Collection<UUID> obraIds) {
-        if (obraIds.isEmpty()) {
-            return Map.of();
-        }
+        return obraIds.isEmpty() ? Map.of() : porObra(jpa.buscarUltimas(obraIds));
+    }
+
+    @Override
+    public Map<UUID, PlanillaCorta> ultimasSinBorrador(Collection<UUID> obraIds) {
+        return obraIds.isEmpty() ? Map.of() : porObra(jpa.buscarUltimasSinBorrador(obraIds));
+    }
+
+    private static Map<UUID, PlanillaCorta> porObra(List<PlanillaJpaRepository.UltimaFila> filas) {
         Map<UUID, PlanillaCorta> ultimas = new HashMap<>();
-        for (PlanillaJpaRepository.UltimaFila fila : jpa.buscarUltimas(obraIds)) {
+        for (PlanillaJpaRepository.UltimaFila fila : filas) {
             ultimas.put(fila.obraId(),
                     new PlanillaCorta(Periodo.de(fila.periodo()), EstadoPlanilla.valueOf(fila.estado())));
         }

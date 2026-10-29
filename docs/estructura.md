@@ -47,8 +47,15 @@ src/main/java/com/constructora/obras/
     dominio/        EstadoPlanilla.java, PlanillaCorta.java (periodo y estado),
                     Planilla.java (007: crear, actualizar líneas con el límite contra lo contratado, adjuntar fotos del periodo, presentar; estados editables),
                     LineaPlanilla.java (cantidad del periodo y monto), TotalesPlanilla.java (subtotal, anticipo, retención y neto con redondeo HALF_UP a 2)
+    aplicacion/                    # 007
+      puerto/entrada/   ElaborarPlanillaCasoUso.java (crear, guardar, presentar), ConsultarPlanillaCasoUso.java (lista y detalle), PlanillaDetalle.java (líneas con acumulados y porcentajes del contrato)
+      puerto/salida/    PlanillaRepositorio.java (además usa ObraRepositorio de obra y FotoAvanceRepositorio de avance: buscar por ids y publicar)
+      servicio/         ElaborarPlanillaServicio.java, ConsultarPlanillaServicio.java, PlanillasDeObra.java (visibilidad, residente asignado y armado del detalle)
     infraestructura/
-      persistencia/     PlanillaEntity.java, LineaPlanillaEntity.java, PlanillaJpaRepository.java (solo lectura en la 006), PlanillasObraRepositorioJpa.java (adaptador de PlanillasObraRepositorio)
+      web/              PlanillaController.java (POST y GET /obras/{obraId}/planillas, GET y PUT /planillas/{id}, POST /planillas/{id}/presentar), PlanillaWebMapper.java,
+                        dto/CrearPlanillaRequest.java, dto/GuardarPlanillaRequest.java, dto/PresentarPlanillaRequest.java, dto/PlanillaResponse.java, dto/PlanillaResumenResponse.java
+      persistencia/     PlanillaEntity.java (con planilla_foto), LineaPlanillaEntity.java, PlanillaJpaRepository.java, PlanillasObraRepositorioJpa.java (adaptador de PlanillasObraRepositorio),
+                        PlanillaRepositorioJpa.java (adaptador de PlanillaRepositorio; @Version → VERSION_DESACTUALIZADA), PlanillaPersistenciaMapper.java
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml
   db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
@@ -57,6 +64,7 @@ src/test/java/com/constructora/obras/
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
   obra/aplicacion/ConsultarObraServicioTest.java # 006: lista, detalle y material previsto con Reloj fijo y dobles
   planilla/dominio/PlanillaTest.java            # 007: caso fijo (anticipo 10 %, retención 7 %), redondeo, límite en el borde, estados, fotos
+  planilla/aplicacion/ElaborarPlanillaServicioTest.java # 007: casos de uso con dobles (residente asignado, visibilidad, cliente sin borradores, fotos publicadas)
   avance/dominio/FotoAvanceTest.java, avance/aplicacion/RegistrarFotoServicioTest.java, ConsultarFotosServicioTest.java (dobles en DoblesAvance)
   compartido/dominio/PaginacionTest.java, PeriodoTest.java
   avance/infraestructura/web/FotoAvanceIT.java    # pruebas de la spec 005 con el doble AlmacenArchivosEnMemoria

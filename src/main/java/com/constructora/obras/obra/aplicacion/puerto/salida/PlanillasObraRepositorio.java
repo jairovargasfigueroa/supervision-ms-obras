@@ -10,7 +10,7 @@ import java.util.UUID;
 
 /**
  * Lo que la consulta de obras (006) lee de las planillas de avance: solo lectura. Crear, guardar y presentar
- * planillas es de la 007.
+ * planillas es de la 007 (PlanillaRepositorio del contexto planilla).
  */
 public interface PlanillasObraRepositorio {
 
@@ -28,6 +28,12 @@ public interface PlanillasObraRepositorio {
      * @return obraId → periodo y estado; las obras sin planillas no figuran
      */
     Map<UUID, PlanillaCorta> ultimas(Collection<UUID> obraIds);
+
+    /**
+     * Como {@link #ultimas(Collection)}, sin contar las planillas en BORRADOR: lo que ve el cliente desde el portal
+     * (007).
+     */
+    Map<UUID, PlanillaCorta> ultimasSinBorrador(Collection<UUID> obraIds);
 
     /**
      * Cantidad del periodo de cada partida en la planilla de ese periodo (en cualquier estado).

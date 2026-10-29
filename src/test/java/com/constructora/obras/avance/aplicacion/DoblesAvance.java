@@ -14,10 +14,12 @@ import com.constructora.obras.obra.dominio.Obra;
 import com.constructora.obras.obra.dominio.Partida;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -84,6 +86,17 @@ final class DoblesAvance {
         @Override
         public Optional<FotoAvance> buscarPorId(UUID id) {
             return Optional.ofNullable(fotos.get(id));
+        }
+
+        @Override
+        public List<FotoAvance> buscarPorIds(Collection<UUID> ids) {
+            return ids.stream().map(fotos::get).filter(Objects::nonNull).toList();
+        }
+
+        @Override
+        public void publicar(Collection<UUID> ids) {
+            ids.forEach(id -> fotos.computeIfPresent(id, (clave, foto) -> new FotoAvance(foto.id(), foto.obraId(),
+                    foto.partidaId(), foto.claveArchivo(), true, foto.registradoPor(), foto.registradoEn())));
         }
 
         /** Solo ordena por registradoEn (y por id para desempatar), como el adaptador JPA. */

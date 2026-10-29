@@ -145,6 +145,27 @@ public final class Obra {
     }
 
     /**
+     * Planillas (007, criterio 10): las elabora, guarda y presenta solo el residente asignado a la obra. Los roles ya
+     * son los efectivos (regla del azp).
+     */
+    public boolean puedeElaborarPlanilla(Usuario usuario) {
+        return usuario.tiene("residente") && usuario.id().equals(asignaciones.residenteId().toString());
+    }
+
+    /**
+     * El usuario ve la obra solo por ser su cliente (por ejemplo desde el portal): no ve las planillas en BORRADOR
+     * (007) ni las fotos sin publicar (005). Si además la ve con un rol interno, no cuenta como solo cliente.
+     */
+    public boolean veSoloComoCliente(Usuario usuario) {
+        if (!esVisiblePara(usuario)) {
+            return false;
+        }
+        Set<String> internos = new HashSet<>(usuario.roles());
+        internos.remove("cliente");
+        return !esVisiblePara(new Usuario(usuario.id(), internos));
+    }
+
+    /**
      * Material previsto (006): lo consultan admin y gerente, y el residente asignado a la obra. Los roles ya son los
      * efectivos (regla del azp).
      */
