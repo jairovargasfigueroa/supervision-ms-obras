@@ -14,8 +14,8 @@ src/main/java/com/constructora/obras/
   compartido/                      # lo que usan todos los contextos
     dominio/        ReglaNegocioException.java, Dinero.java (redondeo HALF_UP a 2), Periodo.java (AAAA-MM), Reloj.java (puerto de la hora)
     infraestructura/
-      seguridad/    ConfiguracionSeguridad.java, ConvertidorRolesKeycloak.java, UsuarioActual.java
-      web/          ManejadorErrores.java (ProblemDetail con "codigo" y "errores"), FiltroRequestId.java
+      seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java, UsuarioActual.java
+      web/          ManejadorErrores.java (ProblemDetail con "codigo" y "errores"), RespuestaProblema.java (401/403 desde los filtros), FiltroRequestId.java, SaludController.java
       mensajeria/   ConfiguracionRabbit.java, Sobre.java, PublicadorOutbox.java, OutboxEventoEntity.java, MensajeProcesadoEntity.java
       archivos/     ConfiguracionS3.java, AlmacenArchivosS3.java
   obra/                            # un paquete por contexto: obra, avance, planilla, saga, diario (capa 1)
@@ -35,6 +35,8 @@ src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
+  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba
+  compartido/infraestructura/seguridad/SeguridadIT.java
   ArquitecturaTest.java                         # ArchUnit
 ```
 
@@ -58,5 +60,5 @@ src/test/java/com/constructora/obras/
 
 - Dominio: unitarias puras, con `Reloj` fijo.
 - Servicios: dobles de los puertos (sin Mockito si un doble a mano es más claro).
-- API: `*IT` con Testcontainers; tokens firmados con la clave del perfil `test`.
+- API: `*IT` que extienden `PruebaIntegracion`, con Testcontainers; tokens de `TokensPrueba`, firmados con una clave RSA creada al iniciar las pruebas (la aplicación la usa por `obras.seguridad.clave-publica`).
 - `./mvnw verify` corre todo.

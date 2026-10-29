@@ -7,6 +7,8 @@ Fuente para este servicio. La copia general está en `docs/contratos/` de la car
 ### GET /salud
 Sin token · `200 {"estado":"ok"}`
 
+Token: firma con el JWKS del realm, vencimiento, emisor `OBRAS_KEYCLOAK_ISSUER` y audiencia `plataforma-api`. Sin token o con uno inválido: `401 NO_AUTENTICADO`. Ruta que no existe (con token válido): `404 RUTA_NO_ENCONTRADA`. Toda respuesta lleva `X-Request-Id` (el que llega o un UUID nuevo).
+
 ### POST /obras · 002
 Roles: `admin`
 ```json

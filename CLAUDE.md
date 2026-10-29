@@ -17,7 +17,8 @@ Parte de la «Plataforma de supervisión de obras». Si existe `../../CLAUDE.md`
 
 ```sh
 ./mvnw spring-boot:run     # levantar (Windows: mvnw.cmd)
-./mvnw test                # pruebas
+./mvnw test                # pruebas unitarias
+./mvnw verify              # todas, con las de integración (*IT, Testcontainers: necesita Docker)
 ./mvnw package             # compilar el .jar
 ```
 
