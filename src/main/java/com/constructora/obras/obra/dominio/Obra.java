@@ -9,6 +9,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -141,6 +142,34 @@ public final class Obra {
         String id = usuario.id();
         return usuario.tiene("residente") && id.equals(asignaciones.residenteId().toString())
                 || usuario.tiene("maestro") && id.equals(asignaciones.maestroId().toString());
+    }
+
+    /**
+     * Material previsto (006): lo consultan admin y gerente, y el residente asignado a la obra. Los roles ya son los
+     * efectivos (regla del azp).
+     */
+    public boolean puedeVerMaterialPrevisto(Usuario usuario) {
+        return usuario.tiene("admin") || usuario.tiene("gerente")
+                || usuario.tiene("residente") && usuario.id().equals(asignaciones.residenteId().toString());
+    }
+
+    /**
+     * Material previsto del periodo (docs/reglas-negocio.md, «Presupuesto por partidas»; 006, criterio 5): por cada
+     * partida y cada material previsto por unidad, cantidad medida en el periodo × cantidad por unidad, redondeado a
+     * 3 decimales. Ordenado por código de partida y material.
+     *
+     * @param cantidadPeriodoPorPartida cantidad de cada partida en la planilla del periodo; las que no figuran
+     *                                  cuentan 0
+     */
+    public List<MaterialPrevisto> materialPrevisto(Map<UUID, BigDecimal> cantidadPeriodoPorPartida) {
+        List<MaterialPrevisto> previstos = new ArrayList<>();
+        partidas.stream().sorted(Comparator.comparing(Partida::codigo)).forEach(partida -> {
+            BigDecimal cantidad = cantidadPeriodoPorPartida.getOrDefault(partida.id(), BigDecimal.ZERO);
+            partida.insumos().stream().sorted(Comparator.comparing(InsumoPrevisto::materialId))
+                    .forEach(insumo -> previstos.add(new MaterialPrevisto(partida.id(), insumo.materialId(),
+                            cantidad.multiply(insumo.cantidadPorUnidad()).setScale(3, RoundingMode.HALF_UP))));
+        });
+        return List.copyOf(previstos);
     }
 
     /** Ids de las partidas de la obra. */

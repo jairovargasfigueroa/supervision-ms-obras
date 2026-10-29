@@ -321,6 +321,41 @@ class ObraTest {
         }
 
         @Test
+        void materialPrevistoEsLaCantidadDelPeriodoPorElMaterialPorUnidad() {
+            Obra conInsumos = registrar(contrato("1500.00"),
+                    partida("P-02", "5", "100", new InsumoPrevisto("ladrillo", new BigDecimal("30"))),
+                    partida("P-01", "10", "100", new InsumoPrevisto("fierro", new BigDecimal("2.5")),
+                            new InsumoPrevisto("cemento", new BigDecimal("1.1"))));
+            UUID muro = conInsumos.partidas().get(0).id();
+            UUID losa = conInsumos.partidas().get(1).id();
+
+            // La losa sin cantidad en el periodo tiene previsto 0; 1,333 × 30 = 39,99; ordenado por partida y material
+            assertThat(conInsumos.materialPrevisto(Map.of(muro, new BigDecimal("1.333")))).containsExactly(
+                    new MaterialPrevisto(losa, "cemento", new BigDecimal("0.000")),
+                    new MaterialPrevisto(losa, "fierro", new BigDecimal("0.000")),
+                    new MaterialPrevisto(muro, "ladrillo", new BigDecimal("39.990")));
+            assertThat(conInsumos.materialPrevisto(Map.of(losa, new BigDecimal("0.555"))).get(0).cantidadPrevista())
+                    .isEqualByComparingTo("0.611"); // 0,6105 redondeado HALF_UP
+        }
+
+        @Test
+        void unaPartidaSinMaterialPrevistoNoAgregaFilas() {
+            assertThat(obra.materialPrevisto(Map.of(partidaId(), BigDecimal.TEN))).isEmpty();
+        }
+
+        @Test
+        void materialPrevistoLoVenAdminGerenteYElResidenteAsignado() {
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario("otro", Set.of("admin")))).isTrue();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario("otro", Set.of("gerente")))).isTrue();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario(RESIDENTE.toString(), Set.of("residente")))).isTrue();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario(UUID.randomUUID().toString(), Set.of("residente"))))
+                    .isFalse();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario(MAESTRO.toString(), Set.of("maestro", "residente"))))
+                    .isFalse();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario(CLIENTE.toString(), Set.of("cliente")))).isFalse();
+        }
+
+        @Test
         void despuesDelPlazoSinTerminarEstaEnRiesgo() {
             Obra.Indicadores indicadores = obra.indicadores(Map.of(partidaId(), new BigDecimal("8.9")),
                     INICIO.plusDays(400));

@@ -75,6 +75,9 @@ Errores: `404 OBRA_NO_ENCONTRADA` (también si el usuario no puede verla) o si e
 ### GET /obras/{id}/material-previsto?periodo=AAAA-MM · 006
 Roles: `admin`, `gerente` y `residente` asignado (si no ve la obra: `404 OBRA_NO_ENCONTRADA`).
 `{ "periodo": "2027-02", "hayPlanilla": true, "items": [{ "partidaId": "…", "materialId": "…", "cantidadPrevista": 55.0 }] }`
+- `items`: por cada partida de la obra y cada material previsto por unidad, `cantidadPrevista` = `cantidad_periodo` de la partida en la planilla de ese periodo (en cualquier estado; 0 si la planilla no tiene línea de esa partida) × `cantidad_por_unidad`, con 3 decimales (HALF_UP). Ordenados por código de partida y `materialId`; una partida sin material previsto no agrega filas.
+- Sin planilla en el periodo: `hayPlanilla: false` e `items: []` (el ERP muestra «Sin planilla en este periodo»).
+- Errores, en este orden: `403 SIN_PERMISO` (rol distinto de `admin`, `gerente` o `residente`) · `400 DATOS_INVALIDOS` (`periodo` falta o no es `AAAA-MM`; `errores[].campo = periodo`) · `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o el id no es un UUID) · `403 SIN_PERMISO` (ve la obra con otro papel: por ejemplo, con los roles residente y maestro, asignado solo como maestro).
 
 ### POST /obras/{obraId}/fotos/url-subida · 005
 Roles: `maestro`, `residente` asignados. Recibe `{ "fotoId": "uuid" }`.

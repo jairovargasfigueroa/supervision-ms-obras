@@ -25,13 +25,13 @@ src/main/java/com/constructora/obras/
       archivos/     ConfiguracionS3.java (OBRAS_S3_*; sin bucket o claves arranca igual y las firmas responden 503),
                     AlmacenArchivosS3.java (firma con S3Presigner, sin red)
   obra/                            # un paquete por contexto: obra, avance, planilla, saga, diario (capa 1)
-    dominio/        Obra.java, Partida.java, InsumoPrevisto.java, EstadoObra.java, Asignaciones.java, ContratoCopia.java, ObraRegistrada.java (evento)
+    dominio/        Obra.java, Partida.java, InsumoPrevisto.java, EstadoObra.java, Asignaciones.java, ContratoCopia.java, ObraRegistrada.java (evento), MaterialPrevisto.java (006)
     aplicacion/
-      puerto/entrada/   RegistrarObraCasoUso.java, ConsultarObraCasoUso.java, RegistrarRespuestaContratoCasoUso.java, ObraDetalle.java (indicadores y última planilla), FiltroObras.java (estado y búsqueda de GET /obras)
+      puerto/entrada/   RegistrarObraCasoUso.java, ConsultarObraCasoUso.java, RegistrarRespuestaContratoCasoUso.java, ObraDetalle.java (indicadores y última planilla), FiltroObras.java (estado y búsqueda de GET /obras), ConsultarMaterialPrevistoCasoUso.java
       puerto/salida/    ObraRepositorio.java, PublicadorEventos.java, PlanillasObraRepositorio.java (006: lectura de planillas para avance, última planilla y material previsto)
-      servicio/         RegistrarObraServicio.java, ConsultarObraServicio.java, RespuestaContratoServicio.java
+      servicio/         RegistrarObraServicio.java, ConsultarObraServicio.java, RespuestaContratoServicio.java, ConsultarMaterialPrevistoServicio.java
     infraestructura/
-      web/              ObraController.java, dto/RegistrarObraRequest.java, dto/ObraResponse.java, dto/ObraResumenResponse.java, ObraWebMapper.java
+      web/              ObraController.java, dto/RegistrarObraRequest.java, dto/ObraResponse.java, dto/ObraResumenResponse.java, dto/MaterialPrevistoResponse.java, ObraWebMapper.java
       persistencia/     ObraEntity.java, PartidaEntity.java, InsumoPrevistoEntity.java, ObraJpaRepository.java (con Specification para visibilidad y filtros), ObraRepositorioJpa.java, ObraPersistenciaMapper.java
       mensajeria/       PublicadorEventosOutbox.java, ContratoRegistradoConsumidor.java, ContratoRechazadoConsumidor.java
   avance/                          # 005: fotos de avance (usa ObraRepositorio del contexto obra para la visibilidad)
@@ -54,11 +54,12 @@ src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
   avance/dominio/FotoAvanceTest.java, avance/aplicacion/RegistrarFotoServicioTest.java, ConsultarFotosServicioTest.java (dobles en DoblesAvance)
-  compartido/dominio/PaginacionTest.java
+  compartido/dominio/PaginacionTest.java, PeriodoTest.java
   avance/infraestructura/web/FotoAvanceIT.java    # pruebas de la spec 005 con el doble AlmacenArchivosEnMemoria
   compartido/infraestructura/archivos/AlmacenArchivosS3Test.java # firma real del SDK, sin red
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
   obra/infraestructura/web/ConsultarObraIT.java # 002 y 006: lista con filtros, indicadores, última planilla y detalle
+  obra/infraestructura/web/MaterialPrevistoIT.java # 006: material previsto con y sin planilla, roles y periodo
   soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java

@@ -1,12 +1,15 @@
 package com.constructora.obras.obra.infraestructura.web;
 
+import com.constructora.obras.obra.aplicacion.puerto.entrada.ConsultarMaterialPrevistoCasoUso;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.ObraDetalle;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso;
 import com.constructora.obras.obra.dominio.Asignaciones;
 import com.constructora.obras.obra.dominio.ContratoCopia;
 import com.constructora.obras.obra.dominio.InsumoPrevisto;
+import com.constructora.obras.obra.dominio.MaterialPrevisto;
 import com.constructora.obras.obra.dominio.Obra;
 import com.constructora.obras.obra.dominio.Partida;
+import com.constructora.obras.obra.infraestructura.web.dto.MaterialPrevistoResponse;
 import com.constructora.obras.obra.infraestructura.web.dto.ObraResponse;
 import com.constructora.obras.obra.infraestructura.web.dto.ObraResumenResponse;
 import com.constructora.obras.obra.infraestructura.web.dto.RegistrarObraRequest;
@@ -57,6 +60,13 @@ public interface ObraWebMapper {
                 obra.fechaInicio(), indicadores.avancePct(), indicadores.plazoPct(), indicadores.enRiesgo(),
                 ultima == null ? null
                         : new ObraResumenResponse.PlanillaCorta(ultima.periodo().toString(), ultima.estado().name()));
+    }
+
+    MaterialPrevistoResponse.Item aItem(MaterialPrevisto previsto);
+
+    default MaterialPrevistoResponse aRespuesta(ConsultarMaterialPrevistoCasoUso.Resultado resultado) {
+        return new MaterialPrevistoResponse(resultado.periodo().toString(), resultado.hayPlanilla(),
+                resultado.items().stream().map(this::aItem).toList());
     }
 
     private ObraResponse.Partida aRespuesta(Partida partida, Obra.Indicadores indicadores) {
