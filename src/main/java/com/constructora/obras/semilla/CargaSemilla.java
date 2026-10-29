@@ -13,19 +13,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Escribe las filas de {@link PlanSemilla} en obras_db en una sola transacción (o todo o nada), con
  * {@code INSERT … ON CONFLICT DO NOTHING} por la clave primaria: lo que ya existe no se pisa y correrla dos veces no
- * duplica nada. No toca outbox_evento, mensaje_procesado ni saga_aprobacion (docs/datos-prueba.md, sección 12).
+ * duplica nada. No escribe en outbox_evento, mensaje_procesado ni saga_aprobacion (docs/datos-prueba.md, sección
+ * 12). En modo recargar vacía antes todas las tablas del negocio, en la misma transacción.
  */
 public class CargaSemilla {
 
     /** Tablas que carga la semilla, en el orden del resumen. */
     static final List<String> TABLAS = List.of("obra", "partida", "insumo_previsto", "foto_avance", "planilla",
             "linea_planilla", "planilla_foto");
+    /** Historial de Flyway: recargar nunca lo vacía. */
+    static final String HISTORIAL_MIGRACIONES = "flyway_schema_history";
 
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transaccion;
@@ -44,13 +48,33 @@ public class CargaSemilla {
         Objects.requireNonNull(modo, "modo");
         PlanSemilla plan = PlanSemilla.armar(DatosSemilla.leer(), fechas);
         return transaccion.execute(estado -> {
+            // En la misma transacción: si la carga falla, el vaciado también se deshace
+            List<String> vaciadas = modo == ModoSemilla.RECARGAR ? vaciar() : List.of();
             Map<String, Integer> insertadas = cargar(plan);
             Map<String, ResumenSemilla.Conteo> conteos = new LinkedHashMap<>();
             for (String tabla : TABLAS) {
                 conteos.put(tabla, new ResumenSemilla.Conteo(insertadas.get(tabla), contar(tabla)));
             }
-            return new ResumenSemilla(fechas.d(), modo, conteos, contar("outbox_evento"));
+            return new ResumenSemilla(fechas.d(), modo, vaciadas, conteos, contar("outbox_evento"));
         });
+    }
+
+    /**
+     * Modo recargar: vacía todas las tablas del esquema salvo el historial de Flyway (también outbox_evento,
+     * mensaje_procesado y saga_aprobacion, y las que agreguen las capas), con {@code TRUNCATE … CASCADE}.
+     *
+     * @return tablas vaciadas, por nombre
+     */
+    private List<String> vaciar() {
+        List<String> tablas = jdbc.queryForList("""
+                select tablename from pg_tables
+                where schemaname = current_schema() and tablename <> ?
+                order by tablename""", String.class, HISTORIAL_MIGRACIONES);
+        if (!tablas.isEmpty()) {
+            jdbc.execute("truncate table " + tablas.stream().map(tabla -> "\"" + tabla.replace("\"", "\"\"") + "\"")
+                    .collect(Collectors.joining(", ")) + " cascade");
+        }
+        return List.copyOf(tablas);
     }
 
     private Map<String, Integer> cargar(PlanSemilla plan) {

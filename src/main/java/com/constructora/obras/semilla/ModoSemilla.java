@@ -4,9 +4,13 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-/** {@code semilla.modo}: {@code cargar} inserta solo lo que no existe por id. */
+/**
+ * {@code semilla.modo}: {@code cargar} inserta solo lo que no existe por id; {@code recargar} vacía antes todas las
+ * tablas del negocio (no el historial de Flyway) y vuelve al estado de docs/datos-prueba.md con la fecha D.
+ */
 public enum ModoSemilla {
-    CARGAR;
+    CARGAR,
+    RECARGAR;
 
     /** Lee el modo sin distinguir mayúsculas; uno desconocido es un error. */
     public static ModoSemilla de(String texto) {
