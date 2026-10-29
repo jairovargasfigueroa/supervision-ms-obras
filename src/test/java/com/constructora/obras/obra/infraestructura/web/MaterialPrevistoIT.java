@@ -120,6 +120,16 @@ class MaterialPrevistoIT extends PruebaIntegracion {
     }
 
     @Test
+    void conVariosRolesCuentanLosDeLaAplicacionDesdeLaQueEntro() throws Exception {
+        // El residente de la obra que además es cliente: desde el ERP es residente; desde el portal, solo cliente
+        String erp = TokensPrueba.desde("erp", equipo.residente().toString(), "residente", "cliente");
+        String portal = TokensPrueba.desde("portal", equipo.residente().toString(), "residente", "cliente");
+
+        pedir(obra, "2026-10", erp).andExpect(status().isOk());
+        esperarSinPermiso(pedir(obra, "2026-10", portal));
+    }
+
+    @Test
     void obraInexistenteOIdInvalidoResponde404() throws Exception {
         esperarNoEncontrada(pedir(UUID.randomUUID(), "2026-10", admin()));
         esperarNoEncontrada(mvc.perform(get("/obras/no-es-un-uuid/material-previsto").param("periodo", "2026-10")

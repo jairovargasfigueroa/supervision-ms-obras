@@ -8,4 +8,4 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 - [x] `GET /obras` con filtros, indicadores y `ultimaPlanilla`; visibilidad por rol
 - [x] Completar `GET /obras/{id}` con `ejecutadaAcumulada` y `avancePct` por partida
 - [x] `GET /obras/{id}/material-previsto`
-- [ ] Pruebas de la spec
+- [x] Pruebas de la spec
