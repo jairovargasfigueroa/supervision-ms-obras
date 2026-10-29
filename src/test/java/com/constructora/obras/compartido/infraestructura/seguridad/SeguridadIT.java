@@ -42,7 +42,9 @@ class SeguridadIT extends PruebaIntegracion {
     @Test
     void tokenValidoEsAceptado() throws Exception {
         mvc.perform(get(RUTA_PROTEGIDA).header("Authorization", "Bearer " + TokensPrueba.valido(RESIDENTE1, "residente")))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+                .andExpect(jsonPath("$.codigo").value("RUTA_NO_ENCONTRADA"));
     }
 
     @Test
