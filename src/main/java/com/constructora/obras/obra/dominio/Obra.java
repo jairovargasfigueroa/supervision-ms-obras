@@ -143,8 +143,11 @@ public final class Obra {
     public Indicadores indicadores(Map<UUID, BigDecimal> ejecutadaPorPartida, LocalDate hoy) {
         BigDecimal ejecutadoBs = BigDecimal.ZERO;
         Map<UUID, BigDecimal> avancePorPartida = new HashMap<>();
+        Map<UUID, BigDecimal> ejecutadas = new HashMap<>();
         for (Partida partida : partidas) {
-            BigDecimal ejecutada = ejecutadaPorPartida.getOrDefault(partida.id(), BigDecimal.ZERO);
+            BigDecimal ejecutada = ejecutadaPorPartida.getOrDefault(partida.id(), BigDecimal.ZERO)
+                    .setScale(3, RoundingMode.HALF_UP);
+            ejecutadas.put(partida.id(), ejecutada);
             ejecutadoBs = ejecutadoBs.add(ejecutada.multiply(partida.precioUnitario()));
             avancePorPartida.put(partida.id(), porcentaje(ejecutada, partida.cantidadContratada()));
         }
@@ -153,7 +156,7 @@ public final class Obra {
         BigDecimal plazo = porcentaje(dias, BigDecimal.valueOf(contrato.plazoDias()))
                 .max(BigDecimal.ZERO.setScale(2)).min(CIEN.setScale(2));
         boolean enRiesgo = plazo.subtract(avance).compareTo(UMBRAL_RIESGO) > 0;
-        return new Indicadores(avance, plazo, enRiesgo, Map.copyOf(avancePorPartida));
+        return new Indicadores(avance, plazo, enRiesgo, Map.copyOf(ejecutadas), Map.copyOf(avancePorPartida));
     }
 
     private static BigDecimal porcentaje(BigDecimal parte, BigDecimal total) {
@@ -238,8 +241,9 @@ public final class Obra {
         return partidas;
     }
 
-    /** Avance de la obra y de cada partida (%), plazo transcurrido (%) y si está en riesgo. */
+    /** Avance de la obra (%), plazo transcurrido (%), riesgo y, por partida, cantidad ejecutada acumulada y avance (%). */
     public record Indicadores(BigDecimal avancePct, BigDecimal plazoPct, boolean enRiesgo,
+            Map<UUID, BigDecimal> ejecutadaPorPartida,
             Map<UUID, BigDecimal> avancePorPartida) {
     }
 }

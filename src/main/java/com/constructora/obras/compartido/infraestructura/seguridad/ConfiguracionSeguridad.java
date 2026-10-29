@@ -55,6 +55,10 @@ public class ConfiguracionSeguridad {
                         // Los errores (por ejemplo un 404) se despachan otra vez a /error: no deben pedir token de nuevo
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.GET, "/salud").permitAll()
+                        // Escrituras solo de un rol: el 403 debe llegar antes que la validación del cuerpo (400),
+                        // que Spring hace antes de entrar al método con @PreAuthorize (convenciones, «Respuestas
+                        // de permiso»). El controlador repite el rol con @PreAuthorize.
+                        .requestMatchers(HttpMethod.POST, "/obras").hasRole("admin")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(servidor -> servidor
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(new ConvertidorRolesKeycloak()))
