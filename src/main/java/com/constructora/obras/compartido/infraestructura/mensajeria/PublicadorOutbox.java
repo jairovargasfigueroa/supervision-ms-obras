@@ -12,6 +12,7 @@ import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,8 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
  * (evento.obras.&lt;Tipo&gt; o, para los comandos de la saga, comando.&lt;destino&gt;.&lt;Tipo&gt;) y los marca publicados. Espera la confirmación de RabbitMQ de cada mensaje antes de
  * marcarlo: si RabbitMQ no responde, el mensaje queda pendiente y se reintenta en la próxima vuelta (los
  * consumidores descartan repetidos por id).
+ *
+ * <p>Con obras.mensajeria.publicador-activo = false (perfil semilla, 011) no se crea: la semilla no publica nada.
  */
 @Component
+@ConditionalOnBooleanProperty(name = "obras.mensajeria.publicador-activo", matchIfMissing = true)
 public class PublicadorOutbox {
 
     private static final Logger log = LoggerFactory.getLogger(PublicadorOutbox.class);

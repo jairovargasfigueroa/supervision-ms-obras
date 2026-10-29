@@ -1,0 +1,30 @@
+# 011 · Datos de prueba: carga la parte de Obras de docs/datos-prueba.md y termina (SemillaRunner).
+# ./mvnw spring-boot:run -Dspring-boot.run.profiles=semilla (README, «Datos de prueba»). Lee .env.properties como
+# el perfil normal (spring.config.import de application.yaml).
+spring:
+  main:
+    # Sin servidor web: no ocupa el puerto 8081 aunque Obras esté corriendo
+    web-application-type: none
+  rabbitmq:
+    # Sin consumidores: la semilla no procesa mensajes de la cola obras (ni abre la conexión con RabbitMQ)
+    listener:
+      simple:
+        auto-startup: false
+      direct:
+        auto-startup: false
+
+obras:
+  mensajeria:
+    # Sin PublicadorOutbox: la semilla no publica eventos ni comandos (docs/datos-prueba.md, sección 12)
+    publicador-activo: false
+  saga:
+    # Sin VencimientoSagaTarea
+    vencimiento-activo: false
+
+semilla:
+  # Fecha de carga D (AAAA-MM-DD) que calcula infra; vacía = hoy en America/La_Paz
+  fecha: ${SEMILLA_FECHA:}
+  # cargar (solo lo que no existe por id) o recargar (vacía las tablas del negocio y carga)
+  modo: ${SEMILLA_MODO:cargar}
+  # Cerrar el proceso al terminar (System.exit con el código de salida); las pruebas lo apagan
+  salir: true
