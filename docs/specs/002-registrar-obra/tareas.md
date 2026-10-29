@@ -6,7 +6,7 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 
 - [x] Migración Flyway: tablas `obra`, `partida`, `insumo_previsto`, `outbox_evento`, `mensaje_procesado` (con `motivo_rechazo_contrato`)
 - [x] Dominio: agregado `Obra` con `Partida` e `InsumoPrevisto` y la regla del presupuesto (tolerancia 0,01); pruebas unitarias
-- [ ] Caso de uso `RegistrarObra` + puerto de repositorio + adaptador JPA
+- [x] Caso de uso `RegistrarObra` + puerto de repositorio + adaptador JPA
 - [ ] Publicador del outbox (cada 1 s) hacia el exchange `plataforma` con el sobre común
 - [ ] `POST /obras` con validación y errores Problem Details (`PRESUPUESTO_NO_COINCIDE`, `CODIGO_PARTIDA_REPETIDO`, `INSUMO_REPETIDO`, `CONTRATO_INVALIDO`)
 - [ ] `GET /obras/{id}` básico (datos, contrato, partidas, estado, motivo de rechazo) con visibilidad por rol
