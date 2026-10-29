@@ -17,7 +17,8 @@ Parte de la «Plataforma de supervisión de obras». Si existe `../../CLAUDE.md`
 
 ```sh
 ./mvnw spring-boot:run     # levantar (Windows: mvnw.cmd)
-./mvnw test                # pruebas
+./mvnw test                # pruebas unitarias
+./mvnw verify              # todas, con las de integración (*IT, Testcontainers: necesita Docker)
 ./mvnw package             # compilar el .jar
 ```
 
@@ -60,4 +61,4 @@ Paquete raíz `com.constructora.obras`. Estructura prevista por contexto (`obra`
 
 Conventional Commits en español e imperativo (`feat(planillas): agrega cálculo del neto`). Sin coautoría ni firmas de la IA.
 
-Trabajo en ramas `feat/NNN-nombre` con *pull request* y revisión; nunca hagas *push* a `main` (está protegida). Detalle y definición de terminado: `docs/flujo-trabajo.md` del repo `supervision-docs`.
+Git Flow: ramas `feat/`, `fix/`, `docs/`… desde `develop`, que entran por *pull request*; nunca hagas *push* a `main` ni a `develop` (están protegidas). El agente crea y fusiona los PR (merge normal, sin squash) hacia `develop` cuando todas las pruebas pasan. Detalle y definición de terminado: `docs/flujo-trabajo.md` del repo `supervision-docs`.
