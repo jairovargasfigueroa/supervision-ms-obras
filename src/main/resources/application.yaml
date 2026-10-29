@@ -25,6 +25,8 @@ obras:
   seguridad:
     emisor: ${OBRAS_KEYCLOAK_ISSUER:http://localhost:8080/realms/supervision}
     audiencia: plataforma-api
+  cors:
+    origenes: ${OBRAS_CORS_ORIGENES:http://localhost:4300}
 
 server:
   port: ${OBRAS_PORT:8081}

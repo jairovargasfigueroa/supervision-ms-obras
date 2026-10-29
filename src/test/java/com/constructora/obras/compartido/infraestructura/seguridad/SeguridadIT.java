@@ -2,6 +2,7 @@ package com.constructora.obras.compartido.infraestructura.seguridad;
 
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -86,6 +87,25 @@ class SeguridadIT extends PruebaIntegracion {
         mvc.perform(get(RUTA_PROTEGIDA))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string("X-Request-Id", matchesPattern("[0-9a-f-]{36}")));
+    }
+
+    @Test
+    void permiteCorsSoloAlPortal() throws Exception {
+        mvc.perform(options("/obras").header("Origin", "http://localhost:4300")
+                .header("Access-Control-Request-Method", "GET")
+                .header("Access-Control-Request-Headers", "authorization"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:4300"));
+        mvc.perform(options("/obras").header("Origin", "http://localhost:4200")
+                .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void enviaLosEncabezadosDeSeguridad() throws Exception {
+        mvc.perform(get("/salud"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("Referrer-Policy", "no-referrer"));
     }
 
     private ResultActions conToken(String token) throws Exception {
