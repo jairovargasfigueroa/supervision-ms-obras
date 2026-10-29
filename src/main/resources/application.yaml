@@ -20,6 +20,15 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+  # Mensajería (convenciones, «Eventos y comandos»): exchange plataforma y cola obras
+  rabbitmq:
+    host: ${OBRAS_RABBITMQ_HOST:localhost}
+    port: ${OBRAS_RABBITMQ_PORT:5672}
+    username: ${OBRAS_RABBITMQ_USER:obras}
+    password: ${OBRAS_RABBITMQ_PASSWORD:}
+    # PublicadorOutbox espera la confirmación de cada mensaje antes de marcarlo publicado
+    publisher-confirm-type: simple
+
 # Token de Keycloak (ConfiguracionSeguridad): emisor y audiencia que se exigen. La firma se valida con el JWKS del emisor.
 obras:
   seguridad:
@@ -27,6 +36,9 @@ obras:
     audiencia: plataforma-api
   cors:
     origenes: ${OBRAS_CORS_ORIGENES:http://localhost:4300}
+  mensajeria:
+    # Cada cuánto PublicadorOutbox envía los mensajes pendientes del outbox
+    intervalo-outbox-ms: 1000
 
 server:
   port: ${OBRAS_PORT:8081}
@@ -41,7 +53,3 @@ management:
     web:
       exposure:
         include: health,info
-  health:
-    # RabbitMQ todavía no está instalado; se activa cuando lo levantemos
-    rabbit:
-      enabled: false

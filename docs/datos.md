@@ -4,6 +4,8 @@ Base propia: `obras_db`. Ningún otro servicio la lee. Las referencias a otros s
 
 ## Tablas del sistema base
 
+Migración de la 002: `V1__obra.sql` (`obra`, `partida`, `insumo_previsto`, `outbox_evento`, `mensaje_procesado`). Tipos: montos `numeric(14,2)`, cantidades `numeric(14,3)`, porcentajes `numeric(5,2)`; `obra.nombre` `varchar(150)` y `obra.ubicacion` `varchar(200)` (002, criterio 2). `obra.perimetro` queda sin usar hasta la 401.
+
 ### obra
 | Campo | Tipo | Notas |
 |---|---|---|
@@ -35,6 +37,8 @@ Base propia: `obras_db`. Ningún otro servicio la lee. Las referencias a otros s
 | cantidad_contratada | numeric | |
 | precio_unitario | numeric | |
 | meses | varchar | meses en que se ejecuta |
+
+Único: (`obra_id`, `codigo`). Partidas e insumos se devuelven ordenados por `codigo` y por `material_id` (la tabla no guarda el orden en que se cargaron).
 
 ### insumo_previsto
 | Campo | Tipo | Notas |
@@ -114,9 +118,9 @@ Base propia: `obras_db`. Ningún otro servicio la lee. Las referencias a otros s
 ### outbox_evento
 | Campo | Tipo | Notas |
 |---|---|---|
-| id | uuid | PK |
-| tipo | varchar | |
-| payload | jsonb | |
+| id | uuid | PK; es el `id` del mensaje (sobre) |
+| tipo | varchar | `ObraRegistrada`, …; la clave es `evento.obras.<tipo>` |
+| payload | jsonb | sobre completo (`id`, `tipo`, `version`, `ocurridoEn`, `origen`, `correlacionId`, `datos`) |
 | creado_en | timestamptz | |
 | publicado_en | timestamptz | nulo hasta publicarse |
 
