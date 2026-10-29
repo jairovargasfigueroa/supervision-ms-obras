@@ -20,8 +20,19 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+# Token de Keycloak (ConfiguracionSeguridad): emisor y audiencia que se exigen. La firma se valida con el JWKS del emisor.
+obras:
+  seguridad:
+    emisor: ${OBRAS_KEYCLOAK_ISSUER:http://localhost:8080/realms/supervision}
+    audiencia: plataforma-api
+
 server:
   port: ${OBRAS_PORT:8081}
+
+logging:
+  pattern:
+    # Cada línea lleva el X-Request-Id de la petición (FiltroRequestId)
+    level: "%5p [%X{requestId:-}]"
 
 management:
   endpoints:
