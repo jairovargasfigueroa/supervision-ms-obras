@@ -14,7 +14,7 @@ src/main/java/com/constructora/obras/
   compartido/                      # lo que usan todos los contextos
     dominio/        ReglaNegocioException.java, Dinero.java (redondeo HALF_UP a 2), Periodo.java (AAAA-MM), Reloj.java (puerto de la hora)
     infraestructura/
-      seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java, UsuarioActual.java
+      seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java (realm_access.roles → ROLE_<rol>), RolesEfectivos.java (regla del azp), UsuarioActual.java
       web/          ManejadorErrores.java (ProblemDetail con "codigo" y "errores"), RespuestaProblema.java (401/403 desde los filtros), FiltroRequestId.java, SaludController.java
       mensajeria/   ConfiguracionRabbit.java, Sobre.java, PublicadorOutbox.java, OutboxEventoEntity.java, MensajeProcesadoEntity.java
       archivos/     ConfiguracionS3.java, AlmacenArchivosS3.java
@@ -35,7 +35,7 @@ src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
-  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba
+  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba)
   compartido/infraestructura/seguridad/SeguridadIT.java
   ArquitecturaTest.java                         # ArchUnit
 ```
