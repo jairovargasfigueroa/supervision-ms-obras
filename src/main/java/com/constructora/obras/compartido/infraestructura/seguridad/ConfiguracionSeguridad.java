@@ -57,7 +57,7 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(HttpMethod.GET, "/salud").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(servidor -> servidor
-                        .jwt(Customizer.withDefaults())
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(new ConvertidorRolesKeycloak()))
                         .authenticationEntryPoint(noAutenticado())
                         .accessDeniedHandler(sinPermiso())
                         .withObjectPostProcessor(new ObjectPostProcessor<BearerTokenAuthenticationFilter>() {

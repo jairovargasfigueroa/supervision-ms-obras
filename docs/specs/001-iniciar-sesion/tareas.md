@@ -4,6 +4,6 @@ Requisitos y diseño: `docs/specs/001-iniciar-sesion/` de la carpeta que agrupa 
 
 Marca cada tarea al terminarla (con sus pruebas y su commit).
 
-- [ ] Convertidor de `realm_access.roles` a autoridades `ROLE_<rol>` y `@EnableMethodSecurity`
-- [ ] Perfil de pruebas con clave de firma local y utilidad para generar tokens por rol
-- [ ] Pruebas 401/403/200 sobre un endpoint de ejemplo protegido
+- [x] Convertidor de `realm_access.roles` a autoridades `ROLE_<rol>` y `@EnableMethodSecurity`
+- [x] Perfil de pruebas con clave de firma local y utilidad para generar tokens por rol
+- [x] Pruebas 401/403/200 sobre un endpoint de ejemplo protegido
