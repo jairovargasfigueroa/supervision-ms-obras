@@ -12,22 +12,25 @@ Starters de Spring Boot 4.1 (web MVC, security OAuth2 resource server, data JPA,
 src/main/java/com/constructora/obras/
   ObrasApplication.java
   compartido/                      # lo que usan todos los contextos
-    dominio/        ReglaNegocioException.java, Dinero.java (redondeo HALF_UP a 2), Periodo.java (AAAA-MM), Reloj.java (puerto de la hora)
+    dominio/        ReglaNegocioException.java, Dinero.java (redondeo HALF_UP a 2), Periodo.java (AAAA-MM), Reloj.java (puerto de la hora), Usuario.java (id y roles efectivos), EventoDominio.java
     infraestructura/
+      RelojSistema.java
       seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java (realm_access.roles → ROLE_<rol>), RolesEfectivos.java (regla del azp), UsuarioActual.java
       web/          ManejadorErrores.java (ProblemDetail con "codigo" y "errores"), RespuestaProblema.java (401/403 desde los filtros), FiltroRequestId.java, SaludController.java
-      mensajeria/   ConfiguracionRabbit.java, Sobre.java, PublicadorOutbox.java, OutboxEventoEntity.java, MensajeProcesadoEntity.java
+      mensajeria/   ConfiguracionRabbit.java, Sobre.java, Outbox.java (guarda en outbox_evento), PublicadorOutbox.java (envía cada 1 s), OutboxEventoEntity.java, OutboxEventoJpaRepository.java,
+                    ReceptorMensajes.java (cola obras: inbox, reintentos y fallidos), ManejadorMensaje.java (un consumidor por tipo), MensajeInvalidoException.java,
+                    MensajeProcesadoEntity.java, MensajeProcesadoJpaRepository.java
       archivos/     ConfiguracionS3.java, AlmacenArchivosS3.java
   obra/                            # un paquete por contexto: obra, avance, planilla, saga, diario (capa 1)
-    dominio/        Obra.java, Partida.java, InsumoPrevisto.java, EstadoObra.java, Asignaciones.java, ContratoCopia.java
+    dominio/        Obra.java, Partida.java, InsumoPrevisto.java, EstadoObra.java, Asignaciones.java, ContratoCopia.java, ObraRegistrada.java (evento)
     aplicacion/
-      puerto/entrada/   RegistrarObraCasoUso.java, ConsultarObraCasoUso.java
+      puerto/entrada/   RegistrarObraCasoUso.java, ConsultarObraCasoUso.java, RegistrarRespuestaContratoCasoUso.java, ObraDetalle.java
       puerto/salida/    ObraRepositorio.java, PublicadorEventos.java
-      servicio/         RegistrarObraServicio.java, ConsultarObraServicio.java
+      servicio/         RegistrarObraServicio.java, ConsultarObraServicio.java, RespuestaContratoServicio.java
     infraestructura/
-      web/              ObraController.java, dto/RegistrarObraRequest.java, dto/ObraResponse.java, ObraWebMapper.java
+      web/              ObraController.java, dto/RegistrarObraRequest.java, dto/ObraResponse.java, dto/ObraResumenResponse.java, ObraWebMapper.java
       persistencia/     ObraEntity.java, PartidaEntity.java, InsumoPrevistoEntity.java, ObraJpaRepository.java, ObraRepositorioJpa.java, ObraPersistenciaMapper.java
-      mensajeria/       ContratoRegistradoConsumidor.java
+      mensajeria/       PublicadorEventosOutbox.java, ContratoRegistradoConsumidor.java, ContratoRechazadoConsumidor.java
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml
   db/migration/V1__obra.sql, V2__planilla.sql, ...        # una migración por funcionalidad, nunca se edita una ya aplicada
@@ -35,7 +38,7 @@ src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
-  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba)
+  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, Esperar
   compartido/infraestructura/seguridad/SeguridadIT.java
   ArquitecturaTest.java                         # ArchUnit
 ```

@@ -11,4 +11,4 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 - [x] `POST /obras` con validación y errores Problem Details (`PRESUPUESTO_NO_COINCIDE`, `CODIGO_PARTIDA_REPETIDO`, `INSUMO_REPETIDO`, `CONTRATO_INVALIDO`)
 - [x] `GET /obras/{id}` básico (datos, contrato, partidas, estado, motivo de rechazo) con visibilidad por rol
 - [x] Consumidor de `ContratoRegistrado` y `ContratoRechazado` idempotente con `mensaje_procesado`
-- [ ] Pruebas de API e integración del outbox y del consumidor
+- [x] Pruebas de API e integración del outbox y del consumidor

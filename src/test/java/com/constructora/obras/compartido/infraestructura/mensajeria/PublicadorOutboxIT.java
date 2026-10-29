@@ -19,7 +19,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -50,7 +49,7 @@ class PublicadorOutboxIT extends PruebaIntegracion {
 
     @BeforeEach
     void escucharEventosDeObras() {
-        escucha = new AnonymousQueue();
+        escucha = new Queue("prueba." + UUID.randomUUID(), true, false, false);
         admin.declareQueue(escucha);
         admin.declareBinding(BindingBuilder.bind(escucha).to(new TopicExchange(ConfiguracionRabbit.EXCHANGE))
                 .with("evento.obras.#"));

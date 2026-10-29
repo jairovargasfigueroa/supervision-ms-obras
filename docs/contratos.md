@@ -32,6 +32,10 @@ Roles: `admin`
 ```
 Devuelve `201` con el detalle de la obra (como `GET /obras/{id}`), `estado: "SIN_CONTRATO"`.
 Errores: `400` formato · `422 PRESUPUESTO_NO_COINCIDE` · `422 CODIGO_PARTIDA_REPETIDO` · `422 INSUMO_REPETIDO` · `422 CONTRATO_INVALIDO` · `403`.
+- `403 SIN_PERMISO` se comprueba antes que el cuerpo: un rol distinto de `admin` recibe 403 aunque el cuerpo esté mal formado.
+- `400 DATOS_INVALIDOS` (formato): campos obligatorios, `nombre` hasta 150 y `ubicacion` hasta 200 caracteres, al menos una partida, `cantidadContratada`, `precioUnitario` y `cantidadPorUnidad` > 0, montos y porcentajes con hasta 2 decimales y cantidades con hasta 3. Trae `errores[]` con `campo` (por ejemplo `partidas[0].cantidadContratada`) y `mensaje`.
+- `422`: `detail` es el texto del catálogo (`PRESUPUESTO_NO_COINCIDE`: «El presupuesto (Bs 1.249.925,00) no coincide con el monto del contrato (Bs 1.250.000,00)») y `errores[]` señala el campo (`contrato.monto`, `contrato.plazoDias`, `contrato.anticipoPct`, `contrato.retencionPct`, `partidas[i].codigo`, `partidas[i].insumos[j].materialId`, `partidas`). Se valida en este orden: contrato, códigos, insumos, presupuesto.
+- `firmadoEn` no se guarda en Obras: viaja en `ObraRegistrada`.
 Publica `ObraRegistrada`.
 
 ### GET /obras?estado=&busqueda= · 006, 009
@@ -44,6 +48,7 @@ Roles: todos; filtra por visibilidad (convenciones).
 }]
 ```
 `ultimaPlanilla` es `null` si no hay planillas.
+Estado en la 002: devuelve las obras que el usuario ve, ordenadas por nombre; `avancePct` es 0 (todavía no hay planillas aprobadas), `plazoPct` y `enRiesgo` se calculan con docs/reglas-negocio.md («Avance y plazo») y `ultimaPlanilla` es `null`. Los filtros `estado` y `busqueda` se aceptan pero no filtran hasta la 006.
 
 ### GET /obras/{id} · 002, 004, 006
 Roles: los que pueden ver la obra.
@@ -62,7 +67,7 @@ Roles: los que pueden ver la obra.
   }]
 }
 ```
-Errores: `404 OBRA_NO_ENCONTRADA` (también si el usuario no puede verla).
+Errores: `404 OBRA_NO_ENCONTRADA` (también si el usuario no puede verla) o si el id no es un UUID. En la 002 `ejecutadaAcumulada` y `avancePct` de cada partida son 0.
 
 ### GET /obras/{id}/material-previsto?periodo=AAAA-MM · 006
 Roles: `admin`, `gerente` y `residente` asignado (si no ve la obra: `404 OBRA_NO_ENCONTRADA`).
