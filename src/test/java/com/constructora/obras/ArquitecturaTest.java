@@ -37,4 +37,9 @@ class ArquitecturaTest {
             .should().dependOnClassesThat().resideInAnyPackage("..infraestructura.persistencia..",
                     "jakarta.persistence..")
             .allowEmptyShould(true);
+
+    /** La semilla (011) es infraestructura: usa el dominio, pero nada del servicio depende de ella. */
+    @ArchTest
+    static final ArchRule nadieUsaLaSemilla = noClasses().that().resideOutsideOfPackage("..semilla..")
+            .should().dependOnClassesThat().resideInAPackage("..semilla..");
 }
