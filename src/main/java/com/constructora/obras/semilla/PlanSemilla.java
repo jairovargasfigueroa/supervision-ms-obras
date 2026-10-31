@@ -3,6 +3,7 @@ package com.constructora.obras.semilla;
 import com.constructora.obras.compartido.dominio.Dinero;
 import com.constructora.obras.compartido.dominio.Periodo;
 import com.constructora.obras.obra.dominio.EstadoObra;
+import com.constructora.obras.obra.dominio.Zona;
 import com.constructora.obras.planilla.dominio.EstadoPlanilla;
 import com.constructora.obras.planilla.dominio.LineaPlanilla;
 import com.constructora.obras.planilla.dominio.TotalesPlanilla;
@@ -86,7 +87,11 @@ public final class PlanSemilla {
 
     private Map<String, PartidaSemilla> agregarObra(ObraSemilla obra, DatosSemilla datos, FechaRelativa fechas) {
         EstadoObra.valueOf(obra.estado());
-        obras.add(new FilaObra(obra.id(), obra.nombre(), obra.ubicacion(), obra.estado(), obra.clienteUsuarioId(),
+        if (obra.zona() != null) {
+            Zona.valueOf(obra.zona());
+        }
+        obras.add(new FilaObra(obra.id(), obra.nombre(), obra.ubicacion(), obra.zona(), obra.estado(),
+                obra.clienteUsuarioId(),
                 obra.residenteUsuarioId(), obra.maestroUsuarioId(), obra.almaceneroUsuarioId(), obra.contratoId(),
                 Dinero.de(obra.contrato().monto()).valor(), obra.contrato().plazoDias(),
                 obra.contrato().anticipoPct(), obra.contrato().retencionPct(), fechas.fecha(obra.fechaInicio())));
@@ -233,7 +238,7 @@ public final class PlanSemilla {
         return List.copyOf(planillas);
     }
 
-    public record FilaObra(UUID id, String nombre, String ubicacion, String estado, UUID clienteUsuarioId,
+    public record FilaObra(UUID id, String nombre, String ubicacion, String zona, String estado, UUID clienteUsuarioId,
             UUID residenteUsuarioId, UUID maestroUsuarioId, UUID almaceneroUsuarioId, UUID contratoId,
             BigDecimal montoContrato, int plazoDias, BigDecimal anticipoPct, BigDecimal retencionPct,
             LocalDate fechaInicio) {

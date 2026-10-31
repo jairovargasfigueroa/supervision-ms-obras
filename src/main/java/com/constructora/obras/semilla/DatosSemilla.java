@@ -45,8 +45,11 @@ public record DatosSemilla(
         }
     }
 
-    /** Obra con la copia del contrato, sus asignaciones y su presupuesto. {@code fechaInicio} es relativa (D-n). */
-    public record ObraSemilla(UUID id, String nombre, String ubicacion, String estado, UUID clienteUsuarioId,
+    /**
+     * Obra con la copia del contrato, sus asignaciones y su presupuesto. {@code fechaInicio} es relativa (D-n);
+     * {@code zona} (401) es NORTE, SUR, ESTE, OESTE, CENTRO o null.
+     */
+    public record ObraSemilla(UUID id, String nombre, String ubicacion, String zona, String estado, UUID clienteUsuarioId,
             UUID residenteUsuarioId, UUID maestroUsuarioId, UUID almaceneroUsuarioId, UUID contratoId,
             ContratoSemilla contrato, String fechaInicio, List<PartidaSemilla> partidas) {
     }
