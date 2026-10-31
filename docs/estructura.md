@@ -81,14 +81,14 @@ src/main/java/com/constructora/obras/
                     DatosSemilla.java (registros de semilla/obras.json), PlanSemilla.java (filas resueltas con D: montos y
                     totales con LineaPlanilla y TotalesPlanilla, número del cobro, comprobaciones del documento),
                     CargaSemilla.java (JdbcTemplate en una transacción, INSERT … ON CONFLICT DO NOTHING; recargar: TRUNCATE
-                    de todas las tablas menos flyway_schema_history), ModoSemilla.java (cargar, recargar),
+                    de todas las tablas menos flyway_schema_history, sacadas de pg_tables: incluye entrada_diario de la 103), ModoSemilla.java (cargar, recargar),
                     ResumenSemilla.java (conteos y línea RESUMEN_SEMILLA en JSON para infra), GuardaSemilla.java (perfil prod o base no local)
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml,
   application-semilla.yaml (011: sin web, listeners con auto-startup false,
                     obras.mensajeria.publicador-activo y obras.saga.vencimiento-activo en false, semilla.fecha/modo/salir)
   semilla/obras.json (011: copia de la parte de Obras de docs/datos-prueba.md con fechas relativas a D)
-  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
+  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), V6__entrada_diario.sql (103: entrada_diario, único obra_id y fecha), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
@@ -112,7 +112,8 @@ src/test/java/com/constructora/obras/
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java
   semilla/FechaRelativaTest.java, DatosSemillaTest.java, PlanSemillaTest.java, GuardaSemillaTest.java # 011: unitarias (tabla del diseño, totales y cobros del documento, guardas)
-  semilla/SemillaPerfilIT.java                  # 011: la aplicación con el perfil semilla (sin web ni mensajería), dos cargas, recargar, prod y base no local
+  semilla/SemillaPerfilIT.java                  # 011: la aplicación con el perfil semilla (sin web ni mensajería), dos cargas, recargar, prod y base no local (recargar también vacía entrada_diario)
+  diario/infraestructura/persistencia/EntradaDiarioTablaIT.java # 103: restricciones de V6 (una entrada por obra y día, clima)
   semilla/DatosPruebaIT.java                    # 011: la API con D = 2026-10-28 (reloj fijo): indicadores, planillas, material previsto, visibilidad y fotos
   ArquitecturaTest.java                         # ArchUnit
 ```
