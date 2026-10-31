@@ -7,6 +7,7 @@ import com.constructora.obras.obra.dominio.EstadoObra;
 import com.constructora.obras.obra.dominio.InsumoPrevisto;
 import com.constructora.obras.obra.dominio.Obra;
 import com.constructora.obras.obra.dominio.Partida;
+import com.constructora.obras.obra.dominio.Zona;
 import java.util.List;
 import org.mapstruct.Mapper;
 
@@ -34,6 +35,7 @@ public interface ObraPersistenciaMapper {
         entidad.setId(obra.id());
         entidad.setNombre(obra.nombre());
         entidad.setUbicacion(obra.ubicacion());
+        entidad.setZona(obra.zona() == null ? null : obra.zona().name());
         entidad.setFechaInicio(obra.fechaInicio());
         Asignaciones asignaciones = obra.asignaciones();
         entidad.setResidenteUsuarioId(asignaciones.residenteId());
@@ -59,7 +61,8 @@ public interface ObraPersistenciaMapper {
 
     default Obra aDominio(ObraEntity entidad) {
         return Obra.reconstruir(entidad.getId(), entidad.getNombre(), entidad.getUbicacion(),
-                entidad.getFechaInicio(), EstadoObra.valueOf(entidad.getEstado()),
+                entidad.getZona() == null ? null : Zona.valueOf(entidad.getZona()), entidad.getFechaInicio(),
+                EstadoObra.valueOf(entidad.getEstado()),
                 new Asignaciones(entidad.getResidenteUsuarioId(), entidad.getMaestroUsuarioId(),
                         entidad.getAlmaceneroUsuarioId(), entidad.getClienteUsuarioId()),
                 new ContratoCopia(entidad.getContratoId(), Dinero.de(entidad.getMontoContrato()),

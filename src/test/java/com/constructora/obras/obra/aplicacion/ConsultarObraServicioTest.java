@@ -55,7 +55,7 @@ class ConsultarObraServicioTest {
     private static Obra obra(String nombre, EstadoObra estado, Asignaciones asignaciones) {
         Partida losa = Partida.nueva("P-01", "Losa", "m2", BigDecimal.TEN, BigDecimal.valueOf(100), null,
                 List.of(new InsumoPrevisto("cemento", new BigDecimal("1.1"))));
-        return Obra.reconstruir(UUID.randomUUID(), nombre, "Santa Cruz", INICIO, estado, asignaciones,
+        return Obra.reconstruir(UUID.randomUUID(), nombre, "Santa Cruz", null, INICIO, estado, asignaciones,
                 ContratoCopia.nuevo(Dinero.de(new BigDecimal("1000")), 300, BigDecimal.TEN, BigDecimal.valueOf(7)),
                 null, List.of(losa));
     }

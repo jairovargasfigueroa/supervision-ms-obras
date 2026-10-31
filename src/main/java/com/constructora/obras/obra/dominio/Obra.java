@@ -33,6 +33,7 @@ public final class Obra {
     private final UUID id;
     private final String nombre;
     private final String ubicacion;
+    private final Zona zona;
     private final LocalDate fechaInicio;
     private final Asignaciones asignaciones;
     private final List<Partida> partidas;
@@ -40,11 +41,12 @@ public final class Obra {
     private ContratoCopia contrato;
     private String motivoRechazoContrato;
 
-    private Obra(UUID id, String nombre, String ubicacion, LocalDate fechaInicio, EstadoObra estado,
+    private Obra(UUID id, String nombre, String ubicacion, Zona zona, LocalDate fechaInicio, EstadoObra estado,
             Asignaciones asignaciones, ContratoCopia contrato, String motivoRechazoContrato, List<Partida> partidas) {
         this.id = Objects.requireNonNull(id, "id");
         this.nombre = Objects.requireNonNull(nombre, "nombre");
         this.ubicacion = Objects.requireNonNull(ubicacion, "ubicacion");
+        this.zona = zona;
         this.fechaInicio = Objects.requireNonNull(fechaInicio, "fechaInicio");
         this.estado = Objects.requireNonNull(estado, "estado");
         this.asignaciones = Objects.requireNonNull(asignaciones, "asignaciones");
@@ -57,9 +59,11 @@ public final class Obra {
      * Registra una obra nueva en SIN_CONTRATO. Valida, en este orden: el contrato (CONTRATO_INVALIDO), que los
      * códigos de partida no se repitan (CODIGO_PARTIDA_REPETIDO), que ninguna partida repita material
      * (INSUMO_REPETIDO) y que el presupuesto coincida con el monto del contrato (PRESUPUESTO_NO_COINCIDE).
+     *
+     * @param zona opcional (401): null si no se indicó
      */
-    public static Obra registrar(String nombre, String ubicacion, LocalDate fechaInicio, Asignaciones asignaciones,
-            ContratoCopia contrato, List<Partida> partidas) {
+    public static Obra registrar(String nombre, String ubicacion, Zona zona, LocalDate fechaInicio,
+            Asignaciones asignaciones, ContratoCopia contrato, List<Partida> partidas) {
         Objects.requireNonNull(contrato, "contrato");
         if (partidas == null || partidas.isEmpty()) {
             throw new IllegalArgumentException("La obra necesita al menos una partida");
@@ -68,15 +72,16 @@ public final class Obra {
         validarCodigosUnicos(partidas);
         validarInsumosUnicos(partidas);
         validarPresupuesto(partidas, contrato.monto());
-        return new Obra(UUID.randomUUID(), nombre, ubicacion, fechaInicio, EstadoObra.SIN_CONTRATO, asignaciones,
+        return new Obra(UUID.randomUUID(), nombre, ubicacion, zona, fechaInicio, EstadoObra.SIN_CONTRATO, asignaciones,
                 contrato.conContratoId(null), null, partidas);
     }
 
     /** Vuelve a armar una obra ya guardada (persistencia). No valida reglas de registro. */
-    public static Obra reconstruir(UUID id, String nombre, String ubicacion, LocalDate fechaInicio, EstadoObra estado,
-            Asignaciones asignaciones, ContratoCopia contrato, String motivoRechazoContrato, List<Partida> partidas) {
-        return new Obra(id, nombre, ubicacion, fechaInicio, estado, asignaciones, contrato, motivoRechazoContrato,
-                partidas);
+    public static Obra reconstruir(UUID id, String nombre, String ubicacion, Zona zona, LocalDate fechaInicio,
+            EstadoObra estado, Asignaciones asignaciones, ContratoCopia contrato, String motivoRechazoContrato,
+            List<Partida> partidas) {
+        return new Obra(id, nombre, ubicacion, zona, fechaInicio, estado, asignaciones, contrato,
+                motivoRechazoContrato, partidas);
     }
 
     /** Σ cantidad × precio unitario, redondeado a 2 decimales al final. */
@@ -348,6 +353,11 @@ public final class Obra {
 
     public String ubicacion() {
         return ubicacion;
+    }
+
+    /** Zona de la obra (401); null si no se indicó. */
+    public Zona zona() {
+        return zona;
     }
 
     public LocalDate fechaInicio() {

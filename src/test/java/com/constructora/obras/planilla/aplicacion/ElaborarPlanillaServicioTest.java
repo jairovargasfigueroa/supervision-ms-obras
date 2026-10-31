@@ -51,7 +51,7 @@ class ElaborarPlanillaServicioTest {
             UUID.randomUUID(), UUID.randomUUID());
     private final Partida losa = new Partida(UUID.randomUUID(), "P-01", "Losa", "m2", new BigDecimal("10"),
             new BigDecimal("100"), "oct", List.of());
-    private final Obra obra = Obra.reconstruir(UUID.randomUUID(), "Obra", "Santa Cruz", LocalDate.of(2026, 10, 1),
+    private final Obra obra = Obra.reconstruir(UUID.randomUUID(), "Obra", "Santa Cruz", null, LocalDate.of(2026, 10, 1),
             EstadoObra.EN_EJECUCION, asignaciones,
             new ContratoCopia(UUID.randomUUID(), Dinero.de(new BigDecimal("1000")), 100, BigDecimal.TEN,
                     BigDecimal.valueOf(7)), null, List.of(losa));

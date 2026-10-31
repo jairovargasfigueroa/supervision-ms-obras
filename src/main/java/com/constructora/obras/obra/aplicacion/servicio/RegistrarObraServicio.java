@@ -39,7 +39,7 @@ public class RegistrarObraServicio implements RegistrarObraCasoUso {
         ContratoComando datosContrato = comando.contrato();
         ContratoCopia contrato = ContratoCopia.nuevo(Dinero.de(datosContrato.monto()), datosContrato.plazoDias(),
                 datosContrato.anticipoPct(), datosContrato.retencionPct());
-        Obra obra = Obra.registrar(comando.nombre(), comando.ubicacion(), comando.fechaInicio(),
+        Obra obra = Obra.registrar(comando.nombre(), comando.ubicacion(), null, comando.fechaInicio(),
                 comando.asignaciones(), contrato, comando.partidas().stream().map(RegistrarObraServicio::partida)
                         .toList());
         repositorio.guardar(obra);
