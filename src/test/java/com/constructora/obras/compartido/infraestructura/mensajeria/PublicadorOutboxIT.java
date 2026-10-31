@@ -2,11 +2,12 @@ package com.constructora.obras.compartido.infraestructura.mensajeria;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso.Comando;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso.ContratoComando;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso.PartidaComando;
+import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso;
 import com.constructora.obras.obra.dominio.Asignaciones;
+import com.constructora.obras.obra.dominio.Zona;
 import com.constructora.obras.soporte.Esperar;
 import com.constructora.obras.soporte.PruebaIntegracion;
 import java.math.BigDecimal;
@@ -65,11 +66,7 @@ class PublicadorOutboxIT extends PruebaIntegracion {
         Asignaciones asignaciones = new Asignaciones(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
                 UUID.randomUUID());
         Instant antes = Instant.now();
-        UUID obraId = registrar.ejecutar(new Comando("Edificio Las Palmas", "Av. Banzer", LocalDate.of(2026, 11, 1),
-                asignaciones, new ContratoComando(new BigDecimal("1250000"), 300, BigDecimal.TEN,
-                        BigDecimal.valueOf(7), LocalDate.of(2026, 10, 20)),
-                List.of(new PartidaComando("P-01", "Losa", "m2", BigDecimal.valueOf(2500), new BigDecimal("500"),
-                        null, List.of())))).obra().id();
+        UUID obraId = registrar.ejecutar(comando(Zona.CENTRO, asignaciones)).obra().id();
 
         Message mensaje = recibirDeLaObra(obraId);
         JsonNode sobre = json.readTree(new String(mensaje.getBody(), StandardCharsets.UTF_8));
@@ -89,10 +86,12 @@ class PublicadorOutboxIT extends PruebaIntegracion {
         assertThat(sobre.get("ocurridoEn").asString()).endsWith("Z");
 
         JsonNode datos = sobre.get("datos");
-        assertThat(nombres(datos)).containsExactlyInAnyOrder("obraId", "nombre", "fechaInicio", "asignaciones",
-                "contrato");
+        assertThat(nombres(datos)).containsExactlyInAnyOrder("obraId", "nombre", "ubicacion", "zona", "fechaInicio",
+                "asignaciones", "contrato");
         assertThat(datos.get("obraId").asString()).isEqualTo(obraId.toString());
         assertThat(datos.get("nombre").asString()).isEqualTo("Edificio Las Palmas");
+        assertThat(datos.get("ubicacion").asString()).isEqualTo("Av. Banzer");
+        assertThat(datos.get("zona").asString()).isEqualTo("CENTRO");
         assertThat(datos.get("fechaInicio").asString()).isEqualTo("2026-11-01");
         assertThat(nombres(datos.get("asignaciones"))).containsExactlyInAnyOrder("residenteId", "maestroId",
                 "almaceneroId", "clienteId");
@@ -112,6 +111,28 @@ class PublicadorOutboxIT extends PruebaIntegracion {
         Esperar.hasta(Duration.ofSeconds(5), () -> jdbc.queryForObject(
                 "select publicado_en is not null from outbox_evento where id = ?::uuid", Boolean.class,
                 sobre.get("id").asString()));
+    }
+
+    /** 401: una obra sin zona publica zona null (el campo viaja igual). */
+    @Test
+    void obraSinZonaPublicaZonaNull() {
+        Asignaciones asignaciones = new Asignaciones(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                UUID.randomUUID());
+        UUID obraId = registrar.ejecutar(comando(null, asignaciones)).obra().id();
+
+        JsonNode datos = json.readTree(new String(recibirDeLaObra(obraId).getBody(), StandardCharsets.UTF_8))
+                .get("datos");
+        assertThat(datos.has("zona")).isTrue();
+        assertThat(datos.get("zona").isNull()).isTrue();
+        assertThat(datos.get("ubicacion").asString()).isEqualTo("Av. Banzer");
+    }
+
+    private static Comando comando(Zona zona, Asignaciones asignaciones) {
+        return new Comando("Edificio Las Palmas", "Av. Banzer", zona, LocalDate.of(2026, 11, 1), asignaciones,
+                new ContratoComando(new BigDecimal("1250000"), 300, BigDecimal.TEN, BigDecimal.valueOf(7),
+                        LocalDate.of(2026, 10, 20)),
+                List.of(new PartidaComando("P-01", "Losa", "m2", BigDecimal.valueOf(2500), new BigDecimal("500"),
+                        null, List.of())));
     }
 
     private Message recibirDeLaObra(UUID obraId) {

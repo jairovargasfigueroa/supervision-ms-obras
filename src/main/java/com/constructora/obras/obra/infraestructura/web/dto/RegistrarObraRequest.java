@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
@@ -15,11 +16,14 @@ import java.util.UUID;
 /**
  * Cuerpo de POST /obras (docs/contratos.md). Aquí se valida el formato (400 DATOS_INVALIDOS); las reglas del
  * contrato, códigos, insumos y presupuesto las valida el dominio (422). Montos con hasta 2 decimales y cantidades
- * con hasta 3, como en la base (convenciones, «Nombres»).
+ * con hasta 3, como en la base (convenciones, «Nombres»). La zona (401) es opcional: un valor fuera de la lista también
+ * es 400 con errores[].campo = zona.
  */
 public record RegistrarObraRequest(
         @NotBlank(message = "Es obligatorio") @Size(max = 150, message = "Máximo 150 caracteres") String nombre,
         @NotBlank(message = "Es obligatorio") @Size(max = 200, message = "Máximo 200 caracteres") String ubicacion,
+        @Pattern(regexp = "NORTE|SUR|ESTE|OESTE|CENTRO", message = "Debe ser NORTE, SUR, ESTE, OESTE o CENTRO")
+        String zona,
         @NotNull(message = "Es obligatoria") LocalDate fechaInicio,
         @NotNull(message = "Es obligatorio") @Valid AsignacionesRequest asignaciones,
         @NotNull(message = "Es obligatorio") @Valid ContratoRequest contrato,

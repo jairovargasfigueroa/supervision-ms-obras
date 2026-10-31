@@ -2,15 +2,16 @@ package com.constructora.obras.obra.infraestructura.persistencia;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso.Comando;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso.ContratoComando;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso.InsumoComando;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso.PartidaComando;
+import com.constructora.obras.obra.aplicacion.puerto.entrada.RegistrarObraCasoUso;
 import com.constructora.obras.obra.aplicacion.puerto.salida.ObraRepositorio;
 import com.constructora.obras.obra.dominio.Asignaciones;
 import com.constructora.obras.obra.dominio.EstadoObra;
 import com.constructora.obras.obra.dominio.Obra;
+import com.constructora.obras.obra.dominio.Zona;
 import com.constructora.obras.soporte.PruebaIntegracion;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -34,7 +35,7 @@ class RegistrarObraPersistenciaIT extends PruebaIntegracion {
     void guardaYLeeLaObraConSusPartidasEInsumos() {
         Asignaciones asignaciones = new Asignaciones(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
                 UUID.randomUUID());
-        UUID id = registrar.ejecutar(new Comando("Edificio Las Palmas", "Av. Banzer 4to anillo",
+        UUID id = registrar.ejecutar(new Comando("Edificio Las Palmas", "Av. Banzer 4to anillo", Zona.ESTE,
                 LocalDate.of(2026, 11, 1), asignaciones,
                 new ContratoComando(new BigDecimal("400"), 300, BigDecimal.TEN, BigDecimal.valueOf(7),
                         LocalDate.of(2026, 10, 20)),
@@ -47,6 +48,7 @@ class RegistrarObraPersistenciaIT extends PruebaIntegracion {
         Obra leida = transaccion.execute(estado -> repositorio.buscarPorId(id).orElseThrow());
 
         assertThat(leida.estado()).isEqualTo(EstadoObra.SIN_CONTRATO);
+        assertThat(leida.zona()).isEqualTo(Zona.ESTE);
         assertThat(leida.asignaciones()).isEqualTo(asignaciones);
         assertThat(leida.contrato().contratoId()).isNull();
         assertThat(leida.contrato().monto().valor()).isEqualByComparingTo("400.00");

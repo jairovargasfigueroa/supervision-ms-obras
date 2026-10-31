@@ -12,6 +12,7 @@ Migración de la 002: `V1__obra.sql` (`obra`, `partida`, `insumo_previsto`, `out
 | id | uuid | PK |
 | nombre | varchar | |
 | ubicacion | varchar | |
+| zona | varchar(10) | `NORTE`, `SUR`, `ESTE`, `OESTE`, `CENTRO`; null = sin zona (401, `V7__obra_zona.sql`) |
 | perimetro | jsonb | polígono de la obra (opcional) |
 | estado | varchar | `SIN_CONTRATO`, `EN_EJECUCION`, `CONCLUIDA` |
 | cliente_usuario_id | uuid | ref Keycloak |

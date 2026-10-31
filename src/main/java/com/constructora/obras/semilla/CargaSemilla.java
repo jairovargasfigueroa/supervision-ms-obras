@@ -83,12 +83,12 @@ public class CargaSemilla {
         TABLAS.forEach(tabla -> insertadas.put(tabla, 0));
         for (FilaObra obra : plan.obras()) {
             sumar(insertadas, "obra", jdbc.update("""
-                    insert into obra (id, nombre, ubicacion, estado, cliente_usuario_id, residente_usuario_id,
+                    insert into obra (id, nombre, ubicacion, zona, estado, cliente_usuario_id, residente_usuario_id,
                                       maestro_usuario_id, almacenero_usuario_id, contrato_id, monto_contrato,
                                       plazo_dias, anticipo_pct, retencion_pct, fecha_inicio)
-                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     on conflict (id) do nothing""",
-                    obra.id(), obra.nombre(), obra.ubicacion(), obra.estado(), obra.clienteUsuarioId(),
+                    obra.id(), obra.nombre(), obra.ubicacion(), obra.zona(), obra.estado(), obra.clienteUsuarioId(),
                     obra.residenteUsuarioId(), obra.maestroUsuarioId(), obra.almaceneroUsuarioId(), obra.contratoId(),
                     obra.montoContrato(), obra.plazoDias(), obra.anticipoPct(), obra.retencionPct(),
                     obra.fechaInicio()));

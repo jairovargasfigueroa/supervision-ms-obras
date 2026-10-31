@@ -24,6 +24,8 @@ class DatosSemillaTest {
     @Test
     void cantidades() {
         assertThat(datos.obras()).hasSize(3);
+        // 401: zona de cada obra (docs/datos-prueba.md, sección 6)
+        assertThat(datos.obras()).extracting(ObraSemilla::zona).containsExactly("NORTE", "ESTE", "SUR");
         assertThat(datos.obras().stream().mapToInt(obra -> obra.partidas().size()).sum()).isEqualTo(21);
         assertThat(datos.planillas()).hasSize(5);
         assertThat(datos.fotos()).hasSize(10);

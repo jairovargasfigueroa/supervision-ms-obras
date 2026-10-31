@@ -117,6 +117,7 @@ class DatosPruebaIT extends PruebaIntegracion {
                 // Por nombre: Condominio, Edificio, Unidad Educativa
                 .andExpect(jsonPath("$[0].id").value(OBRA_2))
                 .andExpect(jsonPath("$[0].nombre").value("Condominio Las Lomas (12 viviendas)"))
+                .andExpect(jsonPath("$[0].zona").value("ESTE"))
                 .andExpect(jsonPath("$[0].estado").value("EN_EJECUCION"))
                 .andExpect(jsonPath("$[0].avancePct").value(16.34))
                 .andExpect(jsonPath("$[0].plazoPct").value(50.0))
@@ -125,6 +126,7 @@ class DatosPruebaIT extends PruebaIntegracion {
                 .andExpect(jsonPath("$[0].ultimaPlanilla.estado").value("OBSERVADA"))
                 .andExpect(jsonPath("$[1].id").value(OBRA_1))
                 .andExpect(jsonPath("$[1].nombre").value("Edificio Residencial Las Palmeras"))
+                .andExpect(jsonPath("$[1].zona").value("NORTE"))
                 .andExpect(jsonPath("$[1].fechaInicio").value("2026-06-30"))
                 .andExpect(jsonPath("$[1].avancePct").value(28.49))
                 .andExpect(jsonPath("$[1].plazoPct").value(33.33))
@@ -133,6 +135,7 @@ class DatosPruebaIT extends PruebaIntegracion {
                 .andExpect(jsonPath("$[1].ultimaPlanilla.estado").value("PRESENTADA"))
                 .andExpect(jsonPath("$[2].id").value(OBRA_3))
                 .andExpect(jsonPath("$[2].nombre").value("Unidad Educativa Nueva Esperanza"))
+                .andExpect(jsonPath("$[2].zona").value("SUR"))
                 .andExpect(jsonPath("$[2].avancePct").value(0.0))
                 .andExpect(jsonPath("$[2].plazoPct").value(2.08))
                 .andExpect(jsonPath("$[2].enRiesgo").value(false))

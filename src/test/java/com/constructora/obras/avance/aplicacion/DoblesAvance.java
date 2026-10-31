@@ -33,7 +33,7 @@ final class DoblesAvance {
     static Obra obra(Asignaciones asignaciones) {
         Partida partida = Partida.nueva("P-01", "Losa", "m2", BigDecimal.TEN, BigDecimal.valueOf(100), null,
                 List.of());
-        return Obra.reconstruir(UUID.randomUUID(), "Obra de prueba", "Santa Cruz", LocalDate.of(2026, 11, 1),
+        return Obra.reconstruir(UUID.randomUUID(), "Obra de prueba", "Santa Cruz", null, LocalDate.of(2026, 11, 1),
                 EstadoObra.EN_EJECUCION, asignaciones,
                 ContratoCopia.nuevo(Dinero.de(new BigDecimal("1000")), 100, BigDecimal.TEN, BigDecimal.valueOf(7)),
                 null, List.of(partida));

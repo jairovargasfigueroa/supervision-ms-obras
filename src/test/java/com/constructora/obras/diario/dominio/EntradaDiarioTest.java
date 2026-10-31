@@ -109,7 +109,7 @@ class EntradaDiarioTest {
     private static Obra obra(EstadoObra estado) {
         Partida partida = Partida.nueva("P-01", "Losa", "m2", BigDecimal.TEN, BigDecimal.valueOf(100), null,
                 List.of());
-        return Obra.reconstruir(UUID.randomUUID(), "Obra de prueba", "Santa Cruz", INICIO, estado,
+        return Obra.reconstruir(UUID.randomUUID(), "Obra de prueba", "Santa Cruz", null, INICIO, estado,
                 new Asignaciones(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()),
                 ContratoCopia.nuevo(Dinero.de(new BigDecimal("1000")), 100, BigDecimal.TEN, BigDecimal.valueOf(7)),
                 null, List.of(partida));

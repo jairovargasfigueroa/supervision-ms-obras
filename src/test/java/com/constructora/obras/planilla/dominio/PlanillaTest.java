@@ -39,7 +39,8 @@ class PlanillaTest {
             new BigDecimal("700.00"), "nov-dic", List.of());
 
     static Obra obra(EstadoObra estado, ContratoCopia contrato, Partida... partidas) {
-        return Obra.reconstruir(UUID.randomUUID(), "Obra de prueba", "Santa Cruz", LocalDate.of(2026, 11, 1), estado,
+        return Obra.reconstruir(UUID.randomUUID(), "Obra de prueba", "Santa Cruz", null, LocalDate.of(2026, 11, 1),
+                estado,
                 new Asignaciones(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()),
                 contrato, null, List.of(partidas));
     }

@@ -5,11 +5,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/** Detalle de la obra: respuesta de GET /obras/{id} y de POST /obras (docs/contratos.md). */
+/** Detalle de la obra: respuesta de GET /obras/{id} y de POST /obras (docs/contratos.md). zona es null sin zona (401). */
 public record ObraResponse(
         UUID id,
         String nombre,
         String ubicacion,
+        String zona,
         String estado,
         String motivoRechazoContrato,
         LocalDate fechaInicio,

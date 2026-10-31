@@ -19,6 +19,7 @@ import com.constructora.obras.obra.dominio.Asignaciones;
 import com.constructora.obras.obra.dominio.EstadoObra;
 import com.constructora.obras.obra.dominio.Obra;
 import com.constructora.obras.obra.dominio.ObraRegistrada;
+import com.constructora.obras.obra.dominio.Zona;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -58,6 +59,8 @@ class RegistrarObraServicioTest {
 
         assertThat(publicador.eventos).singleElement().isInstanceOfSatisfying(ObraRegistrada.class, evento -> {
             assertThat(evento.obraId()).isEqualTo(obra.id());
+            assertThat(evento.ubicacion()).isEqualTo("Av. Banzer 4to anillo");
+            assertThat(evento.zona()).isEqualTo(Zona.NORTE);
             assertThat(evento.correlacionId()).isEqualTo(obra.id());
             assertThat(evento.asignaciones()).isEqualTo(ASIGNACIONES);
             assertThat(evento.contrato().monto()).isEqualByComparingTo("357425.00");
@@ -76,7 +79,8 @@ class RegistrarObraServicioTest {
     }
 
     private static Comando comando(String monto) {
-        return new Comando("Edificio Las Palmas", "Av. Banzer 4to anillo", LocalDate.of(2026, 11, 1), ASIGNACIONES,
+        return new Comando("Edificio Las Palmas", "Av. Banzer 4to anillo", Zona.NORTE, LocalDate.of(2026, 11, 1),
+                ASIGNACIONES,
                 new ContratoComando(new BigDecimal(monto), 300, BigDecimal.TEN, BigDecimal.valueOf(7),
                         LocalDate.of(2026, 10, 20)),
                 List.of(new PartidaComando("P-01", "Losa de hormigón armado", "m2", BigDecimal.valueOf(850),

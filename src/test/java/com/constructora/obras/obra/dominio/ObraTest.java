@@ -37,8 +37,33 @@ class ObraTest {
     }
 
     static Obra registrar(ContratoCopia contrato, Partida... partidas) {
-        return Obra.registrar("Edificio Las Palmas", "Av. Banzer 4to anillo", INICIO, asignaciones(), contrato,
+        return Obra.registrar("Edificio Las Palmas", "Av. Banzer 4to anillo", null, INICIO, asignaciones(), contrato,
                 List.of(partidas));
+    }
+
+    @Nested
+    class ZonaDeLaObra {
+
+        @Test
+        void registrarGuardaLaZona() {
+            Obra obra = Obra.registrar("Edificio Las Palmas", "Av. Banzer 4to anillo", Zona.NORTE, INICIO,
+                    asignaciones(), contrato("1000.00"), List.of(partida("P-01", "10", "100.00")));
+
+            assertThat(obra.zona()).isEqualTo(Zona.NORTE);
+        }
+
+        @Test
+        void laZonaEsOpcional() {
+            Obra obra = registrar(contrato("1000.00"), partida("P-01", "10", "100.00"));
+
+            assertThat(obra.zona()).isNull();
+        }
+
+        @Test
+        void lasZonasSonLasCincoDeLaLista() {
+            assertThat(Zona.values()).extracting(Enum::name)
+                    .containsExactly("NORTE", "SUR", "ESTE", "OESTE", "CENTRO");
+        }
     }
 
     @Nested

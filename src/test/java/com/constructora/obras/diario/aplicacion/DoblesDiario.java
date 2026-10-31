@@ -30,7 +30,7 @@ final class DoblesDiario {
     static Obra obra(Asignaciones asignaciones, EstadoObra estado) {
         Partida partida = Partida.nueva("P-01", "Losa", "m2", BigDecimal.TEN, BigDecimal.valueOf(100), null,
                 List.of());
-        return Obra.reconstruir(UUID.randomUUID(), "Obra de prueba", "Santa Cruz", INICIO, estado, asignaciones,
+        return Obra.reconstruir(UUID.randomUUID(), "Obra de prueba", "Santa Cruz", null, INICIO, estado, asignaciones,
                 ContratoCopia.nuevo(Dinero.de(new BigDecimal("1000")), 100, BigDecimal.TEN, BigDecimal.valueOf(7)),
                 null, List.of(partida));
     }

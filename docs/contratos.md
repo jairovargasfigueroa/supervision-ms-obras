@@ -9,12 +9,13 @@ Sin token · `200 {"estado":"ok"}`
 
 Token: firma con el JWKS del realm, vencimiento, emisor `OBRAS_KEYCLOAK_ISSUER` y audiencia `plataforma-api`. Sin token o con uno inválido: `401 NO_AUTENTICADO`; si Keycloak no responde al pedir el JWKS: `503 SERVICIO_NO_DISPONIBLE`. CORS solo para `OBRAS_CORS_ORIGENES` (el portal). Ruta que no existe (con token válido): `404 RUTA_NO_ENCONTRADA`. Toda respuesta lleva `X-Request-Id` (el que llega o un UUID nuevo).
 
-### POST /obras · 002
+### POST /obras · 002, 401
 Roles: `admin`
 ```json
 {
   "nombre": "Edificio Las Palmas",
   "ubicacion": "Av. Banzer 4to anillo, Santa Cruz",
+  "zona": "NORTE",
   "fechaInicio": "2026-11-01",
   "asignaciones": {
     "residenteId": "uuid-keycloak", "maestroId": "uuid-keycloak",
@@ -36,27 +37,28 @@ Errores: `400` formato · `422 PRESUPUESTO_NO_COINCIDE` · `422 CODIGO_PARTIDA_R
 - `400 DATOS_INVALIDOS` (formato): campos obligatorios, `nombre` hasta 150 y `ubicacion` hasta 200 caracteres, al menos una partida, `cantidadContratada`, `precioUnitario` y `cantidadPorUnidad` > 0, montos y porcentajes con hasta 2 decimales y cantidades con hasta 3. Trae `errores[]` con `campo` (por ejemplo `partidas[0].cantidadContratada`) y `mensaje`.
 - `422`: `detail` es el texto del catálogo (`PRESUPUESTO_NO_COINCIDE`: «El presupuesto (Bs 1.249.925,00) no coincide con el monto del contrato (Bs 1.250.000,00)») y `errores[]` señala el campo (`contrato.monto`, `contrato.plazoDias`, `contrato.anticipoPct`, `contrato.retencionPct`, `partidas[i].codigo`, `partidas[i].insumos[j].materialId`, `partidas`). Se valida en este orden: contrato, códigos, insumos, presupuesto.
 - `firmadoEn` no se guarda en Obras: viaja en `ObraRegistrada`.
+- `zona` (401): opcional; `NORTE`, `SUR`, `ESTE`, `OESTE` o `CENTRO` (decisión del equipo). Ausente o `null`: la obra queda sin zona. Otro valor (también minúsculas o vacío): `400 DATOS_INVALIDOS` con `errores[].campo = zona`.
 Publica `ObraRegistrada`.
 
-### GET /obras?estado=&busqueda= · 006, 009
-Roles: todos; filtra por visibilidad (convenciones).
+### GET /obras?estado=&busqueda= · 006, 009, 401
+Roles: todos; filtra por visibilidad (convenciones). Quién llama: el gateway y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
 ```json
 [{
-  "id": "uuid", "nombre": "Edificio Las Palmas", "ubicacion": "…", "estado": "EN_EJECUCION",
+  "id": "uuid", "nombre": "Edificio Las Palmas", "ubicacion": "…", "zona": "NORTE", "estado": "EN_EJECUCION",
   "fechaInicio": "2026-11-01", "avancePct": 32.5, "plazoPct": 41.0, "enRiesgo": false,
   "ultimaPlanilla": { "periodo": "2027-02", "estado": "APROBADA" }
 }]
 ```
-`ultimaPlanilla` es `null` si no hay planillas.
+`ultimaPlanilla` es `null` si no hay planillas; `zona` (401) es `null` si la obra no tiene zona.
 - Devuelve las obras que el usuario ve (convenciones), ordenadas por nombre. `avancePct`, `plazoPct` y `enRiesgo` se calculan al leer con docs/reglas-negocio.md («Avance y plazo»): el avance solo cuenta las planillas `APROBADA`; el plazo usa la fecha de hoy en `America/La_Paz`. Porcentajes con 2 decimales.
 - `ultimaPlanilla`: la planilla de periodo más reciente de la obra, en cualquier estado (`periodo` `AAAA-MM`). Para quien ve la obra solo como `cliente` (desde el portal, `azp = portal`) no cuenta las `BORRADOR`, igual que `GET /obras/{obraId}/planillas` (007).
 - `estado` (006): uno de `SIN_CONTRATO`, `EN_EJECUCION`, `CONCLUIDA`; otro valor: `400 DATOS_INVALIDOS` con `errores[].campo = estado`. `busqueda` (006): el nombre contiene el texto (sin distinguir mayúsculas; `%` y `_` son texto literal). Vacíos (o solo espacios) no filtran; los dos se combinan.
 
-### GET /obras/{id} · 002, 004, 006
-Roles: los que pueden ver la obra.
+### GET /obras/{id} · 002, 004, 006, 401
+Roles: los que pueden ver la obra. Quién llama: el gateway y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
 ```json
 {
-  "id": "uuid", "nombre": "…", "ubicacion": "…", "estado": "EN_EJECUCION",
+  "id": "uuid", "nombre": "…", "ubicacion": "…", "zona": "NORTE", "estado": "EN_EJECUCION",
   "motivoRechazoContrato": null, "fechaInicio": "2026-11-01",
   "asignaciones": { "residenteId": "…", "maestroId": "…", "almaceneroId": "…", "clienteId": "…" },
   "contrato": { "contratoId": "uuid|null", "monto": 1250000.00, "plazoDias": 300, "anticipoPct": 10, "retencionPct": 7 },
@@ -70,6 +72,7 @@ Roles: los que pueden ver la obra.
 }
 ```
 Errores: `404 OBRA_NO_ENCONTRADA` (también si el usuario no puede verla) o si el id no es un UUID.
+- `zona` (401): `NORTE`, `SUR`, `ESTE`, `OESTE`, `CENTRO` o `null` (sin zona).
 - Partidas ordenadas por `codigo`. `ejecutadaAcumulada` (3 decimales) = suma de `cantidad_periodo` de sus líneas en planillas `APROBADA`; `avancePct` de la partida = ejecutada acumulada / cantidad contratada × 100 (2 decimales). `avancePct`, `plazoPct` y `enRiesgo` de la obra, como en `GET /obras` (006). En `POST /obras` (002) las partidas salen en el orden en que llegaron y con ejecutada y avance en 0.
 
 ### GET /obras/{id}/material-previsto?periodo=AAAA-MM · 006
@@ -126,12 +129,12 @@ Errores: `409 PLANILLA_ABIERTA_EXISTE` · `422 PERIODO_NO_POSTERIOR` (no es post
 - `numero` = el mayor de la obra + 1 (empieza en 1); una línea por partida en 0 y totales en 0; `version: 0`. Devuelve `Location: /planillas/{id}`. No publica eventos (la 010 agregará `PlanillaPresentada` al presentar).
 
 ### GET /obras/{obraId}/planillas · 006, 007, 008
-Roles: los que pueden ver la obra; `cliente` no recibe `BORRADOR`.
+Roles: los que pueden ver la obra; `cliente` no recibe `BORRADOR`. Quién llama: el gateway y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
 `[{ "id", "numero", "periodo", "estado", "neto", "cobroId", "cobroNumero" }]` (`cobroNumero`: número del cobro, `COB-AAAA-NNNN`, que Obras guarda al recibir `CobroEmitido`; `null` hasta que se aprueba)
 - Ordenadas por `numero` ascendente. El `cliente` que ve la obra solo como cliente (desde el portal) no recibe las `BORRADOR`. Errores: `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o el id no es un UUID).
 
 ### GET /planillas/{id} · 007, 008
-Roles: los que pueden ver la obra; `cliente` recibe `404` si es `BORRADOR`.
+Roles: los que pueden ver la obra; `cliente` recibe `404` si es `BORRADOR`. Quién llama: el gateway y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
 ```json
 {
   "id": "uuid", "obraId": "uuid", "numero": 3, "periodo": "2027-03", "estado": "BORRADOR", "version": 2,
@@ -179,7 +182,7 @@ Sobre, exchange y claves según convenciones.
 
 | Clave | Dirección | `datos` |
 |---|---|---|
-| `evento.obras.ObraRegistrada` | publica | `obraId, nombre, fechaInicio, asignaciones{residenteId, maestroId, almaceneroId, clienteId}, contrato{monto, plazoDias, anticipoPct, retencionPct, firmadoEn}` |
+| `evento.obras.ObraRegistrada` | publica | `obraId, nombre, ubicacion, zona, fechaInicio, asignaciones{residenteId, maestroId, almaceneroId, clienteId}, contrato{monto, plazoDias, anticipoPct, retencionPct, firmadoEn}` (`ubicacion` y `zona` desde la 401; `zona` es `null` sin zona; la escuchan Finanzas, Materiales e IA) |
 | `evento.finanzas.ContratoRegistrado` | escucha | `obraId, contratoId` |
 | `evento.finanzas.ContratoRechazado` | escucha | `obraId, motivo` |
 | `comando.finanzas.ReservarSaldo` | publica | `planillaId, obraId, monto` |

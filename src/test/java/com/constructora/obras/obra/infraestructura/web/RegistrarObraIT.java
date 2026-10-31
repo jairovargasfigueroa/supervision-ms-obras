@@ -1,7 +1,10 @@
 package com.constructora.obras.obra.infraestructura.web;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -10,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.constructora.obras.soporte.PruebaIntegracion;
 import com.constructora.obras.soporte.TokensPrueba;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -180,6 +184,57 @@ class RegistrarObraIT extends PruebaIntegracion {
 
     private static String admin() {
         return TokensPrueba.valido(ADMIN, "admin");
+    }
+
+    /** 401, criterio 1: la zona se elige de la lista y es opcional. */
+    @Test
+    void zonaValidaSeGuardaYSeDevuelveEnElDetalleYLaLista() throws Exception {
+        String respuesta = registrar(admin(), conZona(cuerpoValido("Obra con zona 401"), "\"NORTE\""))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.zona").value("NORTE"))
+                .andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(respuesta, "$.id");
+
+        mvc.perform(get("/obras/" + id).header("Authorization", "Bearer " + admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.zona").value("NORTE"));
+        mvc.perform(get("/obras").header("Authorization", "Bearer " + admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '" + id + "')].zona", contains("NORTE")));
+    }
+
+    @Test
+    void sinZonaQuedaNullEnElDetalleYLaLista() throws Exception {
+        String respuesta = registrar(admin(), cuerpoValido("Obra sin zona 401"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.zona").value(nullValue()))
+                .andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(respuesta, "$.id");
+        registrar(admin(), conZona(cuerpoValido("Obra con zona null 401"), "null"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.zona").value(nullValue()));
+
+        mvc.perform(get("/obras/" + id).header("Authorization", "Bearer " + admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.zona").value(nullValue()));
+        mvc.perform(get("/obras").header("Authorization", "Bearer " + admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '" + id + "')].zona", contains(nullValue())));
+    }
+
+    @Test
+    void zonaFueraDeLaListaResponde400ConElCampo() throws Exception {
+        for (String zona : new String[] {"\"NORESTE\"", "\"norte\"", "\"\""}) {
+            registrar(admin(), conZona(cuerpoValido("Obra X"), zona))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+                    .andExpect(jsonPath("$.codigo").value("DATOS_INVALIDOS"))
+                    .andExpect(jsonPath("$.errores[0].campo").value("zona"));
+        }
+    }
+
+    private static String conZona(String cuerpo, String zonaJson) {
+        return cuerpo.replace("\"fechaInicio\"", "\"zona\": " + zonaJson + ", \"fechaInicio\"");
     }
 
     private ResultActions registrar(String token, String cuerpo) throws Exception {

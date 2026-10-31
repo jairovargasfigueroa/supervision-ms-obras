@@ -27,6 +27,7 @@ public class ObraEntity implements Persistable<UUID> {
     private UUID id;
     private String nombre;
     private String ubicacion;
+    private String zona;
     private String estado;
     @Column(name = "cliente_usuario_id")
     private UUID clienteUsuarioId;
@@ -93,6 +94,14 @@ public class ObraEntity implements Persistable<UUID> {
 
     public void setUbicacion(String ubicacion) {
         this.ubicacion = ubicacion;
+    }
+
+    public String getZona() {
+        return zona;
+    }
+
+    public void setZona(String zona) {
+        this.zona = zona;
     }
 
     public String getEstado() {
