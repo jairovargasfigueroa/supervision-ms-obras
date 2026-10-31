@@ -145,6 +145,25 @@ public final class Obra {
     }
 
     /**
+     * Diario de obra (103, criterio 10): registra entradas solo el maestro asignado a la obra. Los roles ya son los
+     * efectivos (regla del azp).
+     */
+    public boolean puedeRegistrarDiario(Usuario usuario) {
+        return usuario.tiene("maestro") && usuario.id().equals(asignaciones.maestroId().toString());
+    }
+
+    /**
+     * Diario de obra (103, criterio 10): lo consultan admin y gerente, y el maestro y el residente asignados; el
+     * cliente no. Los roles ya son los efectivos (regla del azp).
+     */
+    public boolean puedeVerDiario(Usuario usuario) {
+        String id = usuario.id();
+        return usuario.tiene("admin") || usuario.tiene("gerente")
+                || usuario.tiene("maestro") && id.equals(asignaciones.maestroId().toString())
+                || usuario.tiene("residente") && id.equals(asignaciones.residenteId().toString());
+    }
+
+    /**
      * Planillas (007, criterio 10): las elabora, guarda y presenta solo el residente asignado a la obra. Los roles ya
      * son los efectivos (regla del azp).
      */

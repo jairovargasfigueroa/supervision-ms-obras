@@ -38,7 +38,8 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
 
     /** Códigos de conflicto de estado o versión (docs/contratos.md): 409 en lugar de 422. */
     private static final Set<String> CODIGOS_CONFLICTO = Set.of(
-            "PLANILLA_ABIERTA_EXISTE", "VERSION_DESACTUALIZADA", "PLANILLA_NO_EDITABLE", "PLANILLA_NO_PRESENTADA");
+            "PLANILLA_ABIERTA_EXISTE", "VERSION_DESACTUALIZADA", "PLANILLA_NO_EDITABLE", "PLANILLA_NO_PRESENTADA",
+            "DIARIO_DIA_YA_REGISTRADO");
 
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception error, Object cuerpo,
