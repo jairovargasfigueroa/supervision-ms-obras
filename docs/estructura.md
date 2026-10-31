@@ -78,11 +78,15 @@ src/main/java/com/constructora/obras/
     dominio/        Clima.java (SOLEADO, NUBLADO, LLUVIA_LEVE, LLUVIA_FUERTE),
                     EntradaDiario.java (formato de clima y texto de 10 a 2000 sin los espacios de los extremos; obra EN_EJECUCION;
                                         fecha no futura en America/La_Paz ni anterior al inicio de la obra)
+                    RangoDiario.java (desde y hasta de GET: por defecto los 30 días hasta hoy; máximo 366, RANGO_INVALIDO)
     aplicacion/
-      puerto/entrada/   RegistrarEntradaDiarioCasoUso.java
+      puerto/entrada/   RegistrarEntradaDiarioCasoUso.java, ConsultarDiarioCasoUso.java
       puerto/salida/    EntradaDiarioRepositorio.java (guardarSiNoExiste: false si la base rechaza el id o el día repetido)
-      servicio/         RegistrarEntradaDiarioServicio.java (idempotencia por id, 409 por día repetido, también ante la restricción única)
+      servicio/         RegistrarEntradaDiarioServicio.java (idempotencia por id, 409 por día repetido, también ante la restricción única),
+                        ConsultarDiarioServicio.java (rango, visibilidad: cliente 404, otro papel 403)
     infraestructura/
+      web/              DiarioController.java (POST y GET /obras/{obraId}/diario), DiarioWebMapper.java,
+                        dto/RegistrarEntradaDiarioRequest.java, dto/EntradaDiarioResponse.java
       persistencia/     EntradaDiarioEntity.java, EntradaDiarioJpaRepository.java (INSERT … ON CONFLICT DO NOTHING: el choque no aborta la transacción),
                         EntradaDiarioRepositorioJpa.java, EntradaDiarioPersistenciaMapper.java
   semilla/                         # 011: datos de prueba (infraestructura; nada del servicio depende de él, lo verifica ArquitecturaTest)
@@ -126,6 +130,7 @@ src/test/java/com/constructora/obras/
   semilla/FechaRelativaTest.java, DatosSemillaTest.java, PlanSemillaTest.java, GuardaSemillaTest.java # 011: unitarias (tabla del diseño, totales y cobros del documento, guardas)
   semilla/SemillaPerfilIT.java                  # 011: la aplicación con el perfil semilla (sin web ni mensajería), dos cargas, recargar, prod y base no local (recargar también vacía entrada_diario)
   diario/aplicacion/DoblesDiario.java, RegistrarEntradaDiarioServicioTest.java # 103: idempotencia, día repetido (también a la vez), permisos, orden de validación
+  diario/aplicacion/ConsultarDiarioServicioTest.java, diario/dominio/RangoDiarioTest.java # 103: rango por defecto en La Paz, límites y permisos de la lista
   diario/infraestructura/persistencia/EntradaDiarioTablaIT.java # 103: restricciones de V6 (una entrada por obra y día, clima) y el adaptador (choque sin abortar, rango)
   semilla/DatosPruebaIT.java                    # 011: la API con D = 2026-10-28 (reloj fijo): indicadores, planillas, material previsto, visibilidad y fotos
   ArquitecturaTest.java                         # ArchUnit

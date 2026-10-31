@@ -116,14 +116,15 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
 
     /**
      * «No encontrado» (por ejemplo OBRA_NO_ENCONTRADA) → 404; conflictos → 409; SIN_PERMISO (el rol puede, pero el
-     * usuario ve la obra con otro papel) → 403; PAGINACION_INVALIDA y DATOS_INVALIDOS (un parámetro de la consulta mal
-     * formado, por ejemplo estado o periodo) → 400; el resto de reglas → 422.
+     * usuario ve la obra con otro papel) → 403; PAGINACION_INVALIDA, RANGO_INVALIDO (103) y DATOS_INVALIDOS (un
+     * parámetro de la consulta mal formado, por ejemplo estado o periodo) → 400; el resto de reglas → 422.
      */
     static HttpStatus estadoDe(String codigo) {
         if ("SIN_PERMISO".equals(codigo)) {
             return HttpStatus.FORBIDDEN;
         }
-        if ("PAGINACION_INVALIDA".equals(codigo) || "DATOS_INVALIDOS".equals(codigo)) {
+        if ("PAGINACION_INVALIDA".equals(codigo) || "DATOS_INVALIDOS".equals(codigo)
+                || "RANGO_INVALIDO".equals(codigo)) {
             return HttpStatus.BAD_REQUEST;
         }
         if (codigo.endsWith("_NO_ENCONTRADA") || codigo.endsWith("_NO_ENCONTRADO")) {

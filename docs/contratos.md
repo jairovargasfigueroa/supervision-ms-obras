@@ -103,6 +103,22 @@ Roles: los que pueden ver la obra; `cliente` solo recibe publicadas. Paginado (c
 - Errores: `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o el id no es un UUID) · `503 SERVICIO_NO_DISPONIBLE` si hay fotos que firmar y S3 no está configurado (una página vacía responde igual).
 - `partidaId` filtra; `desde` y `hasta` se aceptan pero no filtran (ninguna funcionalidad del sistema base los usa). La galería del periodo de la 007 pide páginas en orden `registradoEn desc` hasta pasar del periodo y filtra en el ERP; el periodo de las fotos adjuntas lo valida `PUT /planillas/{id}` (`422 FOTO_FUERA_DEL_PERIODO`).
 
+### POST /obras/{obraId}/diario · 103
+Roles: `maestro` asignado. Quién llama: Sincronización, con el token del maestro (la app no llama directo).
+Recibe `{ "id": "uuid generado en el celular", "fecha": "2026-11-15", "clima": "LLUVIA_LEVE", "texto": "Se vació la losa del 2do piso. Lluvia por la tarde, se cubrió con nylon." }`.
+Devuelve `201` (o `200` si el `id` ya existía) `{ "id", "obraId", "fecha", "clima", "texto", "registradoPor", "registradoEn" }`.
+Errores: `400 DATOS_INVALIDOS` · `403 SIN_PERMISO` · `404 OBRA_NO_ENCONTRADA` · `409 DIARIO_DIA_YA_REGISTRADO` · `422 OBRA_NO_EN_EJECUCION` · `422 FECHA_DIARIO_INVALIDA`.
+- `clima`: `SOLEADO`, `NUBLADO`, `LLUVIA_LEVE` o `LLUVIA_FUERTE`. `texto`: de 10 a 2000 caracteres contados sin los espacios de los extremos; se guarda sin ellos. `registradoPor` = `sub` del token; `registradoEn` = momento en que Obras la recibió (ISO 8601 en UTC, al microsegundo).
+- Orden: rol (`403 SIN_PERMISO`, antes que el cuerpo; por ejemplo el residente asignado) → cuerpo (`400 DATOS_INVALIDOS`: `id`, `fecha` (`AAAA-MM-DD`), `clima` y `texto` obligatorios; después el valor de `clima` y el largo de `texto`, con `errores[].campo` = `clima` o `texto`) → obra visible (`404`, también si el id no es un UUID o el maestro no está asignado) → maestro de esa obra (`403 SIN_PERMISO` si la ve con otro papel, por ejemplo con los roles maestro y residente asignado solo como residente) → `id` ya registrado en la obra: `200` con la entrada guardada, sin volver a validar, aunque el cuerpo sea distinto → otra entrada de la obra en esa `fecha` (`409 DIARIO_DIA_YA_REGISTRADO`, «Ya existe una entrada del diario para ese día») → `422 OBRA_NO_EN_EJECUCION` (la obra no está `EN_EJECUCION`) → `422 FECHA_DIARIO_INVALIDA` (posterior a hoy en `America/La_Paz` o anterior a `fechaInicio`; `errores[].campo = fecha`).
+- Si dos pedidos llegan a la vez, la base decide (clave primaria y único `obra_id`, `fecha`): con el mismo `id`, el segundo recibe `200` con la guardada; con otro `id` el mismo día, `409 DIARIO_DIA_YA_REGISTRADO`.
+- Un `id` que ya existe en **otra** obra: `409 DIARIO_DIA_YA_REGISTRADO` (ese registro no se puede crear ni devolver; la spec no lo trata, decisión de implementación).
+
+### GET /obras/{obraId}/diario?desde=&hasta= · 103
+Roles: `maestro` y `residente` asignados, `admin`, `gerente`.
+`[{ "id", "obraId", "fecha", "clima", "texto", "registradoPor", "registradoEn" }]`, de la fecha más reciente a la más antigua.
+- `desde` y `hasta` (`AAAA-MM-DD`, las dos incluidas). Sin `hasta`: hoy en `America/La_Paz`; sin `desde`: `hasta` − 29 días (los 30 días que terminan en `hasta`). Sin ninguna: los últimos 30 días hasta hoy.
+- Errores, en este orden: `400 DATOS_INVALIDOS` (una fecha que no es `AAAA-MM-DD`, o `desde` posterior a `hasta`; `errores[].campo` = `desde` o `hasta`) · `400 RANGO_INVALIDO` (más de 366 días, contando los dos extremos) · `404 OBRA_NO_ENCONTRADA` (no existe, no la ve, el id no es un UUID, o la ve solo como `cliente`) · `403 SIN_PERMISO` (la ve con otro papel, por ejemplo el almacenero asignado; la spec no lo nombra).
+
 ### POST /obras/{obraId}/planillas · 007
 Roles: `residente` asignado. Recibe `{ "periodo": "2027-03" }`. Devuelve `201` con el detalle (`GET /planillas/{id}`).
 Errores: `409 PLANILLA_ABIERTA_EXISTE` · `422 PERIODO_NO_POSTERIOR` (no es posterior al de la última planilla) · `422 PERIODO_FUTURO` (mes futuro) · `422 OBRA_NO_EN_EJECUCION`.
@@ -207,4 +223,4 @@ Sobre, exchange y claves según convenciones.
 
 ## Herramientas MCP (capa 5, solo lectura)
 
-`avance_obra`, `buscar_diario`, `planillas_estado`, `asistencia_obra` (si existe asistencia). Se especifican en la capa 5.
+`avance_obra`, `buscar_diario` (leerá `entrada_diario`, 103), `planillas_estado`, `asistencia_obra` (si existe asistencia). Se especifican en la capa 5.
