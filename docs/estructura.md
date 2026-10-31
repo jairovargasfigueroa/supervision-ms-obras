@@ -131,6 +131,7 @@ src/test/java/com/constructora/obras/
   semilla/SemillaPerfilIT.java                  # 011: la aplicación con el perfil semilla (sin web ni mensajería), dos cargas, recargar, prod y base no local (recargar también vacía entrada_diario)
   diario/aplicacion/DoblesDiario.java, RegistrarEntradaDiarioServicioTest.java # 103: idempotencia, día repetido (también a la vez), permisos, orden de validación
   diario/aplicacion/ConsultarDiarioServicioTest.java, diario/dominio/RangoDiarioTest.java # 103: rango por defecto en La Paz, límites y permisos de la lista
+  diario/infraestructura/web/DiarioIT.java      # 103: pruebas de API de la spec (mismo id, día repetido también a la vez, maestro no asignado, residente, obra no en ejecución, fechas, formato, GET por rol, rango por defecto)
   diario/infraestructura/persistencia/EntradaDiarioTablaIT.java # 103: restricciones de V6 (una entrada por obra y día, clima) y el adaptador (choque sin abortar, rango)
   semilla/DatosPruebaIT.java                    # 011: la API con D = 2026-10-28 (reloj fijo): indicadores, planillas, material previsto, visibilidad y fotos
   ArquitecturaTest.java                         # ArchUnit
