@@ -6,11 +6,12 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Evento evento.obras.ObraRegistrada (docs/contratos.md): lo escuchan Finanzas (crea el contrato) y Materiales
- * (guarda las asignaciones). Los componentes son exactamente los "datos" del contrato de eventos.
+ * Evento evento.obras.ObraRegistrada (docs/contratos.md): lo escuchan Finanzas (crea el contrato), Materiales
+ * (guarda las asignaciones) e IA (base de reportes, 401: usa ubicacion y zona). Los componentes son exactamente los
+ * "datos" del contrato de eventos; zona es null si la obra no tiene zona.
  */
-public record ObraRegistrada(UUID obraId, String nombre, LocalDate fechaInicio, Asignaciones asignaciones,
-        Contrato contrato) implements EventoDominio {
+public record ObraRegistrada(UUID obraId, String nombre, String ubicacion, Zona zona, LocalDate fechaInicio,
+        Asignaciones asignaciones, Contrato contrato) implements EventoDominio {
 
     public static final String TIPO = "ObraRegistrada";
 
@@ -21,7 +22,8 @@ public record ObraRegistrada(UUID obraId, String nombre, LocalDate fechaInicio, 
 
     public static ObraRegistrada de(Obra obra, LocalDate firmadoEn) {
         ContratoCopia contrato = obra.contrato();
-        return new ObraRegistrada(obra.id(), obra.nombre(), obra.fechaInicio(), obra.asignaciones(),
+        return new ObraRegistrada(obra.id(), obra.nombre(), obra.ubicacion(), obra.zona(), obra.fechaInicio(),
+                obra.asignaciones(),
                 new Contrato(contrato.monto().valor(), contrato.plazoDias(), contrato.anticipoPct(),
                         contrato.retencionPct(), firmadoEn));
     }

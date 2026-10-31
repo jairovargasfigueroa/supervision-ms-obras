@@ -59,6 +59,8 @@ class RegistrarObraServicioTest {
 
         assertThat(publicador.eventos).singleElement().isInstanceOfSatisfying(ObraRegistrada.class, evento -> {
             assertThat(evento.obraId()).isEqualTo(obra.id());
+            assertThat(evento.ubicacion()).isEqualTo("Av. Banzer 4to anillo");
+            assertThat(evento.zona()).isEqualTo(Zona.NORTE);
             assertThat(evento.correlacionId()).isEqualTo(obra.id());
             assertThat(evento.asignaciones()).isEqualTo(ASIGNACIONES);
             assertThat(evento.contrato().monto()).isEqualByComparingTo("357425.00");

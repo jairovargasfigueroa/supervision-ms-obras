@@ -6,4 +6,4 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 
 - [x] Migración Flyway `obra.zona` y enum `Zona` en el dominio
 - [x] `POST /obras` acepta `zona` opcional (400 si no es válida); `GET /obras` y `GET /obras/{id}` la devuelven; pruebas
-- [ ] `ObraRegistrada` agrega `ubicacion` y `zona` en `datos`; prueba del outbox
+- [x] `ObraRegistrada` agrega `ubicacion` y `zona` en `datos`; prueba del outbox

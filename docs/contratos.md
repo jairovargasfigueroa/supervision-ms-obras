@@ -182,7 +182,7 @@ Sobre, exchange y claves según convenciones.
 
 | Clave | Dirección | `datos` |
 |---|---|---|
-| `evento.obras.ObraRegistrada` | publica | `obraId, nombre, fechaInicio, asignaciones{residenteId, maestroId, almaceneroId, clienteId}, contrato{monto, plazoDias, anticipoPct, retencionPct, firmadoEn}` |
+| `evento.obras.ObraRegistrada` | publica | `obraId, nombre, ubicacion, zona, fechaInicio, asignaciones{residenteId, maestroId, almaceneroId, clienteId}, contrato{monto, plazoDias, anticipoPct, retencionPct, firmadoEn}` (`ubicacion` y `zona` desde la 401; `zona` es `null` sin zona; la escuchan Finanzas, Materiales e IA) |
 | `evento.finanzas.ContratoRegistrado` | escucha | `obraId, contratoId` |
 | `evento.finanzas.ContratoRechazado` | escucha | `obraId, motivo` |
 | `comando.finanzas.ReservarSaldo` | publica | `planillaId, obraId, monto` |
