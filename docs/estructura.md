@@ -74,6 +74,10 @@ src/main/java/com/constructora/obras/
       persistencia/     SagaAprobacionEntity.java, SagaAprobacionJpaRepository.java (SELECT … FOR UPDATE), SagaAprobacionRepositorioJpa.java (detalle en JSON)
       mensajeria/       ConsumidoresSaga.java (un ManejadorMensaje por respuesta; busca la saga por correlacionId)
       programacion/     VencimientoSagaTarea.java (@Scheduled cada 10 s: pasos sin respuesta en 60 s)
+  diario/                          # 103 (capa 1): diario de obra (usa ObraRepositorio del contexto obra para la visibilidad)
+    dominio/        Clima.java (SOLEADO, NUBLADO, LLUVIA_LEVE, LLUVIA_FUERTE),
+                    EntradaDiario.java (formato de clima y texto de 10 a 2000 sin los espacios de los extremos; obra EN_EJECUCION;
+                                        fecha no futura en America/La_Paz ni anterior al inicio de la obra)
   semilla/                         # 011: datos de prueba (infraestructura; nada del servicio depende de él, lo verifica ArquitecturaTest)
                     ConfiguracionSemilla.java (@Profile("semilla"): guarda antes de Flyway, CargaSemilla y SemillaRunner),
                     SemillaRunner.java (ApplicationRunner: guarda, carga, resumen y System.exit con el código de salida),
@@ -111,6 +115,7 @@ src/test/java/com/constructora/obras/
   soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java
+  diario/dominio/EntradaDiarioTest.java         # 103: bordes del texto (9, 10, 2000, 2001), clima, hoy en La Paz con UTC del día siguiente, fecha futura y anterior al inicio
   semilla/FechaRelativaTest.java, DatosSemillaTest.java, PlanSemillaTest.java, GuardaSemillaTest.java # 011: unitarias (tabla del diseño, totales y cobros del documento, guardas)
   semilla/SemillaPerfilIT.java                  # 011: la aplicación con el perfil semilla (sin web ni mensajería), dos cargas, recargar, prod y base no local (recargar también vacía entrada_diario)
   diario/infraestructura/persistencia/EntradaDiarioTablaIT.java # 103: restricciones de V6 (una entrada por obra y día, clima)
