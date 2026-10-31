@@ -44,7 +44,7 @@ public interface ObraWebMapper {
         List<ObraResponse.Partida> partidas = obra.partidas().stream()
                 .map(partida -> aRespuesta(partida, indicadores))
                 .toList();
-        return new ObraResponse(obra.id(), obra.nombre(), obra.ubicacion(), obra.estado().name(),
+        return new ObraResponse(obra.id(), obra.nombre(), obra.ubicacion(), zona(obra), obra.estado().name(),
                 obra.motivoRechazoContrato(), obra.fechaInicio(), aRespuesta(obra.asignaciones()),
                 new ObraResponse.Contrato(contrato.contratoId(), contrato.monto().valor(), contrato.plazoDias(),
                         contrato.anticipoPct(), contrato.retencionPct()),
@@ -56,7 +56,7 @@ public interface ObraWebMapper {
         Obra obra = detalle.obra();
         Obra.Indicadores indicadores = detalle.indicadores();
         PlanillaCorta ultima = detalle.ultimaPlanilla();
-        return new ObraResumenResponse(obra.id(), obra.nombre(), obra.ubicacion(), obra.estado().name(),
+        return new ObraResumenResponse(obra.id(), obra.nombre(), obra.ubicacion(), zona(obra), obra.estado().name(),
                 obra.fechaInicio(), indicadores.avancePct(), indicadores.plazoPct(), indicadores.enRiesgo(),
                 ultima == null ? null
                         : new ObraResumenResponse.PlanillaCorta(ultima.periodo().toString(), ultima.estado().name()));
@@ -67,6 +67,11 @@ public interface ObraWebMapper {
     default MaterialPrevistoResponse aRespuesta(ConsultarMaterialPrevistoCasoUso.Resultado resultado) {
         return new MaterialPrevistoResponse(resultado.periodo().toString(), resultado.hayPlanilla(),
                 resultado.items().stream().map(this::aItem).toList());
+    }
+
+    /** Zona de la obra (401) tal cual, o null si no se indicó. */
+    private static String zona(Obra obra) {
+        return obra.zona() == null ? null : obra.zona().name();
     }
 
     private ObraResponse.Partida aRespuesta(Partida partida, Obra.Indicadores indicadores) {
