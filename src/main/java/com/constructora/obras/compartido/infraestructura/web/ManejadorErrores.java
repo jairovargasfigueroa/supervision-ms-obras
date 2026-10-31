@@ -38,7 +38,8 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
 
     /** Códigos de conflicto de estado o versión (docs/contratos.md): 409 en lugar de 422. */
     private static final Set<String> CODIGOS_CONFLICTO = Set.of(
-            "PLANILLA_ABIERTA_EXISTE", "VERSION_DESACTUALIZADA", "PLANILLA_NO_EDITABLE", "PLANILLA_NO_PRESENTADA");
+            "PLANILLA_ABIERTA_EXISTE", "VERSION_DESACTUALIZADA", "PLANILLA_NO_EDITABLE", "PLANILLA_NO_PRESENTADA",
+            "DIARIO_DIA_YA_REGISTRADO");
 
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception error, Object cuerpo,
@@ -115,14 +116,15 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
 
     /**
      * «No encontrado» (por ejemplo OBRA_NO_ENCONTRADA) → 404; conflictos → 409; SIN_PERMISO (el rol puede, pero el
-     * usuario ve la obra con otro papel) → 403; PAGINACION_INVALIDA y DATOS_INVALIDOS (un parámetro de la consulta mal
-     * formado, por ejemplo estado o periodo) → 400; el resto de reglas → 422.
+     * usuario ve la obra con otro papel) → 403; PAGINACION_INVALIDA, RANGO_INVALIDO (103) y DATOS_INVALIDOS (un
+     * parámetro de la consulta mal formado, por ejemplo estado o periodo) → 400; el resto de reglas → 422.
      */
     static HttpStatus estadoDe(String codigo) {
         if ("SIN_PERMISO".equals(codigo)) {
             return HttpStatus.FORBIDDEN;
         }
-        if ("PAGINACION_INVALIDA".equals(codigo) || "DATOS_INVALIDOS".equals(codigo)) {
+        if ("PAGINACION_INVALIDA".equals(codigo) || "DATOS_INVALIDOS".equals(codigo)
+                || "RANGO_INVALIDO".equals(codigo)) {
             return HttpStatus.BAD_REQUEST;
         }
         if (codigo.endsWith("_NO_ENCONTRADA") || codigo.endsWith("_NO_ENCONTRADO")) {

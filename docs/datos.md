@@ -64,14 +64,17 @@ Migración de la 005: `V2__foto_avance.sql`. Índices por (`obra_id`, `registrad
 | registrado_en | timestamptz | fecha y hora en que se tomó (`tomadaEn` del celular) |
 
 ### entrada_diario
+Migración de la 103 (capa 1): `V6__entrada_diario.sql`. Único (`obra_id`, `fecha`): una entrada por obra y día; si dos llegan a la vez, la base rechaza la segunda (`409 DIARIO_DIA_YA_REGISTRADO`). El mismo índice sirve a la lista por rango de fechas. La semilla de la 011 no carga entradas; `recargar` vacía esta tabla junto con las demás (toma la lista de `pg_tables`).
+
 | Campo | Tipo | Notas |
 |---|---|---|
 | id | uuid | PK, creado en el celular |
 | obra_id | uuid | FK obra |
-| fecha | date | |
-| clima | varchar | |
-| texto | text | |
-| registrado_por | uuid | ref Keycloak |
+| fecha | date | día de la entrada (hora de La Paz) |
+| clima | varchar(20) | *check*: `SOLEADO`, `NUBLADO`, `LLUVIA_LEVE`, `LLUVIA_FUERTE` |
+| texto | text | de 10 a 2000 caracteres, guardado sin los espacios de los extremos |
+| registrado_por | uuid | ref Keycloak (`sub` del maestro) |
+| registrado_en | timestamptz | momento en que el servidor la recibió |
 
 ### planilla
 Migración de la 006: `V3__planilla.sql` (`planilla` y `linea_planilla`). La 006 solo las lee (avance, ejecutada acumulada, última planilla y material previsto); la 007 crea y guarda planillas sobre estas mismas tablas y agrega `planilla_foto` en su migración. Tipos: montos `numeric(14,2)`, `cantidad_periodo` `numeric(14,3)`, `estado` `varchar(20)` con *check* de los cinco estados, `periodo` con *check* de primer día del mes; `observacion`, `cobro_id` y `cobro_numero` admiten nulo.

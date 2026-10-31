@@ -74,6 +74,21 @@ src/main/java/com/constructora/obras/
       persistencia/     SagaAprobacionEntity.java, SagaAprobacionJpaRepository.java (SELECT … FOR UPDATE), SagaAprobacionRepositorioJpa.java (detalle en JSON)
       mensajeria/       ConsumidoresSaga.java (un ManejadorMensaje por respuesta; busca la saga por correlacionId)
       programacion/     VencimientoSagaTarea.java (@Scheduled cada 10 s: pasos sin respuesta en 60 s)
+  diario/                          # 103 (capa 1): diario de obra (usa ObraRepositorio del contexto obra para la visibilidad)
+    dominio/        Clima.java (SOLEADO, NUBLADO, LLUVIA_LEVE, LLUVIA_FUERTE),
+                    EntradaDiario.java (formato de clima y texto de 10 a 2000 sin los espacios de los extremos; obra EN_EJECUCION;
+                                        fecha no futura en America/La_Paz ni anterior al inicio de la obra)
+                    RangoDiario.java (desde y hasta de GET: por defecto los 30 días hasta hoy; máximo 366, RANGO_INVALIDO)
+    aplicacion/
+      puerto/entrada/   RegistrarEntradaDiarioCasoUso.java, ConsultarDiarioCasoUso.java
+      puerto/salida/    EntradaDiarioRepositorio.java (guardarSiNoExiste: false si la base rechaza el id o el día repetido)
+      servicio/         RegistrarEntradaDiarioServicio.java (idempotencia por id, 409 por día repetido, también ante la restricción única),
+                        ConsultarDiarioServicio.java (rango, visibilidad: cliente 404, otro papel 403)
+    infraestructura/
+      web/              DiarioController.java (POST y GET /obras/{obraId}/diario), DiarioWebMapper.java,
+                        dto/RegistrarEntradaDiarioRequest.java, dto/EntradaDiarioResponse.java
+      persistencia/     EntradaDiarioEntity.java, EntradaDiarioJpaRepository.java (INSERT … ON CONFLICT DO NOTHING: el choque no aborta la transacción),
+                        EntradaDiarioRepositorioJpa.java, EntradaDiarioPersistenciaMapper.java
   semilla/                         # 011: datos de prueba (infraestructura; nada del servicio depende de él, lo verifica ArquitecturaTest)
                     ConfiguracionSemilla.java (@Profile("semilla"): guarda antes de Flyway, CargaSemilla y SemillaRunner),
                     SemillaRunner.java (ApplicationRunner: guarda, carga, resumen y System.exit con el código de salida),
@@ -81,14 +96,14 @@ src/main/java/com/constructora/obras/
                     DatosSemilla.java (registros de semilla/obras.json), PlanSemilla.java (filas resueltas con D: montos y
                     totales con LineaPlanilla y TotalesPlanilla, número del cobro, comprobaciones del documento),
                     CargaSemilla.java (JdbcTemplate en una transacción, INSERT … ON CONFLICT DO NOTHING; recargar: TRUNCATE
-                    de todas las tablas menos flyway_schema_history), ModoSemilla.java (cargar, recargar),
+                    de todas las tablas menos flyway_schema_history, sacadas de pg_tables: incluye entrada_diario de la 103), ModoSemilla.java (cargar, recargar),
                     ResumenSemilla.java (conteos y línea RESUMEN_SEMILLA en JSON para infra), GuardaSemilla.java (perfil prod o base no local)
 src/main/resources/
   application.yaml, application-dev.yaml, application-test.yaml,
   application-semilla.yaml (011: sin web, listeners con auto-startup false,
                     obras.mensajeria.publicador-activo y obras.saga.vencimiento-activo en false, semilla.fecha/modo/salir)
   semilla/obras.json (011: copia de la parte de Obras de docs/datos-prueba.md con fechas relativas a D)
-  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
+  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), V6__entrada_diario.sql (103: entrada_diario, único obra_id y fecha), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
@@ -111,8 +126,13 @@ src/test/java/com/constructora/obras/
   soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java
+  diario/dominio/EntradaDiarioTest.java         # 103: bordes del texto (9, 10, 2000, 2001), clima, hoy en La Paz con UTC del día siguiente, fecha futura y anterior al inicio
   semilla/FechaRelativaTest.java, DatosSemillaTest.java, PlanSemillaTest.java, GuardaSemillaTest.java # 011: unitarias (tabla del diseño, totales y cobros del documento, guardas)
-  semilla/SemillaPerfilIT.java                  # 011: la aplicación con el perfil semilla (sin web ni mensajería), dos cargas, recargar, prod y base no local
+  semilla/SemillaPerfilIT.java                  # 011: la aplicación con el perfil semilla (sin web ni mensajería), dos cargas, recargar, prod y base no local (recargar también vacía entrada_diario)
+  diario/aplicacion/DoblesDiario.java, RegistrarEntradaDiarioServicioTest.java # 103: idempotencia, día repetido (también a la vez), permisos, orden de validación
+  diario/aplicacion/ConsultarDiarioServicioTest.java, diario/dominio/RangoDiarioTest.java # 103: rango por defecto en La Paz, límites y permisos de la lista
+  diario/infraestructura/web/DiarioIT.java      # 103: pruebas de API de la spec (mismo id, día repetido también a la vez, maestro no asignado, residente, obra no en ejecución, fechas, formato, GET por rol, rango por defecto)
+  diario/infraestructura/persistencia/EntradaDiarioTablaIT.java # 103: restricciones de V6 (una entrada por obra y día, clima) y el adaptador (choque sin abortar, rango)
   semilla/DatosPruebaIT.java                    # 011: la API con D = 2026-10-28 (reloj fijo): indicadores, planillas, material previsto, visibilidad y fotos
   ArquitecturaTest.java                         # ArchUnit
 ```

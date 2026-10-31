@@ -114,6 +114,12 @@ class SemillaPerfilIT {
                        cliente_usuario_id, residente_usuario_id, maestro_usuario_id, almacenero_usuario_id, 100, 30,
                        0, 0, current_date
                 from obra limit 1""");
+        // 103: una entrada del diario registrada en la demostración (la semilla no carga diario)
+        jdbc.update("""
+                insert into entrada_diario (id, obra_id, fecha, clima, texto, registrado_por, registrado_en)
+                select gen_random_uuid(), id, current_date, 'NUBLADO', 'Entrada de la demostración',
+                       maestro_usuario_id, now()
+                from obra where id = 'b0000000-0000-4000-8000-000000000001'::uuid""");
 
         try (ConfigurableApplicationContext contexto = semilla(List.of("semilla"), POSTGRES.getJdbcUrl(),
                 "--semilla.modo=recargar", "--semilla.fecha=2026-11-05")) {
@@ -121,7 +127,8 @@ class SemillaPerfilIT {
             assertThat(runner.getExitCode()).isZero();
             assertThat(runner.resumen().modo()).isEqualTo(ModoSemilla.RECARGAR);
             assertThat(runner.resumen().tablasVaciadas()).contains("obra", "planilla", "saga_aprobacion",
-                    "outbox_evento", "mensaje_procesado").doesNotContain("flyway_schema_history");
+                    "outbox_evento", "mensaje_procesado", "entrada_diario")
+                    .doesNotContain("flyway_schema_history");
             assertThat(runner.resumen().insertadas("obra")).isEqualTo(3);
         }
         assertThat(contar("flyway_schema_history")).isEqualTo(migraciones);
@@ -132,6 +139,7 @@ class SemillaPerfilIT {
         assertThat(contar("saga_aprobacion")).isZero();
         assertThat(contar("outbox_evento")).isZero();
         assertThat(contar("mensaje_procesado")).isZero();
+        assertThat(contar("entrada_diario")).isZero();
         assertThat(jdbc.queryForObject("select estado from planilla where id = ?::uuid", String.class, planilla3))
                 .isEqualTo("PRESENTADA");
         // Las fechas se vuelven a calcular con la nueva D: obra 1 empieza en D-120 y la planilla 3 es de M-1

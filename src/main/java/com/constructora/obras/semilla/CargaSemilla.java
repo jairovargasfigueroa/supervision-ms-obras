@@ -61,7 +61,8 @@ public class CargaSemilla {
 
     /**
      * Modo recargar: vacía todas las tablas del esquema salvo el historial de Flyway (también outbox_evento,
-     * mensaje_procesado y saga_aprobacion, y las que agreguen las capas), con {@code TRUNCATE … CASCADE}.
+     * mensaje_procesado y saga_aprobacion, y las que agreguen las capas, como entrada_diario de la 103), con
+     * {@code TRUNCATE … CASCADE}. La lista sale de pg_tables: una tabla nueva entra sola.
      *
      * @return tablas vaciadas, por nombre
      */
