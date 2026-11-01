@@ -121,13 +121,16 @@ public class CargaSemilla {
         for (FilaPlanilla planilla : plan.planillas()) {
             sumar(insertadas, "planilla", jdbc.update("""
                     insert into planilla (id, obra_id, numero, periodo, estado, subtotal, descuento_anticipo,
-                                          retencion, neto, observacion, cobro_id, cobro_numero, version)
-                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                          retencion, neto, observacion, cobro_id, cobro_numero, version,
+                                          presentada_en)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     on conflict (id) do nothing""",
                     planilla.id(), planilla.obraId(), planilla.numero(), planilla.periodo(), planilla.estado(),
                     planilla.totales().subtotal().valor(), planilla.totales().descuentoAnticipo().valor(),
                     planilla.totales().retencion().valor(), planilla.totales().neto().valor(),
-                    planilla.observacion(), planilla.cobroId(), planilla.cobroNumero(), planilla.version()));
+                    planilla.observacion(), planilla.cobroId(), planilla.cobroNumero(), planilla.version(),
+                    planilla.presentadaEn() == null ? null
+                            : OffsetDateTime.ofInstant(planilla.presentadaEn(), ZoneOffset.UTC)));
             for (LineaPlanilla linea : planilla.lineas()) {
                 sumar(insertadas, "linea_planilla", jdbc.update("""
                         insert into linea_planilla (planilla_id, partida_id, cantidad_periodo, monto)

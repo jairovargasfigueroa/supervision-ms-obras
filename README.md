@@ -11,7 +11,7 @@ cp .env.properties.example .env.properties   # completar los valores
 
 ## Datos de prueba (011)
 
-Carga la parte de Obras de `docs/datos-prueba.md` (repo `supervision-docs`): 3 obras con la copia del contrato, 21 partidas con sus insumos, 5 planillas (montos y totales calculados con la regla del dominio) y 10 fotos de avance registradas en la base (las imágenes las sube infra al bucket). Normalmente la corre `infra/semilla/semilla.ps1` (o `.sh`) junto con Finanzas y Materiales; también se puede correr sola.
+Carga la parte de Obras de `docs/datos-prueba.md` (repo `supervision-docs`): 3 obras con la copia del contrato, 21 partidas con sus insumos, 5 planillas (montos y totales calculados con la regla del dominio; la N.º 3 de la obra 1, `PRESENTADA`, con `presentada_en` = D-10 15:00, para los agentes de la 502) y 10 fotos de avance registradas en la base (las imágenes las sube infra al bucket). Normalmente la corre `infra/semilla/semilla.ps1` (o `.sh`) junto con Finanzas y Materiales; también se puede correr sola.
 
 Se corre **desde esta carpeta** (lee `.env.properties` como el perfil normal; las variables `OBRAS_DB_*` del entorno tienen prioridad). Necesita PostgreSQL; no necesita RabbitMQ ni Keycloak. Arranca sin servidor web (no choca con Obras corriendo en el 8081), sin consumidores ni publicador del outbox, aplica las migraciones, carga y termina.
 

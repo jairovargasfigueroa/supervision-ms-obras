@@ -33,6 +33,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 class PlanillaTest {
 
     static final LocalDate HOY = LocalDate.of(2026, 10, 29);
+    static final Instant AHORA = Instant.parse("2026-10-29T15:00:00Z");
     static final Partida P01 = new Partida(UUID.randomUUID(), "P-01", "Excavación", "m3", new BigDecimal("200"),
             new BigDecimal("150.00"), "nov", List.of());
     static final Partida P02 = new Partida(UUID.randomUUID(), "P-02", "Muro de ladrillo", "m2", new BigDecimal("100"),
@@ -307,9 +308,11 @@ class PlanillaTest {
             Planilla planilla = nueva(obra);
             planilla.actualizarLineas(cantidades(P01, "1"), Map.of(), obra);
 
-            planilla.presentar(0);
+            assertThat(planilla.presentadaEn()).isNull();
+            planilla.presentar(0, AHORA);
 
             assertThat(planilla.estado()).isEqualTo(EstadoPlanilla.PRESENTADA);
+            assertThat(planilla.presentadaEn()).isEqualTo(AHORA);
         }
 
         @Test
@@ -320,9 +323,11 @@ class PlanillaTest {
             Planilla observada = enEstado(base, EstadoPlanilla.OBSERVADA, 4);
 
             observada.actualizarLineas(cantidades(P01, "2"), Map.of(), obra);
-            observada.presentar(4);
+            Instant otraVez = AHORA.plusSeconds(86_400);
+            observada.presentar(4, otraVez);
 
             assertThat(observada.estado()).isEqualTo(EstadoPlanilla.PRESENTADA);
+            assertThat(observada.presentadaEn()).isEqualTo(otraVez);
             assertThat(observada.observacion()).isEqualTo("Falta la foto del muro");
             assertThat(observada.totales().subtotal()).isEqualTo(bs("300.00"));
         }
@@ -340,7 +345,7 @@ class PlanillaTest {
                     () -> planilla.verificarEdicion(2),
                     () -> planilla.actualizarLineas(cantidades(P01, "2"), Map.of(), obra),
                     () -> planilla.adjuntarFotos(List.of(), Map.of()),
-                    () -> planilla.presentar(2))) {
+                    () -> planilla.presentar(2, AHORA))) {
                 ReglaNegocioException e = error(accion);
                 assertThat(e.codigo()).isEqualTo("PLANILLA_NO_EDITABLE");
                 assertThat(e.getMessage()).isEqualTo("La planilla ya no se puede editar (estado " + estado + ")");
@@ -357,14 +362,14 @@ class PlanillaTest {
 
             assertThat(e.codigo()).isEqualTo("VERSION_DESACTUALIZADA");
             assertThat(e.getMessage()).isEqualTo("La planilla cambió, recarga para ver la última versión");
-            assertThat(error(() -> planilla.presentar(4)).codigo()).isEqualTo("VERSION_DESACTUALIZADA");
+            assertThat(error(() -> planilla.presentar(4, AHORA)).codigo()).isEqualTo("VERSION_DESACTUALIZADA");
         }
 
         @Test
         void conSubtotalCeroNoSePresenta() {
             Planilla planilla = nueva(obraFija());
 
-            ReglaNegocioException e = error(() -> planilla.presentar(0));
+            ReglaNegocioException e = error(() -> planilla.presentar(0, AHORA));
 
             assertThat(e.codigo()).isEqualTo("SUBTOTAL_CERO");
             assertThat(planilla.estado()).isEqualTo(EstadoPlanilla.BORRADOR);

@@ -173,7 +173,8 @@ public final class PlanSemilla {
         UUID cobroId = aprobada ? planilla.cobro().id() : null;
         return new FilaPlanilla(planilla.id(), obra.id(), planilla.numero(), periodo.primerDia(), estado.name(),
                 totales, planilla.observacion(), cobroId, aprobada ? numerosCobro.get(cobroId) : null, 1,
-                List.copyOf(lineas), List.copyOf(planilla.fotos()));
+                List.copyOf(lineas), List.copyOf(planilla.fotos()),
+                planilla.presentadaEn() == null ? null : fechas.instante(planilla.presentadaEn()));
     }
 
     /**
@@ -257,6 +258,6 @@ public final class PlanSemilla {
 
     public record FilaPlanilla(UUID id, UUID obraId, int numero, LocalDate periodo, String estado,
             TotalesPlanilla totales, String observacion, UUID cobroId, String cobroNumero, int version,
-            List<LineaPlanilla> lineas, List<UUID> fotoIds) {
+            List<LineaPlanilla> lineas, List<UUID> fotoIds, Instant presentadaEn) {
     }
 }

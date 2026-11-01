@@ -11,6 +11,7 @@ import com.constructora.obras.obra.dominio.Obra;
 import com.constructora.obras.obra.dominio.Partida;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,10 +63,12 @@ public final class Planilla {
     private final Map<UUID, LineaPlanilla> lineas;
     private TotalesPlanilla totales;
     private Set<UUID> fotoIds;
+    /** Última vez que pasó a PRESENTADA (501); null si nunca se presentó o es anterior a la 501. */
+    private Instant presentadaEn;
 
     private Planilla(UUID id, UUID obraId, int numero, Periodo periodo, EstadoPlanilla estado,
             List<LineaPlanilla> lineas, TotalesPlanilla totales, String observacion, UUID cobroId,
-            String cobroNumero, int version, Collection<UUID> fotoIds) {
+            String cobroNumero, int version, Collection<UUID> fotoIds, Instant presentadaEn) {
         this.id = Objects.requireNonNull(id, "id");
         this.obraId = Objects.requireNonNull(obraId, "obraId");
         this.numero = numero;
@@ -79,6 +82,7 @@ public final class Planilla {
         this.lineas = new LinkedHashMap<>();
         lineas.forEach(linea -> this.lineas.put(linea.partidaId(), linea));
         this.fotoIds = new TreeSet<>(fotoIds);
+        this.presentadaEn = presentadaEn;
     }
 
     /**
@@ -117,15 +121,27 @@ public final class Planilla {
                 .map(partida -> LineaPlanilla.de(partida.id(), BigDecimal.ZERO, partida.precioUnitario()))
                 .toList();
         return new Planilla(UUID.randomUUID(), obra.id(), numero, periodo, EstadoPlanilla.BORRADOR, lineas,
-                TotalesPlanilla.CERO, null, null, null, 0, List.of());
+                TotalesPlanilla.CERO, null, null, null, 0, List.of(), null);
     }
 
-    /** Vuelve a armar una planilla guardada (persistencia). No valida reglas. */
+    /** Vuelve a armar una planilla guardada (persistencia), sin fecha de presentación. No valida reglas. */
     public static Planilla reconstruir(UUID id, UUID obraId, int numero, Periodo periodo, EstadoPlanilla estado,
             List<LineaPlanilla> lineas, TotalesPlanilla totales, String observacion, UUID cobroId,
             String cobroNumero, int version, Collection<UUID> fotoIds) {
+        return reconstruir(id, obraId, numero, periodo, estado, lineas, totales, observacion, cobroId, cobroNumero,
+                version, fotoIds, null);
+    }
+
+    /**
+     * Vuelve a armar una planilla guardada (persistencia). No valida reglas.
+     *
+     * @param presentadaEn última vez que pasó a PRESENTADA (501); null si no se sabe
+     */
+    public static Planilla reconstruir(UUID id, UUID obraId, int numero, Periodo periodo, EstadoPlanilla estado,
+            List<LineaPlanilla> lineas, TotalesPlanilla totales, String observacion, UUID cobroId,
+            String cobroNumero, int version, Collection<UUID> fotoIds, Instant presentadaEn) {
         return new Planilla(id, obraId, numero, periodo, estado, lineas, totales, observacion, cobroId, cobroNumero,
-                version, fotoIds);
+                version, fotoIds, presentadaEn);
     }
 
     /** Solo se editan (y se presentan) planillas en BORRADOR u OBSERVADA (criterio 9). */
@@ -234,15 +250,20 @@ public final class Planilla {
 
     /**
      * Presenta la planilla al cliente (criterio 8): debe ser editable (BORRADOR u OBSERVADA), con la versión guardada
-     * y subtotal mayor a 0 (SUBTOTAL_CERO). Queda PRESENTADA; las fotos adjuntas se publican (lo hace el caso de uso).
+     * y subtotal mayor a 0 (SUBTOTAL_CERO). Queda PRESENTADA con la hora de presentación (501: también al volver a
+     * presentar una observada); las fotos adjuntas se publican (lo hace el caso de uso).
+     *
+     * @param ahora hora actual (Reloj.ahora())
      */
-    public void presentar(int versionEditada) {
+    public void presentar(int versionEditada, Instant ahora) {
+        Objects.requireNonNull(ahora, "ahora");
         verificarEdicion(versionEditada);
         if (!totales.subtotal().esPositivo()) {
             throw new ReglaNegocioException(SUBTOTAL_CERO,
                     "No se puede presentar una planilla con subtotal 0. Indica las cantidades ejecutadas del periodo.");
         }
         estado = EstadoPlanilla.PRESENTADA;
+        presentadaEn = ahora;
     }
 
     /**
@@ -384,6 +405,11 @@ public final class Planilla {
 
     public String cobroNumero() {
         return cobroNumero;
+    }
+
+    /** Última vez que pasó a PRESENTADA (501); null si nunca se presentó o es anterior a la 501. */
+    public Instant presentadaEn() {
+        return presentadaEn;
     }
 
     /** Versión leída de la base (bloqueo optimista). */

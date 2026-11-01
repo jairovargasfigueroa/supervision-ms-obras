@@ -27,14 +27,15 @@ public interface PlanillaPersistenciaMapper {
     }
 
     /**
-     * Lo que cambia al guardar o presentar (007): estado, líneas, totales y fotos adjuntas; y al revisarla (008):
-     * observación y cobro.
+     * Lo que cambia al guardar o presentar (007): estado, líneas, totales, fotos adjuntas y hora de presentación
+     * (501); y al revisarla (008): observación y cobro.
      */
     default void actualizar(Planilla planilla, PlanillaEntity entidad) {
         entidad.setEstado(planilla.estado().name());
         entidad.setObservacion(planilla.observacion());
         entidad.setCobroId(planilla.cobroId());
         entidad.setCobroNumero(planilla.cobroNumero());
+        entidad.setPresentadaEn(planilla.presentadaEn());
         TotalesPlanilla totales = planilla.totales();
         entidad.setSubtotal(totales.subtotal().valor());
         entidad.setDescuentoAnticipo(totales.descuentoAnticipo().valor());
@@ -62,6 +63,6 @@ public interface PlanillaPersistenciaMapper {
                 new TotalesPlanilla(Dinero.de(entidad.getSubtotal()), Dinero.de(entidad.getDescuentoAnticipo()),
                         Dinero.de(entidad.getRetencion()), Dinero.de(entidad.getNeto())),
                 entidad.getObservacion(), entidad.getCobroId(), entidad.getCobroNumero(), entidad.getVersion(),
-                entidad.getFotoIds());
+                entidad.getFotoIds(), entidad.getPresentadaEn());
     }
 }

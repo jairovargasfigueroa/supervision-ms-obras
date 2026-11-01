@@ -47,7 +47,8 @@ src/main/java/com/constructora/obras/
   planilla/                        # 006: tablas y lectura; 007: dominio Planilla, casos de uso y endpoints; 008: revisión del cliente
     dominio/        EstadoPlanilla.java, PlanillaCorta.java (periodo y estado),
                     Planilla.java (007: crear, actualizar líneas con el límite contra lo contratado, adjuntar fotos del periodo, presentar; estados editables;
-                                   008: aprobar y observar por el cliente, marcar APROBADA con el cobro u OBSERVADA por la saga),
+                                   008: aprobar y observar por el cliente, marcar APROBADA con el cobro u OBSERVADA por la saga;
+                                   501: presentadaEn, la hora de la última presentación),
                     LineaPlanilla.java (cantidad del periodo y monto), TotalesPlanilla.java (subtotal, anticipo, retención y neto con redondeo HALF_UP a 2),
                     PlanillaAprobada.java, PlanillaObservada.java (008: eventos; origen CLIENTE o SAGA)
     aplicacion/                    # 007 y 008
@@ -105,7 +106,7 @@ src/main/resources/
   application-semilla.yaml (011: sin web, listeners con auto-startup false,
                     obras.mensajeria.publicador-activo y obras.saga.vencimiento-activo en false, semilla.fecha/modo/salir)
   semilla/obras.json (011: copia de la parte de Obras de docs/datos-prueba.md con fechas relativas a D)
-  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), V6__entrada_diario.sql (103: entrada_diario, único obra_id y fecha), V7__obra_zona.sql (401: obra.zona), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
+  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), V6__entrada_diario.sql (103: entrada_diario, único obra_id y fecha), V7__obra_zona.sql (401: obra.zona), V8__planilla_presentada_en.sql (501: planilla.presentada_en, la llena «presentar»), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos

@@ -52,6 +52,8 @@ class PlanSemillaTest {
         assertThat(planilla.version()).isEqualTo(1);
         assertThat(planilla.cobroId()).isNull();
         assertThat(planilla.cobroNumero()).isNull();
+        // 501: presentada hace 10 días (D-10 15:00 en La Paz = 19:00 UTC), para el agente de Control de cobros
+        assertThat(planilla.presentadaEn()).isEqualTo(java.time.Instant.parse("2026-10-18T19:00:00Z"));
         Map<UUID, BigDecimal> montos = new LinkedHashMap<>();
         planilla.lineas().forEach(linea -> montos.put(linea.partidaId(), linea.monto().valor()));
         assertThat(montos).hasSize(6);
@@ -70,6 +72,7 @@ class PlanSemillaTest {
         FilaPlanilla planilla = planilla("d0000000-0000-4000-8000-000000000202");
         assertThat(planilla.estado()).isEqualTo("OBSERVADA");
         assertThat(planilla.observacion()).startsWith("La medición de columnas y vigas (40 m³)");
+        assertThat(planilla.presentadaEn()).isNull();
     }
 
     @Test
@@ -111,7 +114,7 @@ class PlanSemillaTest {
         List<DatosSemilla.PlanillaSemilla> planillas = new ArrayList<>(datos.planillas());
         DatosSemilla.PlanillaSemilla tercera = planillas.get(2);
         planillas.set(2, new DatosSemilla.PlanillaSemilla(tercera.id(), tercera.obraId(), tercera.numero(),
-                tercera.periodo(), tercera.estado(), Map.of("P-03", new BigDecimal("91")), null, null, List.of()));
+                tercera.periodo(), tercera.estado(), Map.of("P-03", new BigDecimal("91")), null, null, List.of(), null));
         DatosSemilla alterados = new DatosSemilla(datos.fuente(), datos.materiales(), datos.recetas(), datos.obras(),
                 datos.fotos(), datos.fotosRegistradasPor(), planillas);
 

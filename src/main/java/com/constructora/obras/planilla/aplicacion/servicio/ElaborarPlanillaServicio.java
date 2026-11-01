@@ -74,7 +74,7 @@ public class ElaborarPlanillaServicio implements ElaborarPlanillaCasoUso {
         Obra obra = encontrada.obra();
         Planilla planilla = encontrada.planilla();
         PlanillasDeObra.exigirResidente(obra, usuario);
-        planilla.presentar(version);
+        planilla.presentar(version, reloj.ahora());
         Planilla guardada = planillas.guardar(planilla);
         // Las fotos de respaldo quedan visibles para el cliente (docs/reglas-negocio.md, «Fotos de avance»)
         fotos.publicar(guardada.fotoIds());
