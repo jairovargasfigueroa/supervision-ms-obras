@@ -41,4 +41,26 @@ public class EntradaDiarioRepositorioJpa implements EntradaDiarioRepositorio {
         return jpa.findByObraIdAndFechaBetweenOrderByFechaDesc(obraId, desde, hasta).stream()
                 .map(mapper::aDominio).toList();
     }
+
+    @Override
+    public List<EntradaDiario> buscar(UUID obraId, LocalDate desde, LocalDate hasta, String texto, int limite) {
+        return jpa.buscarPorTexto(obraId, desde, hasta, patron(texto), limite).stream()
+                .map(mapper::aDominio).toList();
+    }
+
+    @Override
+    public long contar(UUID obraId, LocalDate desde, LocalDate hasta, String texto) {
+        return jpa.contarPorTexto(obraId, desde, hasta, patron(texto));
+    }
+
+    /**
+     * Patrón de ILIKE «contiene»: el texto va como parámetro y sus \, % y _ se escapan con \ para que sean literales.
+     * Sin texto, '%' (todas: texto no admite nulos).
+     */
+    static String patron(String texto) {
+        if (texto == null) {
+            return "%";
+        }
+        return "%" + texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+    }
 }

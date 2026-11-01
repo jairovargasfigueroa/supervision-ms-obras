@@ -31,4 +31,21 @@ public interface EntradaDiarioJpaRepository extends JpaRepository<EntradaDiarioE
 
     List<EntradaDiarioEntity> findByObraIdAndFechaBetweenOrderByFechaDesc(UUID obraId, LocalDate desde,
             LocalDate hasta);
+
+    /** 501 · Entradas del rango cuyo texto cumple el patrón ILIKE (ya escapado, con la barra invertida como escape). */
+    @Query(value = """
+            select * from entrada_diario
+            where obra_id = :obraId and fecha between :desde and :hasta and texto ilike :patron escape '\\'
+            order by fecha desc
+            limit :limite""", nativeQuery = true)
+    List<EntradaDiarioEntity> buscarPorTexto(@Param("obraId") UUID obraId, @Param("desde") LocalDate desde,
+            @Param("hasta") LocalDate hasta, @Param("patron") String patron, @Param("limite") int limite);
+
+    /** 501 · Cuántas entradas cumplen el filtro de buscarPorTexto. */
+    @Query(value = """
+            select count(*) from entrada_diario
+            where obra_id = :obraId and fecha between :desde and :hasta and texto ilike :patron escape '\\'""",
+            nativeQuery = true)
+    long contarPorTexto(@Param("obraId") UUID obraId, @Param("desde") LocalDate desde,
+            @Param("hasta") LocalDate hasta, @Param("patron") String patron);
 }

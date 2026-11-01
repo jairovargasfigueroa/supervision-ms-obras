@@ -30,6 +30,58 @@ final class EsquemasEntradaMcp {
                         }
                       },
                       "additionalProperties": false
+                    }""".formatted(UUID, PERIODO),
+            "buscar_diario", """
+                    {
+                      "type": "object",
+                      "properties": {
+                        "obraId": {
+                          "type": "string", "format": "uuid", "pattern": "%1$s",
+                          "description": "Id de la obra."
+                        },
+                        "desde": {
+                          "type": "string", "format": "date", "pattern": "%2$s",
+                          "description": "Primera fecha AAAA-MM-DD. Por defecto, hoy menos 14 días."
+                        },
+                        "hasta": {
+                          "type": "string", "format": "date", "pattern": "%2$s",
+                          "description": "Última fecha AAAA-MM-DD. Por defecto, hoy. Rango máximo: 62 días."
+                        },
+                        "texto": {
+                          "type": "string", "minLength": 2, "maxLength": 50,
+                          "description": "Palabra que debe contener el texto de la entrada, sin distinguir mayúsculas."
+                        },
+                        "limite": {
+                          "type": "integer", "minimum": 1, "maximum": 30, "default": 14,
+                          "description": "Entradas máximas."
+                        }
+                      },
+                      "required": ["obraId"],
+                      "additionalProperties": false
+                    }""".formatted(UUID, FECHA),
+            "planillas_estado", """
+                    {
+                      "type": "object",
+                      "properties": {
+                        "obraId": {
+                          "type": "string", "format": "uuid", "pattern": "%1$s",
+                          "description": "Id de la obra. Sin obraId, las planillas de todas las obras."
+                        },
+                        "estados": {
+                          "type": "array", "minItems": 1, "maxItems": 5, "uniqueItems": true,
+                          "items": { "type": "string", "enum": ["BORRADOR", "PRESENTADA", "APROBANDO", "APROBADA", "OBSERVADA"] },
+                          "description": "Estados que se devuelven. Por defecto, todos menos APROBADA."
+                        },
+                        "desdePeriodo": {
+                          "type": "string", "pattern": "%2$s",
+                          "description": "Mes AAAA-MM desde el que se devuelven planillas (incluido)."
+                        },
+                        "limite": {
+                          "type": "integer", "minimum": 1, "maximum": 50, "default": 30,
+                          "description": "Planillas máximas."
+                        }
+                      },
+                      "additionalProperties": false
                     }""".formatted(UUID, PERIODO));
 
     private static final JsonMapper JSON = JsonMapper.builder().build();

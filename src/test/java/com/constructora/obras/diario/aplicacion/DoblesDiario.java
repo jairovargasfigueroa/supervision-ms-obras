@@ -118,5 +118,19 @@ final class DoblesDiario {
                     .sorted(Comparator.comparing(EntradaDiario::fecha).reversed())
                     .toList();
         }
+
+        @Override
+        public List<EntradaDiario> buscar(UUID obraId, LocalDate desde, LocalDate hasta, String texto, int limite) {
+            return listar(obraId, desde, hasta).stream()
+                    .filter(entrada -> texto == null
+                            || entrada.texto().toLowerCase().contains(texto.toLowerCase()))
+                    .limit(limite)
+                    .toList();
+        }
+
+        @Override
+        public long contar(UUID obraId, LocalDate desde, LocalDate hasta, String texto) {
+            return buscar(obraId, desde, hasta, texto, Integer.MAX_VALUE).size();
+        }
     }
 }

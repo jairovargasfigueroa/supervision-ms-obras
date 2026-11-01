@@ -22,4 +22,15 @@ public interface EntradaDiarioRepositorio {
 
     /** Entradas de la obra con fecha entre desde y hasta (incluidas), de la más reciente a la más antigua. */
     List<EntradaDiario> listar(UUID obraId, LocalDate desde, LocalDate hasta);
+
+    /**
+     * 501 · Entradas de la obra en el rango (incluido) cuyo texto contiene el indicado, sin distinguir mayúsculas
+     * (%, _ y \ son texto literal), de la más reciente a la más antigua y como máximo limite.
+     *
+     * @param texto null no filtra
+     */
+    List<EntradaDiario> buscar(UUID obraId, LocalDate desde, LocalDate hasta, String texto, int limite);
+
+    /** 501 · Cuántas entradas cumplen el mismo filtro que buscar (sin el límite). */
+    long contar(UUID obraId, LocalDate desde, LocalDate hasta, String texto);
 }

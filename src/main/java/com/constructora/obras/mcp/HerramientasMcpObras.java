@@ -4,7 +4,10 @@ import com.constructora.obras.compartido.dominio.Periodo;
 import com.constructora.obras.compartido.dominio.Reloj;
 import com.constructora.obras.compartido.dominio.Usuario;
 import com.constructora.obras.compartido.infraestructura.seguridad.UsuarioActual;
+import com.constructora.obras.diario.aplicacion.puerto.entrada.BuscarDiarioCasoUso;
 import com.constructora.obras.mcp.dto.AvanceObraSalida;
+import com.constructora.obras.mcp.dto.BuscarDiarioSalida;
+import com.constructora.obras.mcp.dto.PlanillasEstadoSalida;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.ConsultarMaterialPrevistoCasoUso;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.ConsultarObraCasoUso;
 import com.constructora.obras.obra.aplicacion.puerto.entrada.FiltroObras;
@@ -12,12 +15,18 @@ import com.constructora.obras.obra.aplicacion.puerto.entrada.ObraDetalle;
 import com.constructora.obras.obra.dominio.EstadoObra;
 import com.constructora.obras.obra.dominio.MaterialPrevisto;
 import com.constructora.obras.obra.dominio.Partida;
+import com.constructora.obras.planilla.aplicacion.puerto.entrada.ConsultarPlanillasEstadoCasoUso;
+import com.constructora.obras.planilla.dominio.EstadoPlanilla;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.ai.mcp.annotation.McpTool;
@@ -37,16 +46,30 @@ public class HerramientasMcpObras {
     /** Respuestas compactas (501): filas máximas por herramienta. */
     static final int MAX_OBRAS = 50;
     static final int MAX_PARTIDAS = 200;
+    /** buscar_diario (501): rango máximo, valores por defecto y texto máximo de cada entrada. */
+    static final int RANGO_MAXIMO_DIAS = 62;
+    static final int DIAS_POR_DEFECTO = 14;
+    static final int LIMITE_DIARIO = 14;
+    static final int TEXTO_DIARIO_MAXIMO = 1000;
+    /** planillas_estado (501): límite por defecto y observación máxima. */
+    static final int LIMITE_PLANILLAS = 30;
+    static final int OBSERVACION_MAXIMA = 500;
+    static final Set<EstadoPlanilla> ESTADOS_POR_DEFECTO = EnumSet.complementOf(EnumSet.of(EstadoPlanilla.APROBADA));
 
     private final ConsultarObraCasoUso consultarObra;
     private final ConsultarMaterialPrevistoCasoUso consultarMaterialPrevisto;
+    private final BuscarDiarioCasoUso buscarDiario;
+    private final ConsultarPlanillasEstadoCasoUso consultarPlanillas;
     private final UsuarioActual usuarioActual;
     private final Reloj reloj;
 
     public HerramientasMcpObras(ConsultarObraCasoUso consultarObra,
-            ConsultarMaterialPrevistoCasoUso consultarMaterialPrevisto, UsuarioActual usuarioActual, Reloj reloj) {
+            ConsultarMaterialPrevistoCasoUso consultarMaterialPrevisto, BuscarDiarioCasoUso buscarDiario,
+            ConsultarPlanillasEstadoCasoUso consultarPlanillas, UsuarioActual usuarioActual, Reloj reloj) {
         this.consultarObra = consultarObra;
         this.consultarMaterialPrevisto = consultarMaterialPrevisto;
+        this.buscarDiario = buscarDiario;
+        this.consultarPlanillas = consultarPlanillas;
         this.usuarioActual = usuarioActual;
         this.reloj = reloj;
     }
@@ -96,6 +119,101 @@ public class HerramientasMcpObras {
                 .toList();
         return new AvanceObraSalida(generadoEn, List.of(obra(detalle, filas)), hayPlanilla,
                 partidas.size() > MAX_PARTIDAS);
+    }
+
+    @McpTool(name = "buscar_diario", generateOutputSchema = true,
+            description = "Devuelve las entradas del diario de obra (clima y texto) de una obra en un rango de fechas,"
+                    + " opcionalmente filtradas por una palabra. Sirve para buscar la causa de un atraso.",
+            annotations = @McpAnnotations(title = "Diario de obra", readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    public BuscarDiarioSalida buscarDiario(
+            @McpToolParam(description = "Id de la obra") String obraId,
+            @McpToolParam(required = false, description = "Primera fecha AAAA-MM-DD") String desde,
+            @McpToolParam(required = false, description = "Última fecha AAAA-MM-DD") String hasta,
+            @McpToolParam(required = false, description = "Palabra a buscar") String texto,
+            @McpToolParam(required = false, description = "Entradas máximas") Integer limite) {
+        LocalDate hoy = reloj.hoy();
+        LocalDate fin = hasta == null ? hoy : fecha(hasta, "hasta");
+        LocalDate inicio = desde == null ? hoy.minusDays(DIAS_POR_DEFECTO) : fecha(desde, "desde");
+        if (inicio.isAfter(fin)) {
+            throw ErrorHerramienta.argumentoInvalido("desde no puede ser posterior a hasta.");
+        }
+        if (ChronoUnit.DAYS.between(inicio, fin) > RANGO_MAXIMO_DIAS) {
+            throw ErrorHerramienta.argumentoInvalido("El rango de fechas no puede pasar de " + RANGO_MAXIMO_DIAS
+                    + " días.");
+        }
+        int maximo = limite == null ? LIMITE_DIARIO : limite;
+        BuscarDiarioCasoUso.Resultado resultado = buscarDiario.buscar(
+                new BuscarDiarioCasoUso.Busqueda(UUID.fromString(obraId), inicio, fin, texto, maximo),
+                usuarioActual.obtener());
+        List<BuscarDiarioSalida.Entrada> entradas = resultado.entradas().stream()
+                .map(entrada -> new BuscarDiarioSalida.Entrada(entrada.fecha().toString(), entrada.clima().name(),
+                        recortarTexto(entrada.texto(), TEXTO_DIARIO_MAXIMO),
+                        largo(entrada.texto()) > TEXTO_DIARIO_MAXIMO))
+                .toList();
+        return new BuscarDiarioSalida(obraId, entradas, resultado.total(), resultado.total() > maximo);
+    }
+
+    @McpTool(name = "planillas_estado", generateOutputSchema = true,
+            description = "Devuelve las planillas de avance, al día, con su estado, neto, observación y días desde que"
+                    + " se presentaron. Sirve para detectar planillas pendientes o sin respuesta del cliente.",
+            annotations = @McpAnnotations(title = "Estado de las planillas", readOnlyHint = true,
+                    destructiveHint = false, idempotentHint = true, openWorldHint = false))
+    public PlanillasEstadoSalida planillasEstado(
+            @McpToolParam(required = false, description = "Id de la obra") String obraId,
+            @McpToolParam(required = false, description = "Estados que se devuelven") List<String> estados,
+            @McpToolParam(required = false, description = "Mes AAAA-MM desde el que se devuelven") String desdePeriodo,
+            @McpToolParam(required = false, description = "Planillas máximas") Integer limite) {
+        Set<EstadoPlanilla> pedidos = estados == null ? ESTADOS_POR_DEFECTO
+                : estados.stream().map(EstadoPlanilla::valueOf).collect(Collectors.toSet());
+        ConsultarPlanillasEstadoCasoUso.Resultado resultado = consultarPlanillas.consultar(
+                new ConsultarPlanillasEstadoCasoUso.Filtro(obraId == null ? null : UUID.fromString(obraId), pedidos,
+                        desdePeriodo == null ? null : Periodo.de(desdePeriodo),
+                        limite == null ? LIMITE_PLANILLAS : limite),
+                usuarioActual.obtener());
+        LocalDate hoy = reloj.hoy();
+        List<PlanillasEstadoSalida.Planilla> planillas = resultado.planillas().stream()
+                .map(planilla -> new PlanillasEstadoSalida.Planilla(planilla.planillaId().toString(),
+                        planilla.obraId().toString(), planilla.obraNombre(), planilla.numero(),
+                        planilla.periodo().toString(), planilla.estado().name(), planilla.neto(),
+                        planilla.observacion() == null ? null
+                                : recortarTexto(planilla.observacion(), OBSERVACION_MAXIMA),
+                        planilla.presentadaEn() == null ? null
+                                : planilla.presentadaEn().truncatedTo(ChronoUnit.SECONDS).toString(),
+                        diasDesdePresentacion(planilla, hoy),
+                        planilla.cobroId() == null ? null : planilla.cobroId().toString()))
+                .toList();
+        return new PlanillasEstadoSalida(planillas, resultado.hayMas());
+    }
+
+    /** Días calendario en La Paz desde la presentación hasta hoy, solo para las PRESENTADA. */
+    private static Long diasDesdePresentacion(ConsultarPlanillasEstadoCasoUso.PlanillaEstado planilla,
+            LocalDate hoy) {
+        if (planilla.estado() != EstadoPlanilla.PRESENTADA || planilla.presentadaEn() == null) {
+            return null;
+        }
+        return ChronoUnit.DAYS.between(planilla.presentadaEn().atZone(Reloj.ZONA_NEGOCIO).toLocalDate(), hoy);
+    }
+
+    private static LocalDate fecha(String texto, String campo) {
+        try {
+            return LocalDate.parse(texto);
+        } catch (DateTimeParseException e) {
+            throw ErrorHerramienta.argumentoInvalido(campo + " no es una fecha válida (AAAA-MM-DD).");
+        }
+    }
+
+    /** Largo en caracteres (puntos de código), como cuenta el esquema. */
+    private static int largo(String texto) {
+        return texto.codePointCount(0, texto.length());
+    }
+
+    /** Recorta a un máximo de caracteres (puntos de código) sin partir un carácter. */
+    static String recortarTexto(String texto, int maximo) {
+        if (largo(texto) <= maximo) {
+            return texto;
+        }
+        return texto.substring(0, texto.offsetByCodePoints(0, maximo));
     }
 
     private static AvanceObraSalida.Obra obra(ObraDetalle detalle, List<AvanceObraSalida.Partida> partidas) {
