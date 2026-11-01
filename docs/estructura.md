@@ -101,7 +101,8 @@ src/main/java/com/constructora/obras/
                     HerramientasMcpObras.java (un método @McpTool por herramienta, con @McpToolParam y readOnlyHint; llama a los casos de uso de aplicacion),
                     ConfiguracionMcp.java (registra las herramientas: esquema de entrada estricto, outputSchema del record cerrado con additionalProperties: false,
                                            y sin la validación propia del SDK), EsquemasEntradaMcp.java (JSON Schema de entrada de cada herramienta),
-                    EjecutorHerramientasMcp.java (valida contra el esquema, transacción de solo lectura de 5 s, structuredContent + texto, errores como resultado),
+                    EjecutorHerramientasMcp.java (valida contra el esquema, transacción de solo lectura de 5 s, structuredContent + texto, errores como resultado
+                                                  y una línea JSON por llamada en el registro McpObras con el X-Request-Id),
                     ErrorHerramienta.java (ARGUMENTO_INVALIDO, OBRA_NO_ENCONTRADA, ERROR_INTERNO),
                     dto/   SalidaHerramienta.java (filas devueltas), AvanceObraSalida.java, BuscarDiarioSalida.java, PlanillasEstadoSalida.java
                            (records de salida: de ellos sale el outputSchema)
@@ -140,6 +141,8 @@ src/test/java/com/constructora/obras/
   planilla/infraestructura/persistencia/PlanillaTablasIT.java # 006, 007 y 008: restricciones de V3, V4 y V5 y lectura de planillas
   saga/infraestructura/mensajeria/SagaAprobacionIT.java # 008: saga con RabbitMQ real (Finanzas y Materiales simulados): camino feliz y avance, fallo con compensación, fallidos, vencimiento y respuestas tardías
   mcp/ServidorMcpIT.java                        # 501: initialize, tools/list sin sesión, GET 405, sin recursos ni prompts
+  mcp/EjecutorHerramientasMcpTest.java          # 501: validación antes de llamar, errores como resultado, transacción de solo lectura de 5 s, registro JSON
+  mcp/RegistroMcpIT.java                        # 501: la línea de registro lleva el X-Request-Id del agente y no el token
   mcp/BuscarDiarioMcpIT.java, PlanillasEstadoMcpIT.java  # 501: rango, escape, límite y truncado del diario; estados, días desde la presentación y cifras del REST
   mcp/AvanceObraMcpIT.java                      # 501: avance_obra con las cifras de GET /obras, GET /obras/{id} y material previsto; orden, periodo sin obraId y truncado
   mcp/SeguridadMcpIT.java                       # 501: /mcp sin token 401, personas 403, agente_ia solo con azp ia-agentes 200, agente_ia en REST 403
@@ -154,7 +157,7 @@ src/test/java/com/constructora/obras/
   diario/infraestructura/web/DiarioIT.java      # 103: pruebas de API de la spec (mismo id, día repetido también a la vez, maestro no asignado, residente, obra no en ejecución, fechas, formato, GET por rol, rango por defecto)
   diario/infraestructura/persistencia/EntradaDiarioTablaIT.java # 103: restricciones de V6 (una entrada por obra y día, clima) y el adaptador (choque sin abortar, rango)
   semilla/DatosPruebaIT.java                    # 011: la API con D = 2026-10-28 (reloj fijo): indicadores, planillas, material previsto, visibilidad y fotos
-  ArquitecturaTest.java                         # ArchUnit
+  ArquitecturaTest.java                         # ArchUnit (501: mcp solo usa casos de uso; Spring AI y el SDK de MCP solo en mcp)
 ```
 
 ## Reglas

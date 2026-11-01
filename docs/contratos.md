@@ -293,4 +293,4 @@ Ruta: POST /mcp (MCP, HTTP «streamable», sin estado, respuestas JSON; versión
 Resultado con `isError: true` y texto JSON `{"codigo": "...", "mensaje": "..."}`: `ARGUMENTO_INVALIDO` (argumentos que no cumplen el esquema: tipo, formato, rango o campos de más; no se consulta la base), `OBRA_NO_ENCONTRADA`, `ERROR_INTERNO`. Una herramienta que no existe es un error del protocolo.
 
 ### Registro
-Una línea JSON por llamada en el log del servicio (`McpObras`): `herramienta`, `argumentos`, `filas`, `duracionMs`, `requestId` (encabezado `X-Request-Id`, igual al id de la ejecución del agente). Nunca el token.
+Una línea JSON por llamada en el log del servicio (`McpObras`): `herramienta`, `argumentos`, `filas`, `duracionMs`, `requestId` (encabezado `X-Request-Id`, igual al id de la ejecución del agente) y, si la llamada terminó en error, `error` con su código. Nunca el token.

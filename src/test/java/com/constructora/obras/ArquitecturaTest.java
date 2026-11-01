@@ -38,6 +38,19 @@ class ArquitecturaTest {
                     "jakarta.persistence..")
             .allowEmptyShould(true);
 
+    /**
+     * Las herramientas MCP (501) son un adaptador de entrada como los controladores: llaman solo a casos de uso de
+     * aplicacion; no usan repositorios, puertos de salida ni entidades JPA, ni Spring AI fuera de mcp.
+     */
+    @ArchTest
+    static final ArchRule mcpSoloUsaCasosDeUso = noClasses().that().resideInAPackage("..mcp..")
+            .should().dependOnClassesThat().resideInAnyPackage("..infraestructura.persistencia..",
+                    "..puerto.salida..", "jakarta.persistence..", "org.springframework.jdbc..");
+
+    @ArchTest
+    static final ArchRule springAiSoloEnMcp = noClasses().that().resideOutsideOfPackage("..mcp..")
+            .should().dependOnClassesThat().resideInAnyPackage("org.springframework.ai..", "io.modelcontextprotocol..");
+
     /** La semilla (011) es infraestructura: usa el dominio, pero nada del servicio depende de ella. */
     @ArchTest
     static final ArchRule nadieUsaLaSemilla = noClasses().that().resideOutsideOfPackage("..semilla..")

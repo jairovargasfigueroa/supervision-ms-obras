@@ -1,6 +1,7 @@
 package com.constructora.obras.mcp;
 
 import com.constructora.obras.compartido.dominio.ReglaNegocioException;
+import com.constructora.obras.compartido.infraestructura.web.FiltroRequestId;
 import com.constructora.obras.mcp.dto.SalidaHerramienta;
 import io.modelcontextprotocol.json.schema.JsonSchemaValidator;
 import io.modelcontextprotocol.json.schema.jackson3.DefaultJsonSchemaValidator;
@@ -13,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -32,7 +34,10 @@ public class EjecutorHerramientasMcp {
     static final int TIEMPO_MAXIMO_S = 5;
     private static final int LARGO_MAXIMO_MENSAJE = 500;
     private static final String PREFIJO_VALIDACION = "Validation failed: JSON schema validation errors: ";
+    private static final int LARGO_MAXIMO_ARGUMENTOS = 2000;
     private static final Logger log = LoggerFactory.getLogger(EjecutorHerramientasMcp.class);
+    /** Registro de las llamadas (docs/contratos.md, «Herramientas MCP», «Registro»). */
+    private static final Logger registro = LoggerFactory.getLogger("McpObras");
 
     private final JsonMapper json = JsonMapper.builder().build();
     private final JsonSchemaValidator validador = new DefaultJsonSchemaValidator(json);
@@ -46,24 +51,56 @@ public class EjecutorHerramientasMcp {
 
     CallToolResult ejecutar(McpSchema.Tool herramienta, Method metodo, Object destino,
             McpSchema.CallToolRequest pedido) {
+        long inicio = System.nanoTime();
         Map<String, Object> argumentos = pedido.arguments() == null ? Map.of() : pedido.arguments();
+        int filas = 0;
+        String codigoError = null;
         try {
             validar(herramienta, argumentos);
             Object[] valores = valores(metodo, argumentos);
             SalidaHerramienta salida = lectura.execute(estado -> invocar(metodo, destino, valores));
+            filas = salida.filas();
             return exito(salida);
         } catch (ErrorHerramienta e) {
+            codigoError = e.codigo();
             return error(e.codigo(), e.getMessage());
         } catch (ReglaNegocioException e) {
             if (ErrorHerramienta.OBRA_NO_ENCONTRADA.equals(e.codigo())) {
-                return error(ErrorHerramienta.OBRA_NO_ENCONTRADA, "Obra no encontrada.");
+                codigoError = ErrorHerramienta.OBRA_NO_ENCONTRADA;
+                return error(codigoError, "Obra no encontrada.");
             }
             log.error("Regla de negocio inesperada en la herramienta {}: {}", herramienta.name(), e.codigo(), e);
-            return error(ErrorHerramienta.ERROR_INTERNO, "No se pudo completar la consulta.");
+            codigoError = ErrorHerramienta.ERROR_INTERNO;
+            return error(codigoError, "No se pudo completar la consulta.");
         } catch (RuntimeException e) {
+            // Incluye la consulta que pasó de 5 s: el detalle queda en el registro, no en la respuesta
             log.error("Falló la herramienta {}", herramienta.name(), e);
-            return error(ErrorHerramienta.ERROR_INTERNO, "No se pudo completar la consulta.");
+            codigoError = ErrorHerramienta.ERROR_INTERNO;
+            return error(codigoError, "No se pudo completar la consulta.");
+        } finally {
+            registrar(herramienta.name(), argumentos, filas, (System.nanoTime() - inicio) / 1_000_000, codigoError);
         }
+    }
+
+    /**
+     * Una línea JSON por llamada (501, criterio 14): herramienta, argumentos, filas devueltas, duración, X-Request-Id
+     * (lo pone FiltroRequestId en el MDC; el agente manda el id de su ejecución) y, si falló, el código. Nunca el
+     * token. Unos argumentos muy largos (que no pasan el esquema) no se copian enteros.
+     */
+    private void registrar(String herramienta, Map<String, Object> argumentos, int filas, long duracionMs,
+            String codigoError) {
+        Map<String, Object> linea = new LinkedHashMap<>();
+        linea.put("herramienta", herramienta);
+        String copia = json.writeValueAsString(argumentos);
+        linea.put("argumentos", copia.length() <= LARGO_MAXIMO_ARGUMENTOS ? argumentos
+                : "(recortados: " + copia.length() + " caracteres)");
+        linea.put("filas", filas);
+        linea.put("duracionMs", duracionMs);
+        linea.put("requestId", MDC.get(FiltroRequestId.CLAVE_REGISTRO));
+        if (codigoError != null) {
+            linea.put("error", codigoError);
+        }
+        registro.info(json.writeValueAsString(linea));
     }
 
     private void validar(McpSchema.Tool herramienta, Map<String, Object> argumentos) {
