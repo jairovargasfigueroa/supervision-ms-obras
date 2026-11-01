@@ -49,7 +49,7 @@ Migración de la 002: `V1__obra.sql` (`obra`, `partida`, `insumo_previsto`, `out
 | cantidad_por_unidad | numeric | material previsto por unidad de partida |
 
 ### foto_avance
-Migración de la 005: `V2__foto_avance.sql`. Índices por (`obra_id`, `registrado_en desc`) y (`partida_id`, `registrado_en desc`) para la lista.
+Migración de la 005: `V2__foto_avance.sql`; la 301 agrega `sin_chaleco` y `version_modelo_epp` en `V9__foto_avance_deteccion_epp.sql`. Índices por (`obra_id`, `registrado_en desc`) y (`partida_id`, `registrado_en desc`) para la lista. Los cuatro campos de la detección de casco y chaleco (`personas_detectadas`, `sin_casco`, `sin_chaleco`, `version_modelo_epp`) se guardan juntos o quedan los cuatro en `null` (foto no analizada o detección descartada por no ser válida); la semilla de la 011 los deja en `null`.
 
 | Campo | Tipo | Notas |
 |---|---|---|
@@ -58,8 +58,10 @@ Migración de la 005: `V2__foto_avance.sql`. Índices por (`obra_id`, `registrad
 | partida_id | uuid | FK partida |
 | clave_archivo | varchar(200) | clave en el almacenamiento de objetos: `fotos/{obraId}/{id}.jpg` |
 | clave_archivo_cliente | varchar(200) | versión con rostros difuminados (capa 3); null hasta la 303 |
-| personas_detectadas | int | capa 3; null hasta la 301 |
-| sin_casco | int | capa 3; null hasta la 301 |
+| personas_detectadas | int | capa 3 (301); null si no se analizó |
+| sin_casco | int | capa 3 (301); null si no se analizó |
+| sin_chaleco | int | capa 3 (301); null si no se analizó |
+| version_modelo_epp | varchar(40) | capa 3 (301); versión del modelo usado en el celular |
 | publicada_cliente | boolean | no nulo, `false` al registrarse; pasa a `true` al presentar la planilla que la adjunta (007) |
 | registrado_por | uuid | ref Keycloak (`sub` de quien la registró) |
 | registrado_en | timestamptz | fecha y hora en que se tomó (`tomadaEn` del celular) |

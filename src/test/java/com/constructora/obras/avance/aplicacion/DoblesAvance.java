@@ -96,7 +96,8 @@ final class DoblesAvance {
         @Override
         public void publicar(Collection<UUID> ids) {
             ids.forEach(id -> fotos.computeIfPresent(id, (clave, foto) -> new FotoAvance(foto.id(), foto.obraId(),
-                    foto.partidaId(), foto.claveArchivo(), true, foto.registradoPor(), foto.registradoEn())));
+                    foto.partidaId(), foto.claveArchivo(), true, foto.registradoPor(), foto.registradoEn(),
+                    foto.deteccion())));
         }
 
         /** Solo ordena por registradoEn (y por id para desempatar), como el adaptador JPA. */

@@ -25,6 +25,8 @@ public record DatosSemilla(
         List<ObraSemilla> obras,
         List<FotoSemilla> fotos,
         UUID fotosRegistradasPor,
+        /** 301: versión del modelo con la que figuran analizadas las fotos (sin personas: 0, 0 y 0; sección 13). */
+        String fotosVersionModeloEpp,
         List<PlanillaSemilla> planillas) {
 
     public static final String RECURSO = "semilla/obras.json";

@@ -35,8 +35,8 @@ public class ConsultarFotosServicio implements ConsultarFotosCasoUso {
 
     /**
      * Si el usuario no ve la obra: OBRA_NO_ENCONTRADA. Si la ve solo como cliente, recibe solo las publicadas
-     * (requisitos de la 005, criterio 8). Una página vacía no necesita el almacenamiento; si hay fotos y S3 no está
-     * configurado, AlmacenNoDisponibleException (503).
+     * (requisitos de la 005, criterio 8), y sin la detección de casco y chaleco (301, criterio 13). Una página vacía
+     * no necesita el almacenamiento; si hay fotos y S3 no está configurado, AlmacenNoDisponibleException (503).
      */
     @Override
     @Transactional(readOnly = true)
@@ -48,7 +48,8 @@ public class ConsultarFotosServicio implements ConsultarFotosCasoUso {
         boolean soloPublicadas = !obra.esVisiblePara(sinRolCliente(usuario));
         Pagina<FotoAvance> pagina = fotos.listar(obra.id(), consulta.partidaId(), soloPublicadas,
                 consulta.paginacion());
-        return pagina.map(foto -> new FotoListada(foto,
+        // 301: quien recibe solo las publicadas (ve la obra solo como cliente) no recibe la detección de EPP
+        return pagina.map(foto -> new FotoListada(soloPublicadas ? foto.sinDeteccion() : foto,
                 almacen.urlDescarga(foto.claveArchivo(), VIGENCIA_DESCARGA).url()));
     }
 

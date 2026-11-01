@@ -9,6 +9,7 @@ import com.constructora.obras.avance.aplicacion.puerto.entrada.ConsultarFotosCas
 import com.constructora.obras.avance.aplicacion.puerto.entrada.ConsultarFotosCasoUso.Consulta;
 import com.constructora.obras.avance.aplicacion.puerto.entrada.ConsultarFotosCasoUso.FotoListada;
 import com.constructora.obras.avance.aplicacion.servicio.ConsultarFotosServicio;
+import com.constructora.obras.avance.dominio.DeteccionEpp;
 import com.constructora.obras.avance.dominio.FotoAvance;
 import com.constructora.obras.compartido.dominio.AlmacenArchivos.AlmacenNoDisponibleException;
 import com.constructora.obras.compartido.dominio.Pagina;
@@ -73,6 +74,19 @@ class ConsultarFotosServicioTest {
     }
 
     @Test
+    void laDeteccionLaRecibenLosRolesInternosYElClienteNunca() {
+        DeteccionEpp deteccion = new DeteccionEpp(4, 1, 2, "epp-1.0.0");
+        UUID id = UUID.randomUUID();
+        fotos.guardar(new FotoAvance(id, obra.id(), partidaId, FotoAvance.claveArchivo(obra.id(), id), true,
+                asignaciones.maestroId(), Instant.parse("2026-11-11T12:00:00Z"), deteccion));
+
+        assertThat(servicio.listar(new Consulta(obra.id(), null, POR_DEFECTO), residente).items())
+                .singleElement().satisfies(listada -> assertThat(listada.foto().deteccion()).isEqualTo(deteccion));
+        assertThat(servicio.listar(new Consulta(obra.id(), null, POR_DEFECTO), cliente).items())
+                .singleElement().satisfies(listada -> assertThat(listada.foto().deteccion()).isNull());
+    }
+
+    @Test
     void filtraPorPartida() {
         foto("2026-11-10T12:00:00Z", false);
 
@@ -104,7 +118,7 @@ class ConsultarFotosServicioTest {
     private FotoAvance foto(String registradoEn, boolean publicada) {
         UUID id = UUID.randomUUID();
         FotoAvance foto = new FotoAvance(id, obra.id(), partidaId, FotoAvance.claveArchivo(obra.id(), id), publicada,
-                asignaciones.maestroId(), Instant.parse(registradoEn));
+                asignaciones.maestroId(), Instant.parse(registradoEn), null);
         fotos.guardar(foto);
         return foto;
     }

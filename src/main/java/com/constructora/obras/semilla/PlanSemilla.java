@@ -66,7 +66,8 @@ public final class PlanSemilla {
             FilaFoto fila = new FilaFoto(foto.id(), foto.obraId(), partida.id(),
                     "fotos/" + foto.obraId() + "/" + foto.id() + ".jpg", foto.publicadaCliente(),
                     Objects.requireNonNull(datos.fotosRegistradasPor(), "fotosRegistradasPor"),
-                    fechas.instante(foto.tomadaEn()));
+                    fechas.instante(foto.tomadaEn()),
+                    Objects.requireNonNull(datos.fotosVersionModeloEpp(), "fotosVersionModeloEpp"));
             if (fotosPorId.put(foto.id(), fila) != null) {
                 throw error("La foto " + foto.id() + " está repetida");
             }
@@ -253,7 +254,7 @@ public final class PlanSemilla {
     }
 
     public record FilaFoto(UUID id, UUID obraId, UUID partidaId, String claveArchivo, boolean publicadaCliente,
-            UUID registradoPor, Instant registradoEn) {
+            UUID registradoPor, Instant registradoEn, String versionModeloEpp) {
     }
 
     public record FilaPlanilla(UUID id, UUID obraId, int numero, LocalDate periodo, String estado,

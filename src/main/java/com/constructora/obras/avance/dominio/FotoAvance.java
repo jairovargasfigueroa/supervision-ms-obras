@@ -16,9 +16,10 @@ import java.util.UUID;
  *
  * @param registradoPor sub del usuario que la registró
  * @param registradoEn  fecha y hora en que se tomó la foto (tomadaEn)
+ * @param deteccion     detección de casco y chaleco hecha en el celular (301); null si no se analizó
  */
 public record FotoAvance(UUID id, UUID obraId, UUID partidaId, String claveArchivo, boolean publicadaCliente,
-        UUID registradoPor, Instant registradoEn) {
+        UUID registradoPor, Instant registradoEn, DeteccionEpp deteccion) {
 
     public static final String PARTIDA_NO_ES_DE_LA_OBRA = "PARTIDA_NO_ES_DE_LA_OBRA";
     public static final String CLAVE_ARCHIVO_INVALIDA = "CLAVE_ARCHIVO_INVALIDA";
@@ -43,9 +44,10 @@ public record FotoAvance(UUID id, UUID obraId, UUID partidaId, String claveArchi
      *
      * @param partidasDeLaObra ids de las partidas de la obra
      * @param tomadaEn         fecha y hora en que se tomó (se guarda como registradoEn, al microsegundo)
+     * @param deteccion        detección ya validada (DeteccionEpp.validar), o null si no hay
      */
     public static FotoAvance registrar(UUID id, UUID obraId, UUID partidaId, Set<UUID> partidasDeLaObra,
-            String claveArchivo, Instant tomadaEn, UUID registradoPor) {
+            String claveArchivo, Instant tomadaEn, UUID registradoPor, DeteccionEpp deteccion) {
         Objects.requireNonNull(tomadaEn, "tomadaEn");
         if (!partidasDeLaObra.contains(partidaId)) {
             throw new ReglaNegocioException(PARTIDA_NO_ES_DE_LA_OBRA, "La partida elegida no pertenece a esta obra.",
@@ -56,6 +58,13 @@ public record FotoAvance(UUID id, UUID obraId, UUID partidaId, String claveArchi
                     List.of(new ErrorCampo("claveArchivo", "Debe ser " + claveArchivo(obraId, id))));
         }
         return new FotoAvance(id, obraId, partidaId, claveArchivo, false, registradoPor,
-                tomadaEn.truncatedTo(ChronoUnit.MICROS));
+                tomadaEn.truncatedTo(ChronoUnit.MICROS), deteccion);
+    }
+
+    /** La misma foto sin la detección: lo que recibe el cliente (301, requisitos, criterio 13). */
+    public FotoAvance sinDeteccion() {
+        return deteccion == null ? this
+                : new FotoAvance(id, obraId, partidaId, claveArchivo, publicadaCliente, registradoPor, registradoEn,
+                        null);
     }
 }

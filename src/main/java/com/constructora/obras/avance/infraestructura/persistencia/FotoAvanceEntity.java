@@ -12,8 +12,9 @@ import java.util.UUID;
 import org.springframework.data.domain.Persistable;
 
 /**
- * Tabla foto_avance (docs/datos.md). El id lo crea el celular: Persistable evita el SELECT previo al insertar. Las
- * columnas de la capa 3 (clave_archivo_cliente, personas_detectadas, sin_casco) se mapean con la 301 y la 303.
+ * Tabla foto_avance (docs/datos.md). El id lo crea el celular: Persistable evita el SELECT previo al insertar. La
+ * detección de casco y chaleco (301) son cuatro columnas que se llenan juntas o quedan en null; clave_archivo_cliente
+ * se mapea con la 303.
  */
 @Entity
 @Table(name = "foto_avance")
@@ -33,6 +34,14 @@ public class FotoAvanceEntity implements Persistable<UUID> {
     private UUID registradoPor;
     @Column(name = "registrado_en")
     private Instant registradoEn;
+    @Column(name = "personas_detectadas")
+    private Integer personasDetectadas;
+    @Column(name = "sin_casco")
+    private Integer sinCasco;
+    @Column(name = "sin_chaleco")
+    private Integer sinChaleco;
+    @Column(name = "version_modelo_epp")
+    private String versionModeloEpp;
 
     @Transient
     private boolean nueva = true;
@@ -103,5 +112,37 @@ public class FotoAvanceEntity implements Persistable<UUID> {
 
     public void setRegistradoEn(Instant registradoEn) {
         this.registradoEn = registradoEn;
+    }
+
+    public Integer getPersonasDetectadas() {
+        return personasDetectadas;
+    }
+
+    public void setPersonasDetectadas(Integer personasDetectadas) {
+        this.personasDetectadas = personasDetectadas;
+    }
+
+    public Integer getSinCasco() {
+        return sinCasco;
+    }
+
+    public void setSinCasco(Integer sinCasco) {
+        this.sinCasco = sinCasco;
+    }
+
+    public Integer getSinChaleco() {
+        return sinChaleco;
+    }
+
+    public void setSinChaleco(Integer sinChaleco) {
+        this.sinChaleco = sinChaleco;
+    }
+
+    public String getVersionModeloEpp() {
+        return versionModeloEpp;
+    }
+
+    public void setVersionModeloEpp(String versionModeloEpp) {
+        this.versionModeloEpp = versionModeloEpp;
     }
 }

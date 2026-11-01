@@ -391,7 +391,7 @@ class PlanillaTest {
         static FotoAvance foto(UUID obraId, String registradoEn) {
             UUID id = UUID.randomUUID();
             return new FotoAvance(id, obraId, P01.id(), FotoAvance.claveArchivo(obraId, id), false, UUID.randomUUID(),
-                    Instant.parse(registradoEn));
+                    Instant.parse(registradoEn), null);
         }
 
         @Test

@@ -116,7 +116,7 @@ class PlanSemillaTest {
         planillas.set(2, new DatosSemilla.PlanillaSemilla(tercera.id(), tercera.obraId(), tercera.numero(),
                 tercera.periodo(), tercera.estado(), Map.of("P-03", new BigDecimal("91")), null, null, List.of(), null));
         DatosSemilla alterados = new DatosSemilla(datos.fuente(), datos.materiales(), datos.recetas(), datos.obras(),
-                datos.fotos(), datos.fotosRegistradasPor(), planillas);
+                datos.fotos(), datos.fotosRegistradasPor(), datos.fotosVersionModeloEpp(), planillas);
 
         assertThatThrownBy(() -> PlanSemilla.armar(alterados, new FechaRelativa(D)))
                 .isInstanceOf(IllegalStateException.class)
