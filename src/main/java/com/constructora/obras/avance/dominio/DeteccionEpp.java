@@ -44,7 +44,7 @@ public record DeteccionEpp(int personas, int sinCasco, int sinChaleco, String ve
         if (sinChaleco > personas) {
             return "sinChaleco es mayor que personas";
         }
-        if (versionModelo == null || versionModelo.isEmpty() || versionModelo.length() > LARGO_MAXIMO_VERSION) {
+        if (versionModelo == null || versionModelo.isBlank() || versionModelo.length() > LARGO_MAXIMO_VERSION) {
             return "versionModelo debe tener de 1 a " + LARGO_MAXIMO_VERSION + " caracteres";
         }
         return null;

@@ -40,6 +40,7 @@ class DeteccionEppTest {
     @Test
     void laVersionDebeTenerDe1A40Caracteres() {
         assertThat(DeteccionEpp.validar(1, 0, 0, "").descartada()).isTrue();
+        assertThat(DeteccionEpp.validar(1, 0, 0, "   ").descartada()).isTrue();
         assertThat(DeteccionEpp.validar(1, 0, 0, "e".repeat(41)).descartada()).isTrue();
     }
 
