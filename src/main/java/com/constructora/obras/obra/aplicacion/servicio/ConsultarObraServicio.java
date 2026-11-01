@@ -53,7 +53,7 @@ public class ConsultarObraServicio implements ConsultarObraCasoUso {
     }
 
     private List<Obra> visibles(Usuario usuario, FiltroObras filtro) {
-        if (usuario.tiene("admin") || usuario.tiene("gerente")) {
+        if (Obra.veTodas(usuario)) {
             return repositorio.listarTodas(filtro);
         }
         boolean residente = usuario.tiene("residente");

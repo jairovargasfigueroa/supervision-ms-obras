@@ -125,11 +125,20 @@ public final class Obra {
     }
 
     /**
-     * Visibilidad (convenciones, «Autenticación y permisos»): admin y gerente ven todas; residente, maestro y
-     * almacenero, las que tienen asignadas; cliente, las suyas. Los roles ya son los efectivos (regla del azp).
+     * Ven todas las obras: admin, gerente y agente_ia (501: la service account de ia-agentes, que solo entra por
+     * POST /mcp, ve lo mismo que gerente). Los roles ya son los efectivos (regla del azp).
+     */
+    public static boolean veTodas(Usuario usuario) {
+        return usuario.tiene("admin") || usuario.tiene("gerente") || usuario.tiene("agente_ia");
+    }
+
+    /**
+     * Visibilidad (convenciones, «Autenticación y permisos»): admin, gerente y agente_ia ven todas; residente,
+     * maestro y almacenero, las que tienen asignadas; cliente, las suyas. Los roles ya son los efectivos (regla del
+     * azp).
      */
     public boolean esVisiblePara(Usuario usuario) {
-        if (usuario.tiene("admin") || usuario.tiene("gerente")) {
+        if (veTodas(usuario)) {
             return true;
         }
         String id = usuario.id();
@@ -158,12 +167,12 @@ public final class Obra {
     }
 
     /**
-     * Diario de obra (103, criterio 10): lo consultan admin y gerente, y el maestro y el residente asignados; el
-     * cliente no. Los roles ya son los efectivos (regla del azp).
+     * Diario de obra (103, criterio 10): lo consultan admin y gerente (y agente_ia, 501), y el maestro y el residente
+     * asignados; el cliente no. Los roles ya son los efectivos (regla del azp).
      */
     public boolean puedeVerDiario(Usuario usuario) {
         String id = usuario.id();
-        return usuario.tiene("admin") || usuario.tiene("gerente")
+        return veTodas(usuario)
                 || usuario.tiene("maestro") && id.equals(asignaciones.maestroId().toString())
                 || usuario.tiene("residente") && id.equals(asignaciones.residenteId().toString());
     }
@@ -198,11 +207,11 @@ public final class Obra {
     }
 
     /**
-     * Material previsto (006): lo consultan admin y gerente, y el residente asignado a la obra. Los roles ya son los
-     * efectivos (regla del azp).
+     * Material previsto (006): lo consultan admin y gerente (y agente_ia, 501), y el residente asignado a la obra.
+     * Los roles ya son los efectivos (regla del azp).
      */
     public boolean puedeVerMaterialPrevisto(Usuario usuario) {
-        return usuario.tiene("admin") || usuario.tiene("gerente")
+        return veTodas(usuario)
                 || usuario.tiene("residente") && usuario.id().equals(asignaciones.residenteId().toString());
     }
 

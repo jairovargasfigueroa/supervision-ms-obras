@@ -17,7 +17,7 @@ src/main/java/com/constructora/obras/
                     Paginacion.java (pagina, tamano, orden, direccion; PAGINACION_INVALIDA), Pagina.java (items, total, pagina, tamano)
     infraestructura/
       RelojSistema.java
-      seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java (realm_access.roles → ROLE_<rol>), RolesEfectivos.java (regla del azp), UsuarioActual.java
+      seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java (realm_access.roles → ROLE_<rol>), RolesEfectivos.java (regla del azp; agente_ia solo con azp ia-agentes, 501), UsuarioActual.java
       web/          ManejadorErrores.java (ProblemDetail con "codigo" y "errores"), RespuestaProblema.java (401/403 desde los filtros), FiltroRequestId.java, SaludController.java
       mensajeria/   ConfiguracionRabbit.java, Sobre.java, Outbox.java (guarda en outbox_evento con su clave de enrutamiento), PublicadorOutbox.java (envía cada 1 s con la clave guardada), OutboxEventoEntity.java, OutboxEventoJpaRepository.java,
                     ReceptorMensajes.java (cola obras: inbox, reintentos y fallidos), ManejadorMensaje.java (un consumidor por tipo), MensajeInvalidoException.java,
@@ -126,6 +126,7 @@ src/test/java/com/constructora/obras/
   planilla/infraestructura/persistencia/PlanillaTablasIT.java # 006, 007 y 008: restricciones de V3, V4 y V5 y lectura de planillas
   saga/infraestructura/mensajeria/SagaAprobacionIT.java # 008: saga con RabbitMQ real (Finanzas y Materiales simulados): camino feliz y avance, fallo con compensación, fallidos, vencimiento y respuestas tardías
   mcp/ServidorMcpIT.java                        # 501: initialize, tools/list sin sesión, GET 405, sin recursos ni prompts
+  mcp/SeguridadMcpIT.java                       # 501: /mcp sin token 401, personas 403, agente_ia solo con azp ia-agentes 200, agente_ia en REST 403
   soporte/                                      # McpPrueba (cliente JSON-RPC de /mcp, 501), PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java
