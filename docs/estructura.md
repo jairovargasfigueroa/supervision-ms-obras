@@ -4,7 +4,7 @@ Obligatorio para todo el código de este servicio. Si algo no encaja, propón el
 
 ## Librerías
 
-Starters de Spring Boot 4.1 (web MVC, security OAuth2 resource server, data JPA, AMQP, validation, actuator), Flyway, MapStruct 1.6.3, `springdoc-openapi-starter-webmvc-ui` 3.2 (Swagger UI en `/docs`, solo perfil `dev`), AWS SDK v2 `s3`, y para pruebas JUnit 5 + AssertJ, Testcontainers 2 (PostgreSQL y RabbitMQ) y ArchUnit 1.5. Sin Lombok: DTO y objetos de valor son `record`.
+Starters de Spring Boot 4.1 (web MVC, security OAuth2 resource server, data JPA, AMQP, validation, actuator), Flyway, MapStruct 1.6.3, `springdoc-openapi-starter-webmvc-ui` 3.2 (Swagger UI en `/docs`, solo perfil `dev`), AWS SDK v2 `s3`, Spring AI 2.0.2 (`spring-ai-bom` y `spring-ai-starter-mcp-server-webmvc`, con el SDK oficial de MCP para Java `io.modelcontextprotocol.sdk:mcp` 2.1.0; solo en `mcp/`, 501), y para pruebas JUnit 5 + AssertJ, Testcontainers 2 (PostgreSQL y RabbitMQ) y ArchUnit 1.5. Sin Lombok: DTO y objetos de valor son `record`.
 
 ## Árbol
 
@@ -89,6 +89,8 @@ src/main/java/com/constructora/obras/
                         dto/RegistrarEntradaDiarioRequest.java, dto/EntradaDiarioResponse.java
       persistencia/     EntradaDiarioEntity.java, EntradaDiarioJpaRepository.java (INSERT … ON CONFLICT DO NOTHING: el choque no aborta la transacción),
                         EntradaDiarioRepositorioJpa.java, EntradaDiarioPersistenciaMapper.java
+  mcp/                             # 501: servidor MCP de solo lectura (adaptador de entrada, como infraestructura/web); POST /mcp sin estado
+                    (configuración en application.yaml: spring.ai.mcp.server.protocol=STATELESS, solo herramientas)
   semilla/                         # 011: datos de prueba (infraestructura; nada del servicio depende de él, lo verifica ArquitecturaTest)
                     ConfiguracionSemilla.java (@Profile("semilla"): guarda antes de Flyway, CargaSemilla y SemillaRunner),
                     SemillaRunner.java (ApplicationRunner: guarda, carga, resumen y System.exit con el código de salida),
@@ -123,7 +125,8 @@ src/test/java/com/constructora/obras/
   planilla/infraestructura/web/RevisarPlanillaIT.java # 008: aprobar (202, saga y ReservarSaldo en la cola de Finanzas) y observar, errores, roles, azp y CORS
   planilla/infraestructura/persistencia/PlanillaTablasIT.java # 006, 007 y 008: restricciones de V3, V4 y V5 y lectura de planillas
   saga/infraestructura/mensajeria/SagaAprobacionIT.java # 008: saga con RabbitMQ real (Finanzas y Materiales simulados): camino feliz y avance, fallo con compensación, fallidos, vencimiento y respuestas tardías
-  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
+  mcp/ServidorMcpIT.java                        # 501: initialize, tools/list sin sesión, GET 405, sin recursos ni prompts
+  soporte/                                      # McpPrueba (cliente JSON-RPC de /mcp, 501), PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java
   diario/dominio/EntradaDiarioTest.java         # 103: bordes del texto (9, 10, 2000, 2001), clima, hoy en La Paz con UTC del día siguiente, fecha futura y anterior al inicio

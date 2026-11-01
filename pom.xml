@@ -31,6 +31,7 @@
 		<archunit.version>1.5.1</archunit.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<awssdk.version>2.56.0</awssdk.version>
+		<spring-ai.version>2.0.2</spring-ai.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -39,6 +40,14 @@
 				<groupId>software.amazon.awssdk</groupId>
 				<artifactId>bom</artifactId>
 				<version>${awssdk.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<!-- Spring AI (501): servidor MCP con el SDK oficial de MCP para Java (io.modelcontextprotocol.sdk:mcp 2.1.0) -->
+			<dependency>
+				<groupId>org.springframework.ai</groupId>
+				<artifactId>spring-ai-bom</artifactId>
+				<version>${spring-ai.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -86,6 +95,11 @@
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
+		</dependency>
+		<!-- Herramientas MCP de solo lectura (501): POST /mcp, HTTP «streamable» sin estado -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
 		</dependency>
 
 		<dependency>
