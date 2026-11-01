@@ -6,9 +6,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.constructora.obras.avance.aplicacion.DoblesAvance.FotosEnMemoria;
 import com.constructora.obras.avance.aplicacion.DoblesAvance.ObrasEnMemoria;
 import com.constructora.obras.avance.aplicacion.puerto.entrada.RegistrarFotoCasoUso.Comando;
+import com.constructora.obras.avance.aplicacion.puerto.entrada.RegistrarFotoCasoUso.DeteccionRecibida;
 import com.constructora.obras.avance.aplicacion.puerto.entrada.RegistrarFotoCasoUso.Registro;
 import com.constructora.obras.avance.aplicacion.puerto.entrada.RegistrarFotoCasoUso.UrlSubida;
 import com.constructora.obras.avance.aplicacion.servicio.RegistrarFotoServicio;
+import com.constructora.obras.avance.dominio.DeteccionEpp;
 import com.constructora.obras.avance.dominio.FotoAvance;
 import com.constructora.obras.compartido.dominio.AlmacenArchivos.AlmacenNoDisponibleException;
 import com.constructora.obras.compartido.dominio.ReglaNegocioException;
@@ -54,7 +56,7 @@ class RegistrarFotoServicioTest {
     void registraConTomadaEnYElUsuarioYSiSeRepiteDevuelveLaMisma() {
         UUID fotoId = UUID.randomUUID();
         Comando comando = new Comando(obra.id(), fotoId, partidaId, FotoAvance.claveArchivo(obra.id(), fotoId),
-                TOMADA_EN);
+                TOMADA_EN, null);
 
         Registro primero = servicio.registrar(comando, maestro);
         Registro repetido = servicio.registrar(comando, maestro);
@@ -65,13 +67,83 @@ class RegistrarFotoServicioTest {
         assertThat(repetido.creada()).isFalse();
         assertThat(repetido.foto()).isEqualTo(primero.foto());
         assertThat(fotos.fotos).hasSize(1);
+        assertThat(primero.foto().deteccion()).isNull();
+        assertThat(primero.avisos()).isEmpty();
+    }
+
+    @Test
+    void registraLaDeteccionValidaSinAvisos() {
+        UUID fotoId = UUID.randomUUID();
+
+        Registro registro = servicio.registrar(comando(fotoId, new DeteccionRecibida(4, 1, 2, "epp-1.0.0")),
+                maestro);
+
+        assertThat(registro.creada()).isTrue();
+        assertThat(registro.avisos()).isEmpty();
+        assertThat(registro.foto().deteccion()).isEqualTo(new DeteccionEpp(4, 1, 2, "epp-1.0.0"));
+        assertThat(fotos.fotos.get(fotoId).deteccion()).isEqualTo(new DeteccionEpp(4, 1, 2, "epp-1.0.0"));
+    }
+
+    @Test
+    void unaDeteccionInvalidaSeDescartaYLaFotoSeRegistraIgual() {
+        UUID fotoId = UUID.randomUUID();
+
+        Registro registro = servicio.registrar(comando(fotoId, new DeteccionRecibida(4, 5, 2, "epp-1.0.0")),
+                maestro);
+
+        assertThat(registro.creada()).isTrue();
+        assertThat(registro.avisos()).containsExactly("DETECCION_DESCARTADA");
+        assertThat(registro.foto().deteccion()).isNull();
+        assertThat(fotos.fotos.get(fotoId).deteccion()).isNull();
+    }
+
+    @Test
+    void unaDeteccionConCamposQueFaltanTambienSeDescarta() {
+        Registro registro = servicio.registrar(
+                comando(UUID.randomUUID(), new DeteccionRecibida(4, null, 2, "epp-1.0.0")), maestro);
+
+        assertThat(registro.avisos()).containsExactly("DETECCION_DESCARTADA");
+        assertThat(registro.foto().deteccion()).isNull();
+    }
+
+    @Test
+    void elRegistroRepetidoNoCambiaLaDeteccionNiDaAvisos() {
+        UUID fotoId = UUID.randomUUID();
+        servicio.registrar(comando(fotoId, new DeteccionRecibida(4, 1, 2, "epp-1.0.0")), maestro);
+
+        Registro conOtra = servicio.registrar(comando(fotoId, new DeteccionRecibida(3, 0, 0, "epp-2.0.0")), maestro);
+        Registro conInvalida = servicio.registrar(comando(fotoId, new DeteccionRecibida(1, 9, 9, "")), maestro);
+        Registro sinDeteccion = servicio.registrar(comando(fotoId, null), maestro);
+
+        for (Registro repetido : new Registro[] {conOtra, conInvalida, sinDeteccion}) {
+            assertThat(repetido.creada()).isFalse();
+            assertThat(repetido.avisos()).isEmpty();
+            assertThat(repetido.foto().deteccion()).isEqualTo(new DeteccionEpp(4, 1, 2, "epp-1.0.0"));
+        }
+        assertThat(fotos.fotos.get(fotoId).deteccion()).isEqualTo(new DeteccionEpp(4, 1, 2, "epp-1.0.0"));
+    }
+
+    @Test
+    void conPartidaAjenaYDeteccionInvalidaGanaElErrorDeLaPartida() {
+        UUID fotoId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> servicio.registrar(new Comando(obra.id(), fotoId, UUID.randomUUID(),
+                FotoAvance.claveArchivo(obra.id(), fotoId), TOMADA_EN, new DeteccionRecibida(1, 2, 0, "x")), maestro))
+                .isInstanceOfSatisfying(ReglaNegocioException.class,
+                        error -> assertThat(error.codigo()).isEqualTo("PARTIDA_NO_ES_DE_LA_OBRA"));
+        assertThat(fotos.fotos).isEmpty();
+    }
+
+    private Comando comando(UUID fotoId, DeteccionRecibida deteccion) {
+        return new Comando(obra.id(), fotoId, partidaId, FotoAvance.claveArchivo(obra.id(), fotoId), TOMADA_EN,
+                deteccion);
     }
 
     @Test
     void elResidenteAsignadoTambienRegistra() {
         UUID fotoId = UUID.randomUUID();
         Registro registro = servicio.registrar(new Comando(obra.id(), fotoId, partidaId,
-                FotoAvance.claveArchivo(obra.id(), fotoId), TOMADA_EN), residente);
+                FotoAvance.claveArchivo(obra.id(), fotoId), TOMADA_EN, null), residente);
 
         assertThat(registro.foto().registradoPor()).isEqualTo(asignaciones.residenteId());
     }
@@ -100,10 +172,10 @@ class RegistrarFotoServicioTest {
         UUID fotoId = UUID.randomUUID();
         UUID otraObra = UUID.randomUUID();
         fotos.guardar(new FotoAvance(fotoId, otraObra, UUID.randomUUID(), FotoAvance.claveArchivo(otraObra, fotoId),
-                false, UUID.randomUUID(), TOMADA_EN));
+                false, UUID.randomUUID(), TOMADA_EN, null));
 
         assertThatThrownBy(() -> servicio.registrar(new Comando(obra.id(), fotoId, partidaId,
-                FotoAvance.claveArchivo(obra.id(), fotoId), TOMADA_EN), maestro))
+                FotoAvance.claveArchivo(obra.id(), fotoId), TOMADA_EN, null), maestro))
                 .isInstanceOfSatisfying(ReglaNegocioException.class,
                         error -> assertThat(error.codigo()).isEqualTo("CLAVE_ARCHIVO_INVALIDA"));
     }

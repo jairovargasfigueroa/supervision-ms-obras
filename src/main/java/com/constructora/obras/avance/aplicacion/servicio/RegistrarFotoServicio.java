@@ -2,6 +2,7 @@ package com.constructora.obras.avance.aplicacion.servicio;
 
 import com.constructora.obras.avance.aplicacion.puerto.entrada.RegistrarFotoCasoUso;
 import com.constructora.obras.avance.aplicacion.puerto.salida.FotoAvanceRepositorio;
+import com.constructora.obras.avance.dominio.DeteccionEpp;
 import com.constructora.obras.avance.dominio.FotoAvance;
 import com.constructora.obras.compartido.dominio.AlmacenArchivos;
 import com.constructora.obras.compartido.dominio.AlmacenArchivos.UrlFirmada;
@@ -11,14 +12,19 @@ import com.constructora.obras.obra.aplicacion.puerto.entrada.ConsultarObraCasoUs
 import com.constructora.obras.obra.aplicacion.puerto.salida.ObraRepositorio;
 import com.constructora.obras.obra.dominio.Obra;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** URL de subida y registro idempotente de fotos de avance (005, docs/specs/005-foto-avance/diseno.md). */
 @Service
 public class RegistrarFotoServicio implements RegistrarFotoCasoUso {
+
+    private static final Logger log = LoggerFactory.getLogger(RegistrarFotoServicio.class);
 
     /** Vigencia de la URL de subida (diseño de la 005). */
     static final Duration VIGENCIA_SUBIDA = Duration.ofMinutes(10);
@@ -58,13 +64,26 @@ public class RegistrarFotoServicio implements RegistrarFotoCasoUso {
                 throw new ReglaNegocioException(FotoAvance.CLAVE_ARCHIVO_INVALIDA,
                         "No se pudo asociar el archivo a este registro.");
             }
-            return new Registro(existente.get(), false);
+            return new Registro(existente.get(), false, List.of());
         }
+        DeteccionEpp.Validacion deteccion = validar(comando.deteccion());
         // puedeRegistrarAvance comparó el sub con un id asignado (UUID): aquí ya es un UUID válido
         FotoAvance foto = FotoAvance.registrar(comando.id(), obra.id(), comando.partidaId(), obra.idsPartidas(),
-                comando.claveArchivo(), comando.tomadaEn(), UUID.fromString(usuario.id()));
+                comando.claveArchivo(), comando.tomadaEn(), UUID.fromString(usuario.id()),
+                deteccion == null ? null : deteccion.deteccion());
         fotos.guardar(foto);
-        return new Registro(foto, true);
+        if (deteccion != null && deteccion.descartada()) {
+            log.warn("Detección de EPP descartada en la foto {}: {}", foto.id(), deteccion.motivo());
+            return new Registro(foto, true, List.of(DeteccionEpp.DETECCION_DESCARTADA));
+        }
+        return new Registro(foto, true, List.of());
+    }
+
+    /** null si la foto no se analizó; si no, la detección válida o el motivo por el que se descarta (301). */
+    private static DeteccionEpp.Validacion validar(DeteccionRecibida recibida) {
+        return recibida == null ? null
+                : DeteccionEpp.validar(recibida.personas(), recibida.sinCasco(), recibida.sinChaleco(),
+                        recibida.versionModelo());
     }
 
     /** La obra existe y el usuario la ve (si no, 404) y es su maestro o residente (si no, 403). */

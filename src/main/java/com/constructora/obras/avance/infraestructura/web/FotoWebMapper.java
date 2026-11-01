@@ -17,6 +17,7 @@ import org.mapstruct.Mapping;
 @Mapper
 public interface FotoWebMapper {
 
+    @Mapping(target = "deteccion", ignore = true)
     RegistrarFotoCasoUso.Comando aComando(UUID obraId, RegistrarFotoRequest pedido);
 
     UrlSubidaResponse aRespuesta(RegistrarFotoCasoUso.UrlSubida urlSubida);

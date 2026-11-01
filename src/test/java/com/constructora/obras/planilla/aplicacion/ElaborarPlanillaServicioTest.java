@@ -250,7 +250,7 @@ class ElaborarPlanillaServicioTest {
         FotoAvance agregar(UUID obraId, String registradoEn) {
             UUID id = UUID.randomUUID();
             FotoAvance foto = new FotoAvance(id, obraId, UUID.randomUUID(), FotoAvance.claveArchivo(obraId, id),
-                    false, UUID.randomUUID(), Instant.parse(registradoEn));
+                    false, UUID.randomUUID(), Instant.parse(registradoEn), null);
             fotos.put(id, foto);
             return foto;
         }
@@ -273,7 +273,7 @@ class ElaborarPlanillaServicioTest {
         @Override
         public void publicar(Collection<UUID> ids) {
             ids.forEach(id -> fotos.computeIfPresent(id, (clave, f) -> new FotoAvance(f.id(), f.obraId(),
-                    f.partidaId(), f.claveArchivo(), true, f.registradoPor(), f.registradoEn())));
+                    f.partidaId(), f.claveArchivo(), true, f.registradoPor(), f.registradoEn(), f.deteccion())));
         }
 
         @Override

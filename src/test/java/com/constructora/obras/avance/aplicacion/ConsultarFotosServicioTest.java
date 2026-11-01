@@ -104,7 +104,7 @@ class ConsultarFotosServicioTest {
     private FotoAvance foto(String registradoEn, boolean publicada) {
         UUID id = UUID.randomUUID();
         FotoAvance foto = new FotoAvance(id, obra.id(), partidaId, FotoAvance.claveArchivo(obra.id(), id), publicada,
-                asignaciones.maestroId(), Instant.parse(registradoEn));
+                asignaciones.maestroId(), Instant.parse(registradoEn), null);
         fotos.guardar(foto);
         return foto;
     }

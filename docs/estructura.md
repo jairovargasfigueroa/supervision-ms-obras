@@ -36,7 +36,8 @@ src/main/java/com/constructora/obras/
       persistencia/     ObraEntity.java, PartidaEntity.java, InsumoPrevistoEntity.java, ObraJpaRepository.java (con Specification para visibilidad y filtros), ObraRepositorioJpa.java, ObraPersistenciaMapper.java
       mensajeria/       PublicadorEventosOutbox.java, ContratoRegistradoConsumidor.java, ContratoRechazadoConsumidor.java
   avance/                          # 005: fotos de avance (usa ObraRepositorio del contexto obra para la visibilidad)
-    dominio/        FotoAvance.java (clave fotos/{obraId}/{fotoId}.jpg, partida de la obra)
+    dominio/        FotoAvance.java (clave fotos/{obraId}/{fotoId}.jpg, partida de la obra; 301: deteccion opcional y sinDeteccion para el cliente),
+                    DeteccionEpp.java (301: objeto de valor; validar devuelve la detección o el motivo para descartarla, aviso DETECCION_DESCARTADA)
     aplicacion/
       puerto/entrada/   RegistrarFotoCasoUso.java, ConsultarFotosCasoUso.java
       puerto/salida/    FotoAvanceRepositorio.java
@@ -130,6 +131,7 @@ src/test/java/com/constructora/obras/
   planilla/aplicacion/RevisarPlanillaServicioTest.java  # 008: aprobar y observar con dobles (DoblesSaga: obras, planillas y sagas en memoria, reloj manual y bus simulado)
   saga/aplicacion/DoblesSaga.java, OrquestadorSagaServicioTest.java # 008: máquina de estados con bus simulado (camino feliz, fallo en cada paso, vencimiento, repetidos, tardíos)
   avance/dominio/FotoAvanceTest.java, avance/aplicacion/RegistrarFotoServicioTest.java, ConsultarFotosServicioTest.java (dobles en DoblesAvance)
+  avance/dominio/DeteccionEppTest.java         # 301: bordes de la validación (conteos, versión de 1 a 40, campos que faltan)
   compartido/dominio/PaginacionTest.java, PeriodoTest.java
   avance/infraestructura/web/FotoAvanceIT.java    # pruebas de la spec 005 con el doble AlmacenArchivosEnMemoria
   avance/infraestructura/persistencia/FotoAvanceTablaIT.java # 301: columnas de la V9 (detección de EPP, todas admiten null)

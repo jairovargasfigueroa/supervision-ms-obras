@@ -26,18 +26,32 @@ class FotoAvanceTest {
         Instant tomadaEn = Instant.parse("2026-11-15T15:20:00.123456789Z");
 
         FotoAvance foto = FotoAvance.registrar(FOTO, OBRA, PARTIDA, Set.of(PARTIDA),
-                FotoAvance.claveArchivo(OBRA, FOTO), tomadaEn, MAESTRO);
+                FotoAvance.claveArchivo(OBRA, FOTO), tomadaEn, MAESTRO, null);
 
         assertThat(foto.registradoEn()).isEqualTo(Instant.parse("2026-11-15T15:20:00.123456Z"));
         assertThat(foto.registradoPor()).isEqualTo(MAESTRO);
         assertThat(foto.publicadaCliente()).isFalse();
         assertThat(foto.partidaId()).isEqualTo(PARTIDA);
+        assertThat(foto.deteccion()).isNull();
+    }
+
+    @Test
+    void guardaLaDeteccionYElClienteLaRecibeSinElla() {
+        DeteccionEpp deteccion = new DeteccionEpp(4, 1, 2, "epp-1.0.0");
+
+        FotoAvance foto = FotoAvance.registrar(FOTO, OBRA, PARTIDA, Set.of(PARTIDA),
+                FotoAvance.claveArchivo(OBRA, FOTO), Instant.now(), MAESTRO, deteccion);
+
+        assertThat(foto.deteccion()).isEqualTo(deteccion);
+        FotoAvance paraElCliente = foto.sinDeteccion();
+        assertThat(paraElCliente.deteccion()).isNull();
+        assertThat(paraElCliente).usingRecursiveComparison().ignoringFields("deteccion").isEqualTo(foto);
     }
 
     @Test
     void laPartidaDebeSerDeLaObra() {
         assertThatThrownBy(() -> FotoAvance.registrar(FOTO, OBRA, UUID.randomUUID(), Set.of(PARTIDA),
-                FotoAvance.claveArchivo(OBRA, FOTO), Instant.now(), MAESTRO))
+                FotoAvance.claveArchivo(OBRA, FOTO), Instant.now(), MAESTRO, null))
                 .isInstanceOfSatisfying(ReglaNegocioException.class, error -> {
                     assertThat(error.codigo()).isEqualTo("PARTIDA_NO_ES_DE_LA_OBRA");
                     assertThat(error.errores()).singleElement()
@@ -51,7 +65,7 @@ class FotoAvanceTest {
                 "fotos/" + OBRA + "/" + UUID.randomUUID() + ".jpg", "fotos/" + OBRA + "/" + FOTO + ".png",
                 "otra/" + OBRA + "/" + FOTO + ".jpg"}) {
             assertThatThrownBy(() -> FotoAvance.registrar(FOTO, OBRA, PARTIDA, Set.of(PARTIDA), clave, Instant.now(),
-                    MAESTRO))
+                    MAESTRO, null))
                     .isInstanceOfSatisfying(ReglaNegocioException.class,
                             error -> assertThat(error.codigo()).isEqualTo("CLAVE_ARCHIVO_INVALIDA"));
         }
@@ -60,7 +74,7 @@ class FotoAvanceTest {
     @Test
     void laPartidaSeValidaAntesQueLaClave() {
         assertThatThrownBy(() -> FotoAvance.registrar(FOTO, OBRA, UUID.randomUUID(), Set.of(PARTIDA), "mala",
-                Instant.now(), MAESTRO))
+                Instant.now(), MAESTRO, null))
                 .isInstanceOfSatisfying(ReglaNegocioException.class,
                         error -> assertThat(error.codigo()).isEqualTo("PARTIDA_NO_ES_DE_LA_OBRA"));
     }
