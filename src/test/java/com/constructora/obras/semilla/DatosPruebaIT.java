@@ -2,7 +2,9 @@ package com.constructora.obras.semilla;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -230,7 +232,12 @@ class DatosPruebaIT extends PruebaIntegracion {
     void fotosDeCadaObraYLasPublicadasParaElCliente() throws Exception {
         pedir("/obras/" + OBRA_1 + "/fotos", TokensPrueba.valido(GERENTE1, "gerente"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(6));
+                .andExpect(jsonPath("$.total").value(6))
+                .andExpect(jsonPath("$.items[*].deteccion.personas", hasSize(6)))
+                .andExpect(jsonPath("$.items[*].deteccion.personas", everyItem(is(0))))
+                .andExpect(jsonPath("$.items[*].deteccion.sinCasco", everyItem(is(0))))
+                .andExpect(jsonPath("$.items[*].deteccion.sinChaleco", everyItem(is(0))))
+                .andExpect(jsonPath("$.items[*].deteccion.versionModelo", everyItem(is("epp-1.0.0"))));
         pedir("/obras/" + OBRA_3 + "/fotos", TokensPrueba.valido(DEMO1, "residente", "cliente"))
                 .andExpect(jsonPath("$.total").value(2));
         pedir("/obras/" + OBRA_1 + "/fotos", TokensPrueba.desde("portal", CLIENTE1, "cliente"))

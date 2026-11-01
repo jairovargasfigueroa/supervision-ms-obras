@@ -105,6 +105,7 @@
     { "id": "f1000000-0000-4000-8000-000000030102", "obraId": "b0000000-0000-4000-8000-000000000003", "partida": "P-01", "tomadaEn": "D-1 11:00", "publicadaCliente": false }
   ],
   "fotosRegistradasPor": "a0000000-0000-4000-8000-000000000005",
+  "fotosVersionModeloEpp": "epp-1.0.0",
   "planillas": [
     {
       "id": "d0000000-0000-4000-8000-000000000101",

@@ -112,11 +112,13 @@ public class CargaSemilla {
         for (FilaFoto foto : plan.fotos()) {
             sumar(insertadas, "foto_avance", jdbc.update("""
                     insert into foto_avance (id, obra_id, partida_id, clave_archivo, publicada_cliente, registrado_por,
-                                             registrado_en)
-                    values (?, ?, ?, ?, ?, ?, ?)
+                                             registrado_en, personas_detectadas, sin_casco, sin_chaleco,
+                                             version_modelo_epp)
+                    values (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?)
                     on conflict (id) do nothing""",
                     foto.id(), foto.obraId(), foto.partidaId(), foto.claveArchivo(), foto.publicadaCliente(),
-                    foto.registradoPor(), OffsetDateTime.ofInstant(foto.registradoEn(), ZoneOffset.UTC)));
+                    foto.registradoPor(), OffsetDateTime.ofInstant(foto.registradoEn(), ZoneOffset.UTC),
+                    foto.versionModeloEpp()));
         }
         for (FilaPlanilla planilla : plan.planillas()) {
             sumar(insertadas, "planilla", jdbc.update("""

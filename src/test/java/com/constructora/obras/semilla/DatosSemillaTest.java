@@ -70,6 +70,7 @@ class DatosSemillaTest {
         });
         assertThat(datos.materiales().values()).allMatch(id -> MATERIAL.matcher(id).matches());
         assertThat(datos.fotosRegistradasPor()).isEqualTo(UUID.fromString("a0000000-0000-4000-8000-000000000005"));
+        assertThat(datos.fotosVersionModeloEpp()).isEqualTo("epp-1.0.0");
     }
 
     @Test
