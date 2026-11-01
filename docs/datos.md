@@ -95,6 +95,7 @@ Migración de la 006: `V3__planilla.sql` (`planilla` y `linea_planilla`). La 006
 | cobro_id | uuid | ref Finanzas, al aprobarse |
 | cobro_numero | varchar(20) | número del cobro (`COB-AAAA-NNNN`), copiado de `CobroEmitido` al aprobarse; lo ven todos los que ven la planilla (008) |
 | version | int | bloqueo optimista |
+| presentada_en | timestamptz | última vez que pasó a `PRESENTADA` (501, migración `V8__planilla_presentada_en.sql`); nulo en planillas anteriores |
 
 Único: (`obra_id`, `numero`) y (`obra_id`, `periodo`).
 

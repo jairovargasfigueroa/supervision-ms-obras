@@ -204,14 +204,16 @@ public final class DoblesSaga {
             int version = guardada == null ? 0 : planilla.version() + 1;
             Planilla nueva = Planilla.reconstruir(planilla.id(), planilla.obraId(), planilla.numero(),
                     planilla.periodo(), planilla.estado(), planilla.lineas(), planilla.totales(),
-                    planilla.observacion(), planilla.cobroId(), planilla.cobroNumero(), version, planilla.fotoIds());
+                    planilla.observacion(), planilla.cobroId(), planilla.cobroNumero(), version, planilla.fotoIds(),
+                    planilla.presentadaEn());
             planillas.put(nueva.id(), nueva);
             return copia(nueva);
         }
 
         private static Planilla copia(Planilla p) {
             return Planilla.reconstruir(p.id(), p.obraId(), p.numero(), p.periodo(), p.estado(), p.lineas(),
-                    p.totales(), p.observacion(), p.cobroId(), p.cobroNumero(), p.version(), p.fotoIds());
+                    p.totales(), p.observacion(), p.cobroId(), p.cobroNumero(), p.version(), p.fotoIds(),
+                    p.presentadaEn());
         }
     }
 

@@ -27,4 +27,12 @@ class RolesEfectivosTest {
         assertThat(RolesEfectivos.de(List.of("automatizacion"), "n8n")).containsExactly("automatizacion");
         assertThat(RolesEfectivos.de(List.of(), "gateway")).isEmpty();
     }
+
+    @Test
+    void agenteIaSoloCuentaDesdeElClienteIaAgentes() {
+        assertThat(RolesEfectivos.de(List.of("agente_ia"), "ia-agentes")).containsExactly("agente_ia");
+        assertThat(RolesEfectivos.de(List.of("agente_ia", "gerente"), "ia-reportes")).containsExactly("gerente");
+        assertThat(RolesEfectivos.de(List.of("agente_ia", "gerente"), "erp")).containsExactly("gerente");
+        assertThat(RolesEfectivos.de(List.of("agente_ia"), "portal")).isEmpty();
+    }
 }

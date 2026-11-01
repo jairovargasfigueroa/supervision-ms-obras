@@ -58,6 +58,9 @@ public class ConfiguracionSeguridad {
                         // Los errores (por ejemplo un 404) se despachan otra vez a /error: no deben pedir token de nuevo
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.GET, "/salud").permitAll()
+                        // 501: herramientas MCP de solo lectura, solo para la service account de ia-agentes. Ningún
+                        // controlador REST acepta agente_ia (cada uno lista sus roles con @PreAuthorize).
+                        .requestMatchers("/mcp", "/mcp/**").hasRole("agente_ia")
                         // Escrituras solo de un rol: el 403 debe llegar antes que la validación del cuerpo (400),
                         // que Spring hace antes de entrar al método con @PreAuthorize (convenciones, «Respuestas
                         // de permiso»). El controlador repite el rol con @PreAuthorize.

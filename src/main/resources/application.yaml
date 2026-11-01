@@ -29,6 +29,26 @@ spring:
     # PublicadorOutbox espera la confirmación de cada mensaje antes de marcarlo publicado
     publisher-confirm-type: simple
 
+  # Herramientas MCP de solo lectura (501): POST /mcp, HTTP «streamable» sin estado y con respuestas JSON (Spring AI
+  # 2.0.2 con el SDK oficial de MCP para Java 2.1.0). Solo herramientas: sin recursos, prompts ni completions.
+  ai:
+    mcp:
+      server:
+        name: obras
+        version: 0.1.0
+        type: SYNC
+        protocol: STATELESS
+        streamable-http:
+          mcp-endpoint: /mcp
+        # Las herramientas las registra mcp/ConfiguracionMcp (esquemas estrictos y EjecutorHerramientasMcp)
+        annotation-scanner:
+          enabled: false
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+
 # Token de Keycloak (ConfiguracionSeguridad): emisor y audiencia que se exigen. La firma se valida con el JWKS del emisor.
 obras:
   seguridad:

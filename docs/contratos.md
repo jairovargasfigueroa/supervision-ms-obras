@@ -224,6 +224,73 @@ Sobre, exchange y claves según convenciones.
 - **Vencimiento**: `VencimientoSagaTarea` corre cada 10 s (`obras.saga.intervalo-vencimiento-ms`) y trata como fallo del paso actual cada saga `EN_CURSO` con `vence_en` pasado, con el motivo «El paso X no respondió a tiempo» (X = 2, 3 o 4) y las mismas compensaciones. Cada saga se vence en su propia transacción y bloqueada, así que una respuesta que llega a la vez no se aplica dos veces.
 - **Respuestas tardías** (saga `COMPENSADA`): `SaldoReservado` → `LiberarReserva` de esa reserva; `ConsumosCerrados` → `ReabrirConsumos`; `CobroEmitido` → se registra como incidente (nivel `ERROR`, «INCIDENTE saga …») y la planilla sigue `OBSERVADA`; los fallos tardíos no cambian nada. La saga y la planilla no cambian.
 
-## Herramientas MCP (capa 5, solo lectura)
+## Herramientas MCP (capa 5, solo lectura) · 501
+Ruta: POST /mcp (MCP, HTTP «streamable», sin estado, respuestas JSON; versión común 2025-11-25) · Rol: agente_ia (service account de ia-agentes) · Solo lo llama el servicio de IA
 
-`avance_obra`, `buscar_diario` (leerá `entrada_diario`, 103), `planillas_estado`, `asistencia_obra` (si existe asistencia). Se especifican en la capa 5.
+- Spring AI 2.0.2 (`spring-ai-starter-mcp-server-webmvc`, SDK oficial de MCP para Java 2.1.0) con `spring.ai.mcp.server.protocol=STATELESS`. `GET /mcp` responde `405`. No publica recursos ni *prompts*.
+- Sin token o con uno inválido: `401 NO_AUTENTICADO`; con un token válido sin `agente_ia` (por ejemplo `gerente` o `admin`): `403 SIN_PERMISO`. `agente_ia` ve todas las obras (como `gerente`) y ningún endpoint REST lo acepta (`403`).
+- Cada herramienta: anotaciones `readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`, `openWorldHint: false`; esquemas de entrada y salida con `additionalProperties: false`; `structuredContent` con la salida y el mismo JSON como texto en `content`; consulta de solo lectura con un tiempo máximo de 5 s.
+- Formatos: `uuid` = texto con formato uuid; `periodo` = `^\d{4}-(0[1-9]|1[0-2])$`; `fecha` = `AAAA-MM-DD`. Hoy en `America/La_Paz`.
+
+### avance_obra {obraId?, periodo?}
+«Devuelve el avance físico y el plazo transcurrido de las obras, al día. Sin obraId devuelve las obras en ejecución ordenadas de la más atrasada a la menos. Con obraId devuelve además sus partidas y, si se indica periodo, el material previsto de ese periodo.»
+```json
+{
+  "generadoEn": "2027-03-10T10:00:00Z",
+  "obras": [{
+    "obraId": "uuid", "nombre": "Edificio Las Palmas", "estado": "EN_EJECUCION",
+    "fechaInicio": "2026-11-01", "plazoDias": 300,
+    "avancePct": 32.5, "plazoPct": 41.0, "diferencia": 8.5, "enRiesgo": false,
+    "ultimaPlanilla": { "periodo": "2027-02", "estado": "APROBADA" },
+    "partidas": [{
+      "partidaId": "uuid", "codigo": "P-01", "nombre": "Losa de hormigón armado", "unidad": "m2",
+      "cantidadContratada": 850, "ejecutadaAcumulada": 300, "avancePct": 35.29,
+      "materialPrevisto": [{ "materialId": "id", "cantidadPrevista": 55.0 }]
+    }]
+  }],
+  "hayPlanillaEnPeriodo": true,
+  "truncado": false
+}
+```
+- Sin `obraId`: obras `EN_EJECUCION`, con `partidas: null`, máximo 50, ordenadas por `diferencia` descendente (`truncado` si hay más).
+- Con `obraId`: una sola obra (en cualquier estado) con `partidas` por código (máximo 200; `truncado` si hay más). `materialPrevisto` y `hayPlanillaEnPeriodo` solo si viene `periodo` (si no, `null`), con el cálculo de `GET /obras/{id}/material-previsto`.
+- `diferencia` = `plazoPct − avancePct`; `enRiesgo`, `avancePct` y `plazoPct` como en `GET /obras` (mismos redondeos). `ultimaPlanilla` es `null` si no tiene.
+- Errores: `ARGUMENTO_INVALIDO` (también `periodo` sin `obraId`), `OBRA_NO_ENCONTRADA`.
+
+### buscar_diario {obraId, desde?, hasta?, texto?, limite?}
+«Devuelve las entradas del diario de obra (clima y texto) de una obra en un rango de fechas, opcionalmente filtradas por una palabra. Sirve para buscar la causa de un atraso.»
+```json
+{
+  "obraId": "uuid",
+  "entradas": [{ "fecha": "2027-03-08", "clima": "LLUVIA_FUERTE", "texto": "Se suspendió el vaciado…", "truncado": false }],
+  "total": 1,
+  "truncado": false
+}
+```
+- `desde` por defecto hoy − 14 días y `hasta` por defecto hoy. Rango máximo 62 días (`hasta − desde`); `desde > hasta` o un rango mayor: `ARGUMENTO_INVALIDO`. `texto`: 2 a 50 caracteres; busca sin distinguir mayúsculas (`ILIKE` con parámetro; `%`, `_` y `\` son texto literal). `limite`: 1 a 30 (por defecto 14).
+- Orden: fecha descendente. `total` = entradas que cumplen el filtro (antes de recortar); `truncado` si `total > limite`. `texto` de cada entrada recortado a 1000 caracteres (con su propio `truncado`). Sin entradas: `entradas: []`.
+- Errores: `ARGUMENTO_INVALIDO`, `OBRA_NO_ENCONTRADA`.
+
+### planillas_estado {obraId?, estados?, desdePeriodo?, limite?}
+«Devuelve las planillas de avance, al día, con su estado, neto, observación y días desde que se presentaron. Sirve para detectar planillas pendientes o sin respuesta del cliente.»
+```json
+{
+  "planillas": [{
+    "planillaId": "uuid", "obraId": "uuid", "obraNombre": "Edificio Las Palmas",
+    "numero": 3, "periodo": "2027-03", "estado": "PRESENTADA", "neto": 41881.80,
+    "observacion": null, "presentadaEn": "2027-04-01T15:00:00Z", "diasDesdePresentacion": 9,
+    "cobroId": null
+  }],
+  "truncado": false
+}
+```
+- `estados`: de `BORRADOR`, `PRESENTADA`, `APROBANDO`, `APROBADA`, `OBSERVADA` (por defecto todos menos `APROBADA`). `desdePeriodo`: periodo mayor o igual. `limite`: 1 a 50 (por defecto 30).
+- `presentadaEn` = `planilla.presentada_en` (última vez que pasó a `PRESENTADA`; `null` en planillas anteriores a la 501). `diasDesdePresentacion`: días calendario en `America/La_Paz` desde `presentadaEn` hasta hoy, solo si el estado es `PRESENTADA` (si no, `null`). `observacion` recortada a 500 caracteres.
+- Orden: periodo descendente (luego nombre de la obra y número). `truncado` si hay más que `limite`.
+- Errores: `ARGUMENTO_INVALIDO`, `OBRA_NO_ENCONTRADA` (si se indica `obraId` y no existe).
+
+### Errores de herramienta
+Resultado con `isError: true` y texto JSON `{"codigo": "...", "mensaje": "..."}`: `ARGUMENTO_INVALIDO` (argumentos que no cumplen el esquema: tipo, formato, rango o campos de más; no se consulta la base), `OBRA_NO_ENCONTRADA`, `ERROR_INTERNO`. Una herramienta que no existe es un error del protocolo.
+
+### Registro
+Una línea JSON por llamada en el log del servicio (`McpObras`): `herramienta`, `argumentos`, `filas`, `duracionMs`, `requestId` (encabezado `X-Request-Id`, igual al id de la ejecución del agente) y, si la llamada terminó en error, `error` con su código. Nunca el token.

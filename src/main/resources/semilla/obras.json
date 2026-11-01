@@ -115,7 +115,8 @@
       "cantidades": { "P-01": 1200, "P-02": 120 },
       "observacion": null,
       "cobro": { "id": "c2000000-0000-4000-8000-000000000101", "emitidoEn": "D-40 10:00" },
-      "fotos": []
+      "fotos": [],
+      "presentadaEn": null
     },
     {
       "id": "d0000000-0000-4000-8000-000000000102",
@@ -126,7 +127,8 @@
       "cantidades": { "P-02": 60, "P-03": 50, "P-04": 300 },
       "observacion": null,
       "cobro": { "id": "c2000000-0000-4000-8000-000000000102", "emitidoEn": "D-12 10:00" },
-      "fotos": []
+      "fotos": [],
+      "presentadaEn": null
     },
     {
       "id": "d0000000-0000-4000-8000-000000000103",
@@ -137,7 +139,8 @@
       "cantidades": { "P-03": 40, "P-04": 500, "P-05": 400 },
       "observacion": null,
       "cobro": null,
-      "fotos": ["f1000000-0000-4000-8000-000000010302", "f1000000-0000-4000-8000-000000010402", "f1000000-0000-4000-8000-000000010502"]
+      "fotos": ["f1000000-0000-4000-8000-000000010302", "f1000000-0000-4000-8000-000000010402", "f1000000-0000-4000-8000-000000010502"],
+      "presentadaEn": "D-10 15:00"
     },
     {
       "id": "d0000000-0000-4000-8000-000000000201",
@@ -148,7 +151,8 @@
       "cantidades": { "P-01": 420, "P-02": 260, "P-03": 96 },
       "observacion": null,
       "cobro": { "id": "c2000000-0000-4000-8000-000000000201", "emitidoEn": "D-20 10:00" },
-      "fotos": []
+      "fotos": [],
+      "presentadaEn": null
     },
     {
       "id": "d0000000-0000-4000-8000-000000000202",
@@ -159,7 +163,8 @@
       "cantidades": { "P-04": 40 },
       "observacion": "La medición de columnas y vigas (40 m³) no coincide con lo verificado en la visita de obra, que fue de unos 30 m³. Corrijan la cantidad y adjunten fotos de los vaciados.",
       "cobro": null,
-      "fotos": ["f1000000-0000-4000-8000-000000020401", "f1000000-0000-4000-8000-000000020402"]
+      "fotos": ["f1000000-0000-4000-8000-000000020401", "f1000000-0000-4000-8000-000000020402"],
+      "presentadaEn": null
     }
   ]
 }

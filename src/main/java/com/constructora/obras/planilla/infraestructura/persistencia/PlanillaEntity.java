@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -46,6 +47,8 @@ public class PlanillaEntity implements Persistable<UUID> {
     private UUID cobroId;
     @Column(name = "cobro_numero")
     private String cobroNumero;
+    @Column(name = "presentada_en")
+    private Instant presentadaEn;
     /** Bloqueo optimista: Hibernate la sube en cada UPDATE y falla si otro la cambió antes. */
     @Version
     private int version;
@@ -170,6 +173,14 @@ public class PlanillaEntity implements Persistable<UUID> {
 
     public void setCobroNumero(String cobroNumero) {
         this.cobroNumero = cobroNumero;
+    }
+
+    public Instant getPresentadaEn() {
+        return presentadaEn;
+    }
+
+    public void setPresentadaEn(Instant presentadaEn) {
+        this.presentadaEn = presentadaEn;
     }
 
     public int getVersion() {

@@ -70,8 +70,10 @@ public record DatosSemilla(
      * Planilla con la cantidad del periodo por código de partida (las que no figuran van en 0). {@code periodo} es
      * M-k; {@code cobro}, solo en las APROBADA; {@code fotos}, ids de las fotos adjuntas.
      */
+    /** presentadaEn (501): última vez que pasó a PRESENTADA (D-n hh:mm); null si no se carga. */
     public record PlanillaSemilla(UUID id, UUID obraId, int numero, String periodo, String estado,
-            Map<String, BigDecimal> cantidades, String observacion, CobroSemilla cobro, List<UUID> fotos) {
+            Map<String, BigDecimal> cantidades, String observacion, CobroSemilla cobro, List<UUID> fotos,
+            String presentadaEn) {
     }
 
     /** Cobro que emitió Finanzas al aprobarse la planilla: su id y cuándo se emitió (D-n hh:mm). */

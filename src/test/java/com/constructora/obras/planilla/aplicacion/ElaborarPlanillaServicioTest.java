@@ -89,6 +89,7 @@ class ElaborarPlanillaServicioTest {
         assertThat(guardada.planilla().totales().neto()).isEqualTo(Dinero.de(new BigDecimal("207.50")));
         assertThat(guardada.lineas().getFirst().saldo()).isEqualByComparingTo("7.5");
         assertThat(presentada.planilla().estado()).isEqualTo(EstadoPlanilla.PRESENTADA);
+        assertThat(presentada.planilla().presentadaEn()).isEqualTo(RELOJ.ahora());
         assertThat(fotos.fotos.get(foto.id()).publicadaCliente()).isTrue();
     }
 
@@ -229,14 +230,16 @@ class ElaborarPlanillaServicioTest {
             int version = planillas.containsKey(planilla.id()) ? planilla.version() + 1 : 0;
             Planilla guardada = Planilla.reconstruir(planilla.id(), planilla.obraId(), planilla.numero(),
                     planilla.periodo(), planilla.estado(), planilla.lineas(), planilla.totales(),
-                    planilla.observacion(), planilla.cobroId(), planilla.cobroNumero(), version, planilla.fotoIds());
+                    planilla.observacion(), planilla.cobroId(), planilla.cobroNumero(), version, planilla.fotoIds(),
+                    planilla.presentadaEn());
             planillas.put(guardada.id(), guardada);
             return copia(guardada);
         }
 
         private static Planilla copia(Planilla p) {
             return Planilla.reconstruir(p.id(), p.obraId(), p.numero(), p.periodo(), p.estado(), p.lineas(),
-                    p.totales(), p.observacion(), p.cobroId(), p.cobroNumero(), p.version(), p.fotoIds());
+                    p.totales(), p.observacion(), p.cobroId(), p.cobroNumero(), p.version(), p.fotoIds(),
+                    p.presentadaEn());
         }
     }
 

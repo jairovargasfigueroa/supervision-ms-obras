@@ -12,6 +12,11 @@ spring:
         auto-startup: false
       direct:
         auto-startup: false
+  # Sin servidor MCP (501): no hay web
+  ai:
+    mcp:
+      server:
+        enabled: false
 
 obras:
   mensajeria:

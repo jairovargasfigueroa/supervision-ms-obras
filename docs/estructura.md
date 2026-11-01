@@ -4,7 +4,7 @@ Obligatorio para todo el código de este servicio. Si algo no encaja, propón el
 
 ## Librerías
 
-Starters de Spring Boot 4.1 (web MVC, security OAuth2 resource server, data JPA, AMQP, validation, actuator), Flyway, MapStruct 1.6.3, `springdoc-openapi-starter-webmvc-ui` 3.2 (Swagger UI en `/docs`, solo perfil `dev`), AWS SDK v2 `s3`, y para pruebas JUnit 5 + AssertJ, Testcontainers 2 (PostgreSQL y RabbitMQ) y ArchUnit 1.5. Sin Lombok: DTO y objetos de valor son `record`.
+Starters de Spring Boot 4.1 (web MVC, security OAuth2 resource server, data JPA, AMQP, validation, actuator), Flyway, MapStruct 1.6.3, `springdoc-openapi-starter-webmvc-ui` 3.2 (Swagger UI en `/docs`, solo perfil `dev`), AWS SDK v2 `s3`, Spring AI 2.0.2 (`spring-ai-bom` y `spring-ai-starter-mcp-server-webmvc`, con el SDK oficial de MCP para Java `io.modelcontextprotocol.sdk:mcp` 2.1.0; solo en `mcp/`, 501), y para pruebas JUnit 5 + AssertJ, Testcontainers 2 (PostgreSQL y RabbitMQ) y ArchUnit 1.5. Sin Lombok: DTO y objetos de valor son `record`.
 
 ## Árbol
 
@@ -17,7 +17,7 @@ src/main/java/com/constructora/obras/
                     Paginacion.java (pagina, tamano, orden, direccion; PAGINACION_INVALIDA), Pagina.java (items, total, pagina, tamano)
     infraestructura/
       RelojSistema.java
-      seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java (realm_access.roles → ROLE_<rol>), RolesEfectivos.java (regla del azp), UsuarioActual.java
+      seguridad/    ConfiguracionSeguridad.java (rutas, JwtDecoder con emisor y audiencia), ConvertidorRolesKeycloak.java (realm_access.roles → ROLE_<rol>), RolesEfectivos.java (regla del azp; agente_ia solo con azp ia-agentes, 501), UsuarioActual.java
       web/          ManejadorErrores.java (ProblemDetail con "codigo" y "errores"), RespuestaProblema.java (401/403 desde los filtros), FiltroRequestId.java, SaludController.java
       mensajeria/   ConfiguracionRabbit.java, Sobre.java, Outbox.java (guarda en outbox_evento con su clave de enrutamiento), PublicadorOutbox.java (envía cada 1 s con la clave guardada), OutboxEventoEntity.java, OutboxEventoJpaRepository.java,
                     ReceptorMensajes.java (cola obras: inbox, reintentos y fallidos), ManejadorMensaje.java (un consumidor por tipo), MensajeInvalidoException.java,
@@ -47,21 +47,25 @@ src/main/java/com/constructora/obras/
   planilla/                        # 006: tablas y lectura; 007: dominio Planilla, casos de uso y endpoints; 008: revisión del cliente
     dominio/        EstadoPlanilla.java, PlanillaCorta.java (periodo y estado),
                     Planilla.java (007: crear, actualizar líneas con el límite contra lo contratado, adjuntar fotos del periodo, presentar; estados editables;
-                                   008: aprobar y observar por el cliente, marcar APROBADA con el cobro u OBSERVADA por la saga),
+                                   008: aprobar y observar por el cliente, marcar APROBADA con el cobro u OBSERVADA por la saga;
+                                   501: presentadaEn, la hora de la última presentación),
                     LineaPlanilla.java (cantidad del periodo y monto), TotalesPlanilla.java (subtotal, anticipo, retención y neto con redondeo HALF_UP a 2),
                     PlanillaAprobada.java, PlanillaObservada.java (008: eventos; origen CLIENTE o SAGA)
     aplicacion/                    # 007 y 008
       puerto/entrada/   ElaborarPlanillaCasoUso.java (crear, guardar, presentar), ConsultarPlanillaCasoUso.java (lista y detalle), PlanillaDetalle.java (líneas con acumulados y porcentajes del contrato),
-                        RevisarPlanillaCasoUso.java (008: aprobar y observar)
-      puerto/salida/    PlanillaRepositorio.java (además usa ObraRepositorio de obra y FotoAvanceRepositorio de avance: buscar por ids y publicar)
+                        RevisarPlanillaCasoUso.java (008: aprobar y observar),
+                        ConsultarPlanillasEstadoCasoUso.java (501: planillas de varias obras por estado, para planillas_estado)
+      puerto/salida/    PlanillasEstadoRepositorio.java (501), PlanillaRepositorio.java (además usa ObraRepositorio de obra y FotoAvanceRepositorio de avance: buscar por ids y publicar)
       servicio/         ElaborarPlanillaServicio.java, ConsultarPlanillaServicio.java, PlanillasDeObra.java (visibilidad, residente asignado y armado del detalle),
-                        RevisarPlanillaServicio.java (008: cliente de la obra; aprobar crea la saga con SagaAprobacionRepositorio y publica con PublicadorEventos)
+                        RevisarPlanillaServicio.java (008: cliente de la obra; aprobar crea la saga con SagaAprobacionRepositorio y publica con PublicadorEventos),
+                        ConsultarPlanillasEstadoServicio.java (501: solo quien ve todas las obras)
     infraestructura/
       web/              PlanillaController.java (POST y GET /obras/{obraId}/planillas, GET y PUT /planillas/{id}, POST /planillas/{id}/presentar, /aprobar y /observar), PlanillaWebMapper.java,
                         dto/CrearPlanillaRequest.java, dto/GuardarPlanillaRequest.java, dto/PresentarPlanillaRequest.java, dto/PlanillaResponse.java, dto/PlanillaResumenResponse.java,
                         dto/ObservarPlanillaRequest.java, dto/AprobacionResponse.java
       persistencia/     PlanillaEntity.java (con planilla_foto), LineaPlanillaEntity.java, PlanillaJpaRepository.java, PlanillasObraRepositorioJpa.java (adaptador de PlanillasObraRepositorio),
-                        PlanillaRepositorioJpa.java (adaptador de PlanillaRepositorio; @Version → VERSION_DESACTUALIZADA), PlanillaPersistenciaMapper.java
+                        PlanillaRepositorioJpa.java (adaptador de PlanillaRepositorio; @Version → VERSION_DESACTUALIZADA), PlanillaPersistenciaMapper.java,
+                        PlanillasEstadoRepositorioJdbc.java (501: SQL constante de planilla con su obra, filtros opcionales como parámetros)
   saga/                            # 008: saga «aprobar planilla», orquestada por Obras
     dominio/        SagaAprobacion.java (máquina de estados: iniciar, respuestas, vencimiento y respuestas tardías; devuelve los mensajes a publicar),
                     EstadoSaga.java, PasoSaga.java (2, 3 y 4), ComandosSaga.java (ReservarSaldo, CerrarConsumos, EmitirCobro, LiberarReserva, ReabrirConsumos),
@@ -80,15 +84,28 @@ src/main/java/com/constructora/obras/
                                         fecha no futura en America/La_Paz ni anterior al inicio de la obra)
                     RangoDiario.java (desde y hasta de GET: por defecto los 30 días hasta hoy; máximo 366, RANGO_INVALIDO)
     aplicacion/
-      puerto/entrada/   RegistrarEntradaDiarioCasoUso.java, ConsultarDiarioCasoUso.java
-      puerto/salida/    EntradaDiarioRepositorio.java (guardarSiNoExiste: false si la base rechaza el id o el día repetido)
+      puerto/entrada/   RegistrarEntradaDiarioCasoUso.java, ConsultarDiarioCasoUso.java, BuscarDiarioCasoUso.java (501: buscar_diario)
+      puerto/salida/    EntradaDiarioRepositorio.java (guardarSiNoExiste: false si la base rechaza el id o el día repetido;
+                        501: buscar y contar por rango y texto)
       servicio/         RegistrarEntradaDiarioServicio.java (idempotencia por id, 409 por día repetido, también ante la restricción única),
-                        ConsultarDiarioServicio.java (rango, visibilidad: cliente 404, otro papel 403)
+                        ConsultarDiarioServicio.java (rango, visibilidad: cliente 404, otro papel 403),
+                        BuscarDiarioServicio.java (501: misma visibilidad, rango ya validado por la herramienta)
     infraestructura/
       web/              DiarioController.java (POST y GET /obras/{obraId}/diario), DiarioWebMapper.java,
                         dto/RegistrarEntradaDiarioRequest.java, dto/EntradaDiarioResponse.java
-      persistencia/     EntradaDiarioEntity.java, EntradaDiarioJpaRepository.java (INSERT … ON CONFLICT DO NOTHING: el choque no aborta la transacción),
+      persistencia/     EntradaDiarioEntity.java, EntradaDiarioJpaRepository.java (INSERT … ON CONFLICT DO NOTHING: el choque no aborta la transacción;
+                        501: ILIKE con parámetro y escape de %, _ y la barra invertida),
                         EntradaDiarioRepositorioJpa.java, EntradaDiarioPersistenciaMapper.java
+  mcp/                             # 501: servidor MCP de solo lectura (adaptador de entrada, como infraestructura/web); POST /mcp sin estado
+                    (configuración en application.yaml: spring.ai.mcp.server.protocol=STATELESS, solo herramientas, escáner de anotaciones apagado)
+                    HerramientasMcpObras.java (un método @McpTool por herramienta, con @McpToolParam y readOnlyHint; llama a los casos de uso de aplicacion),
+                    ConfiguracionMcp.java (registra las herramientas: esquema de entrada estricto, outputSchema del record cerrado con additionalProperties: false,
+                                           y sin la validación propia del SDK), EsquemasEntradaMcp.java (JSON Schema de entrada de cada herramienta),
+                    EjecutorHerramientasMcp.java (valida contra el esquema, transacción de solo lectura de 5 s, structuredContent + texto, errores como resultado
+                                                  y una línea JSON por llamada en el registro McpObras con el X-Request-Id),
+                    ErrorHerramienta.java (ARGUMENTO_INVALIDO, OBRA_NO_ENCONTRADA, ERROR_INTERNO),
+                    dto/   SalidaHerramienta.java (filas devueltas), AvanceObraSalida.java, BuscarDiarioSalida.java, PlanillasEstadoSalida.java
+                           (records de salida: de ellos sale el outputSchema)
   semilla/                         # 011: datos de prueba (infraestructura; nada del servicio depende de él, lo verifica ArquitecturaTest)
                     ConfiguracionSemilla.java (@Profile("semilla"): guarda antes de Flyway, CargaSemilla y SemillaRunner),
                     SemillaRunner.java (ApplicationRunner: guarda, carga, resumen y System.exit con el código de salida),
@@ -103,7 +120,7 @@ src/main/resources/
   application-semilla.yaml (011: sin web, listeners con auto-startup false,
                     obras.mensajeria.publicador-activo y obras.saga.vencimiento-activo en false, semilla.fecha/modo/salir)
   semilla/obras.json (011: copia de la parte de Obras de docs/datos-prueba.md con fechas relativas a D)
-  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), V6__entrada_diario.sql (103: entrada_diario, único obra_id y fecha), V7__obra_zona.sql (401: obra.zona), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
+  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), V6__entrada_diario.sql (103: entrada_diario, único obra_id y fecha), V7__obra_zona.sql (401: obra.zona), V8__planilla_presentada_en.sql (501: planilla.presentada_en, la llena «presentar»), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
@@ -123,7 +140,15 @@ src/test/java/com/constructora/obras/
   planilla/infraestructura/web/RevisarPlanillaIT.java # 008: aprobar (202, saga y ReservarSaldo en la cola de Finanzas) y observar, errores, roles, azp y CORS
   planilla/infraestructura/persistencia/PlanillaTablasIT.java # 006, 007 y 008: restricciones de V3, V4 y V5 y lectura de planillas
   saga/infraestructura/mensajeria/SagaAprobacionIT.java # 008: saga con RabbitMQ real (Finanzas y Materiales simulados): camino feliz y avance, fallo con compensación, fallidos, vencimiento y respuestas tardías
-  soporte/                                      # PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
+  mcp/ServidorMcpIT.java                        # 501: initialize, tools/list sin sesión, GET 405, sin recursos ni prompts
+  mcp/ContratoMcpIT.java                        # 501: tools/list exacto contra src/test/resources/mcp/herramientas-obras.json, argumentos maliciosos, herramienta inexistente
+  mcp/SoloLecturaMcpIT.java                     # 501: después de llamar todas las herramientas ninguna tabla cambia (conteo y md5 de las filas)
+  mcp/EjecutorHerramientasMcpTest.java          # 501: validación antes de llamar, errores como resultado, transacción de solo lectura de 5 s, registro JSON
+  mcp/RegistroMcpIT.java                        # 501: la línea de registro lleva el X-Request-Id del agente y no el token
+  mcp/BuscarDiarioMcpIT.java, PlanillasEstadoMcpIT.java  # 501: rango, escape, límite y truncado del diario; estados, días desde la presentación y cifras del REST
+  mcp/AvanceObraMcpIT.java                      # 501: avance_obra con las cifras de GET /obras, GET /obras/{id} y material previsto; orden, periodo sin obraId y truncado
+  mcp/SeguridadMcpIT.java                       # 501: /mcp sin token 401, personas 403, agente_ia solo con azp ia-agentes 200, agente_ia en REST 403
+  soporte/                                      # McpPrueba (cliente JSON-RPC de /mcp, 501), PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java
   diario/dominio/EntradaDiarioTest.java         # 103: bordes del texto (9, 10, 2000, 2001), clima, hoy en La Paz con UTC del día siguiente, fecha futura y anterior al inicio
@@ -134,7 +159,7 @@ src/test/java/com/constructora/obras/
   diario/infraestructura/web/DiarioIT.java      # 103: pruebas de API de la spec (mismo id, día repetido también a la vez, maestro no asignado, residente, obra no en ejecución, fechas, formato, GET por rol, rango por defecto)
   diario/infraestructura/persistencia/EntradaDiarioTablaIT.java # 103: restricciones de V6 (una entrada por obra y día, clima) y el adaptador (choque sin abortar, rango)
   semilla/DatosPruebaIT.java                    # 011: la API con D = 2026-10-28 (reloj fijo): indicadores, planillas, material previsto, visibilidad y fotos
-  ArquitecturaTest.java                         # ArchUnit
+  ArquitecturaTest.java                         # ArchUnit (501: mcp solo usa casos de uso; Spring AI y el SDK de MCP solo en mcp)
 ```
 
 ## Reglas

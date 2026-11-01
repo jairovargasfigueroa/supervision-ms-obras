@@ -237,9 +237,13 @@ class ObraTest {
         private final Obra obra = registrar(contrato("100.00"), partida("P-01", "1", "100"));
 
         @Test
-        void adminYGerenteVenTodas() {
+        void adminGerenteYAgenteIaVenTodas() {
             assertThat(obra.esVisiblePara(new Usuario("otro", Set.of("admin")))).isTrue();
             assertThat(obra.esVisiblePara(new Usuario("otro", Set.of("gerente")))).isTrue();
+            assertThat(obra.esVisiblePara(new Usuario("otro", Set.of("agente_ia")))).isTrue();
+            assertThat(obra.puedeVerDiario(new Usuario("otro", Set.of("agente_ia")))).isTrue();
+            assertThat(obra.puedeVerMaterialPrevisto(new Usuario("otro", Set.of("agente_ia")))).isTrue();
+            assertThat(obra.puedeElaborarPlanilla(new Usuario("otro", Set.of("agente_ia")))).isFalse();
         }
 
         @Test

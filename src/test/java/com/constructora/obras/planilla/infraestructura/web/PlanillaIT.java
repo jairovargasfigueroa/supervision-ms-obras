@@ -281,6 +281,8 @@ class PlanillaIT extends PruebaIntegracion {
         UUID adjunta = foto(obra, ACTUAL.atDay(1));
         UUID sinAdjuntar = foto(obra, ACTUAL.atDay(2));
         guardar(planilla, 0, lineas(losa, "1"), "\"" + adjunta + "\"", residente()).andExpect(status().isOk());
+        assertThat(presentadaEn(planilla)).isNull();
+        Instant antes = Instant.now().minusSeconds(1);
 
         presentar(planilla, 1, residente())
                 .andExpect(status().isOk())
@@ -288,6 +290,8 @@ class PlanillaIT extends PruebaIntegracion {
                 .andExpect(jsonPath("$.version").value(2))
                 .andExpect(jsonPath("$.fotoIds[0]").value(adjunta.toString()));
 
+        // 501: presentada_en guarda la hora de la presentación
+        assertThat(presentadaEn(planilla)).isBetween(antes, Instant.now().plusSeconds(1));
         assertThat(publicada(adjunta)).isTrue();
         assertThat(publicada(sinAdjuntar)).isFalse();
         // El cliente desde el portal ve la planilla presentada y solo la foto publicada
@@ -320,7 +324,9 @@ class PlanillaIT extends PruebaIntegracion {
     void unaObservadaSeCorrigeYSeVuelveAPresentar() throws Exception {
         UUID planilla = crearYLeerId(MES);
         guardar(planilla, 0, lineas(losa, "1"), "", residente()).andExpect(status().isOk());
-        jdbc.update("update planilla set estado = 'OBSERVADA', observacion = 'Falta el muro' where id = ?", planilla);
+        Instant primera = Instant.parse("2026-01-05T15:00:00Z");
+        jdbc.update("update planilla set estado = 'OBSERVADA', observacion = 'Falta el muro', presentada_en = ?"
+                + " where id = ?", java.sql.Timestamp.from(primera), planilla);
 
         mvc.perform(conToken(get("/planillas/{id}", planilla), residente()))
                 .andExpect(jsonPath("$.observacion").value("Falta el muro"));
@@ -330,6 +336,14 @@ class PlanillaIT extends PruebaIntegracion {
         presentar(planilla, 2, residente())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("PRESENTADA"));
+        // 501: al volver a presentar se guarda la hora nueva
+        assertThat(presentadaEn(planilla)).isAfter(Instant.now().minusSeconds(60));
+    }
+
+    private Instant presentadaEn(UUID planilla) {
+        java.sql.Timestamp valor = jdbc.queryForObject("select presentada_en from planilla where id = ?",
+                java.sql.Timestamp.class, planilla);
+        return valor == null ? null : valor.toInstant();
     }
 
     @Test
