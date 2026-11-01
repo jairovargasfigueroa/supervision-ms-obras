@@ -40,6 +40,9 @@ spring:
         protocol: STATELESS
         streamable-http:
           mcp-endpoint: /mcp
+        # Las herramientas las registra mcp/ConfiguracionMcp (esquemas estrictos y EjecutorHerramientasMcp)
+        annotation-scanner:
+          enabled: false
         capabilities:
           tool: true
           resource: false

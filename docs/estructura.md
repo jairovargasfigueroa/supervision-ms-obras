@@ -91,7 +91,13 @@ src/main/java/com/constructora/obras/
       persistencia/     EntradaDiarioEntity.java, EntradaDiarioJpaRepository.java (INSERT … ON CONFLICT DO NOTHING: el choque no aborta la transacción),
                         EntradaDiarioRepositorioJpa.java, EntradaDiarioPersistenciaMapper.java
   mcp/                             # 501: servidor MCP de solo lectura (adaptador de entrada, como infraestructura/web); POST /mcp sin estado
-                    (configuración en application.yaml: spring.ai.mcp.server.protocol=STATELESS, solo herramientas)
+                    (configuración en application.yaml: spring.ai.mcp.server.protocol=STATELESS, solo herramientas, escáner de anotaciones apagado)
+                    HerramientasMcpObras.java (un método @McpTool por herramienta, con @McpToolParam y readOnlyHint; llama a los casos de uso de aplicacion),
+                    ConfiguracionMcp.java (registra las herramientas: esquema de entrada estricto, outputSchema del record cerrado con additionalProperties: false,
+                                           y sin la validación propia del SDK), EsquemasEntradaMcp.java (JSON Schema de entrada de cada herramienta),
+                    EjecutorHerramientasMcp.java (valida contra el esquema, transacción de solo lectura de 5 s, structuredContent + texto, errores como resultado),
+                    ErrorHerramienta.java (ARGUMENTO_INVALIDO, OBRA_NO_ENCONTRADA, ERROR_INTERNO),
+                    dto/   SalidaHerramienta.java (filas devueltas), AvanceObraSalida.java (records de salida: de ellos sale el outputSchema)
   semilla/                         # 011: datos de prueba (infraestructura; nada del servicio depende de él, lo verifica ArquitecturaTest)
                     ConfiguracionSemilla.java (@Profile("semilla"): guarda antes de Flyway, CargaSemilla y SemillaRunner),
                     SemillaRunner.java (ApplicationRunner: guarda, carga, resumen y System.exit con el código de salida),
@@ -127,6 +133,7 @@ src/test/java/com/constructora/obras/
   planilla/infraestructura/persistencia/PlanillaTablasIT.java # 006, 007 y 008: restricciones de V3, V4 y V5 y lectura de planillas
   saga/infraestructura/mensajeria/SagaAprobacionIT.java # 008: saga con RabbitMQ real (Finanzas y Materiales simulados): camino feliz y avance, fallo con compensación, fallidos, vencimiento y respuestas tardías
   mcp/ServidorMcpIT.java                        # 501: initialize, tools/list sin sesión, GET 405, sin recursos ni prompts
+  mcp/AvanceObraMcpIT.java                      # 501: avance_obra con las cifras de GET /obras, GET /obras/{id} y material previsto; orden, periodo sin obraId y truncado
   mcp/SeguridadMcpIT.java                       # 501: /mcp sin token 401, personas 403, agente_ia solo con azp ia-agentes 200, agente_ia en REST 403
   soporte/                                      # McpPrueba (cliente JSON-RPC de /mcp, 501), PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)

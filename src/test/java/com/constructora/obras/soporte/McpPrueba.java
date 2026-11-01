@@ -2,6 +2,7 @@ package com.constructora.obras.soporte;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.MediaType;
@@ -58,6 +59,32 @@ public final class McpPrueba {
     /** Lee el cuerpo de la respuesta como JSON. */
     public static Map<String, Object> cuerpo(ResultActions resultado) throws Exception {
         return JSON.readValue(resultado.andReturn().getResponse().getContentAsString(),
+                new tools.jackson.core.type.TypeReference<Map<String, Object>>() {
+                });
+    }
+
+    /** structuredContent de un tools/call que salió bien (falla si vino con isError). */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> salida(ResultActions resultado) throws Exception {
+        Map<String, Object> respuesta = (Map<String, Object>) cuerpo(resultado).get("result");
+        if (Boolean.TRUE.equals(respuesta.get("isError"))) {
+            throw new AssertionError("La herramienta devolvió un error: " + respuesta.get("content"));
+        }
+        return (Map<String, Object>) respuesta.get("structuredContent");
+    }
+
+    /** {"codigo", "mensaje"} de un tools/call con isError: true (falla si salió bien). */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> error(ResultActions resultado) throws Exception {
+        Map<String, Object> respuesta = (Map<String, Object>) cuerpo(resultado).get("result");
+        if (!Boolean.TRUE.equals(respuesta.get("isError"))) {
+            throw new AssertionError("Se esperaba un error y la herramienta respondió " + respuesta);
+        }
+        if (respuesta.get("structuredContent") != null) {
+            throw new AssertionError("Un error no lleva structuredContent");
+        }
+        List<Map<String, Object>> contenido = (List<Map<String, Object>>) respuesta.get("content");
+        return JSON.readValue((String) contenido.getFirst().get("text"),
                 new tools.jackson.core.type.TypeReference<Map<String, Object>>() {
                 });
     }
