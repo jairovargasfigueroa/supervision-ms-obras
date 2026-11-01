@@ -88,18 +88,21 @@ Devuelve `{ "url": "https://…", "claveArchivo": "fotos/{obraId}/{fotoId}.jpg",
 - La URL es de S3, para `PUT`, vence a los 10 minutos (`expiraEn`, ISO 8601 en UTC) y lleva el `Content-Type: image/jpeg` dentro de la firma: la subida debe enviar ese mismo encabezado.
 - Errores: `403 SIN_PERMISO` (otro rol, comprobado antes que el cuerpo; o un usuario que ve la obra con otro papel, por ejemplo con los roles almacenero y maestro asignado solo como almacenero) · `404 OBRA_NO_ENCONTRADA` (no existe, no la ve o el id no es un UUID) · `400 DATOS_INVALIDOS` (`fotoId` falta o no es un UUID) · `503 SERVICIO_NO_DISPONIBLE` si S3 no está configurado (`OBRAS_S3_BUCKET`, `OBRAS_S3_ACCESS_KEY` u `OBRAS_S3_SECRET_KEY` vacías; el servicio arranca igual).
 
-### POST /obras/{obraId}/fotos · 005
-Roles: `maestro`, `residente` asignados.
-Recibe `{ "id": "uuid", "partidaId": "uuid", "claveArchivo": "fotos/…jpg", "tomadaEn": "2026-11-15T15:20:00Z" }`.
-Devuelve `201` (o `200` si el `id` ya existía) `{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente": false }`.
+### POST /obras/{obraId}/fotos · 005, 301
+Roles: `maestro`, `residente` asignados. Quién llama: la app y Sincronización (operación `FOTO_AVANCE` de la 102).
+Recibe `{ "id": "uuid", "partidaId": "uuid", "claveArchivo": "fotos/…jpg", "tomadaEn": "2026-11-15T15:20:00Z", "deteccion": { "personas": 4, "sinCasco": 1, "sinChaleco": 2, "versionModelo": "epp-1.0.0" } }` (`deteccion` opcional, 301).
+Devuelve `201` (o `200` si el `id` ya existía) `{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente": false, "deteccion": { … } | null, "avisos": [] }`.
 Errores: `404 OBRA_NO_ENCONTRADA` · `422 PARTIDA_NO_ES_DE_LA_OBRA` · `422 CLAVE_ARCHIVO_INVALIDA`.
+- `deteccion` (301, detección de casco y chaleco hecha en el celular): `personas`, `sinCasco` y `sinChaleco` enteros ≥ 0, `sinCasco ≤ personas`, `sinChaleco ≤ personas`, `versionModelo` de 1 a 40 caracteres. Si no se cumple (también si falta un campo, uno no es entero o `deteccion` no es un objeto), **la foto se registra igual sin la detección** (`deteccion: null`), se escribe un aviso en el registro con el `fotoId` y la respuesta lleva `avisos: ["DETECCION_DESCARTADA"]`. La detección nunca causa un `400`. Sin `deteccion` (o `null`): foto no analizada, `deteccion: null` y `avisos: []`.
+- `avisos` siempre está (lista vacía si no hay). El `200` de un `id` ya registrado devuelve el registro guardado con `avisos: []`: la detección **no** se actualiza ni se vuelve a validar.
 - `registradoEn` = `tomadaEn` (al microsegundo) y `registradoPor` = `sub` del token. No necesita S3 (no comprueba que el archivo exista).
 - Orden: rol (`403 SIN_PERMISO`, antes que el cuerpo) → cuerpo (`400 DATOS_INVALIDOS`: `id`, `partidaId` y `tomadaEn` obligatorios; `claveArchivo` obligatoria, hasta 200 caracteres) → obra visible (`404`) → maestro o residente de esa obra (`403 SIN_PERMISO`) → `id` ya registrado: `200` con el registro guardado, sin volver a validar → partida (`422 PARTIDA_NO_ES_DE_LA_OBRA`, `errores[].campo = partidaId`) → clave igual a `fotos/{obraId}/{id}.jpg` (`422 CLAVE_ARCHIVO_INVALIDA`, `errores[].campo = claveArchivo`).
 - Si el `id` ya existe en **otra** obra: `422 CLAVE_ARCHIVO_INVALIDA` (la clave no puede corresponder a ese registro).
 
-### GET /obras/{obraId}/fotos?partidaId=&desde=&hasta= · 005, 006, 007, 008
+### GET /obras/{obraId}/fotos?partidaId=&desde=&hasta= · 005, 006, 007, 008, 301
 Roles: los que pueden ver la obra; `cliente` solo recibe publicadas. Paginado (convenciones): `pagina`, `tamano`, `orden`, `direccion`; responde `{ items, total, pagina, tamano }` con orden por defecto `registradoEn desc`. Cada elemento:
-`[{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente", "urlDescarga" }]`
+`[{ "id", "partidaId", "registradoPor", "registradoEn", "publicadaCliente", "urlDescarga", "deteccion": { "personas", "sinCasco", "sinChaleco", "versionModelo" } | null }]`
+- `deteccion` (301): `null` si la foto no se analizó (o se descartó la detección). Para el `cliente` es **siempre** `null`: se aplica a quien recibe solo las publicadas (ve la obra solo como cliente), igual que el filtro de abajo.
 - `urlDescarga`: URL firmada de S3 para `GET`, vence a los 30 minutos.
 - `cliente`: con `azp = portal` solo recibe las que tienen `publicada_cliente = true` (un usuario que además ve la obra con un rol interno las recibe todas).
 - Paginación: `pagina` desde 1 (por defecto 1), `tamano` de 1 a 100 (por defecto 20), `orden` solo `registradoEn` (desempata por `id`), `direccion` `asc` o `desc` (por defecto `desc`). Fuera de eso: `400 PAGINACION_INVALIDA` con `errores[].campo` (`pagina`, `tamano`, `orden` o `direccion`). Un `partidaId` que no es UUID o un número mal escrito: `400 DATOS_INVALIDOS`.

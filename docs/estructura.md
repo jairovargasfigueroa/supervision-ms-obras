@@ -120,7 +120,7 @@ src/main/resources/
   application-semilla.yaml (011: sin web, listeners con auto-startup false,
                     obras.mensajeria.publicador-activo y obras.saga.vencimiento-activo en false, semilla.fecha/modo/salir)
   semilla/obras.json (011: copia de la parte de Obras de docs/datos-prueba.md con fechas relativas a D)
-  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), V6__entrada_diario.sql (103: entrada_diario, único obra_id y fecha), V7__obra_zona.sql (401: obra.zona), V8__planilla_presentada_en.sql (501: planilla.presentada_en, la llena «presentar»), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
+  db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), V6__entrada_diario.sql (103: entrada_diario, único obra_id y fecha), V7__obra_zona.sql (401: obra.zona), V8__planilla_presentada_en.sql (501: planilla.presentada_en, la llena «presentar»), V9__foto_avance_deteccion_epp.sql (301: foto_avance.sin_chaleco y version_modelo_epp), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
@@ -132,6 +132,7 @@ src/test/java/com/constructora/obras/
   avance/dominio/FotoAvanceTest.java, avance/aplicacion/RegistrarFotoServicioTest.java, ConsultarFotosServicioTest.java (dobles en DoblesAvance)
   compartido/dominio/PaginacionTest.java, PeriodoTest.java
   avance/infraestructura/web/FotoAvanceIT.java    # pruebas de la spec 005 con el doble AlmacenArchivosEnMemoria
+  avance/infraestructura/persistencia/FotoAvanceTablaIT.java # 301: columnas de la V9 (detección de EPP, todas admiten null)
   compartido/infraestructura/archivos/AlmacenArchivosS3Test.java # firma real del SDK, sin red
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
   obra/infraestructura/web/ConsultarObraIT.java # 002 y 006: lista con filtros, indicadores, última planilla y detalle
