@@ -6,4 +6,4 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 
 - [x] Migración Flyway: `foto_avance.sin_chaleco` y `foto_avance.version_modelo_epp`
 - [x] Objeto de valor `DeteccionEpp` en el dominio con sus validaciones; si no son válidas, la foto se registra sin detección y con el aviso `DETECCION_DESCARTADA`; pruebas
-- [ ] `POST /obras/{obraId}/fotos` acepta `deteccion` opcional sin romper la idempotencia; `GET /obras/{obraId}/fotos` la devuelve (`null` para `cliente`); pruebas de la spec
+- [x] `POST /obras/{obraId}/fotos` acepta `deteccion` opcional sin romper la idempotencia; `GET /obras/{obraId}/fotos` la devuelve (`null` para `cliente`); pruebas de la spec

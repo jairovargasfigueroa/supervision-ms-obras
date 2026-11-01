@@ -43,7 +43,7 @@ src/main/java/com/constructora/obras/
       puerto/salida/    FotoAvanceRepositorio.java
       servicio/         RegistrarFotoServicio.java, ConsultarFotosServicio.java
     infraestructura/
-      web/              FotoController.java, dto/UrlSubidaRequest.java, dto/UrlSubidaResponse.java, dto/RegistrarFotoRequest.java, dto/FotoResponse.java, dto/FotoListadaResponse.java, dto/FotoPaginaResponse.java, FotoWebMapper.java
+      web/              FotoController.java, dto/UrlSubidaRequest.java, dto/UrlSubidaResponse.java, dto/RegistrarFotoRequest.java, dto/FotoResponse.java, dto/FotoListadaResponse.java, dto/FotoPaginaResponse.java, dto/DeteccionEppResponse.java (301), FotoWebMapper.java (301: deteccion llega como JsonNode y se pasa campo a campo, sin 400)
       persistencia/     FotoAvanceEntity.java, FotoAvanceJpaRepository.java (con Specification para los filtros), FotoAvanceRepositorioJpa.java, FotoAvancePersistenciaMapper.java
   planilla/                        # 006: tablas y lectura; 007: dominio Planilla, casos de uso y endpoints; 008: revisión del cliente
     dominio/        EstadoPlanilla.java, PlanillaCorta.java (periodo y estado),
@@ -134,6 +134,7 @@ src/test/java/com/constructora/obras/
   avance/dominio/DeteccionEppTest.java         # 301: bordes de la validación (conteos, versión de 1 a 40, campos que faltan)
   compartido/dominio/PaginacionTest.java, PeriodoTest.java
   avance/infraestructura/web/FotoAvanceIT.java    # pruebas de la spec 005 con el doble AlmacenArchivosEnMemoria
+  avance/infraestructura/web/DeteccionEppIT.java # 301: pruebas de la spec (con y sin deteccion, descartada con aviso, repetido, cliente null)
   avance/infraestructura/persistencia/FotoAvanceTablaIT.java # 301: columnas de la V9 (detección de EPP, todas admiten null)
   compartido/infraestructura/archivos/AlmacenArchivosS3Test.java # firma real del SDK, sin red
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba

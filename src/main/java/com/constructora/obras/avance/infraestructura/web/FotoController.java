@@ -74,7 +74,10 @@ public class FotoController {
         return mapper.aRespuesta(registrarFoto.prepararSubida(uuid(obraId), pedido.fotoId(), usuarioActual.obtener()));
     }
 
-    /** Registra la foto ya subida: 201, o 200 con el registro existente si el id ya estaba (idempotencia). */
+    /**
+     * Registra la foto ya subida: 201, o 200 con el registro existente si el id ya estaba (idempotencia, sin tocar la
+     * detección). Una detección que no es válida no es un error: la foto se registra sin ella (301).
+     */
     @PostMapping
     @PreAuthorize(REGISTRAN)
     public ResponseEntity<FotoResponse> registrar(@PathVariable String obraId,
@@ -82,7 +85,7 @@ public class FotoController {
         RegistrarFotoCasoUso.Registro registro = registrarFoto.registrar(mapper.aComando(uuid(obraId), pedido),
                 usuarioActual.obtener());
         return ResponseEntity.status(registro.creada() ? HttpStatus.CREATED : HttpStatus.OK)
-                .body(mapper.aRespuesta(registro.foto()));
+                .body(mapper.aRespuesta(registro));
     }
 
     /** Un id de obra que no es UUID responde como una obra que no existe. */
