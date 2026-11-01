@@ -141,6 +141,8 @@ src/test/java/com/constructora/obras/
   planilla/infraestructura/persistencia/PlanillaTablasIT.java # 006, 007 y 008: restricciones de V3, V4 y V5 y lectura de planillas
   saga/infraestructura/mensajeria/SagaAprobacionIT.java # 008: saga con RabbitMQ real (Finanzas y Materiales simulados): camino feliz y avance, fallo con compensación, fallidos, vencimiento y respuestas tardías
   mcp/ServidorMcpIT.java                        # 501: initialize, tools/list sin sesión, GET 405, sin recursos ni prompts
+  mcp/ContratoMcpIT.java                        # 501: tools/list exacto contra src/test/resources/mcp/herramientas-obras.json, argumentos maliciosos, herramienta inexistente
+  mcp/SoloLecturaMcpIT.java                     # 501: después de llamar todas las herramientas ninguna tabla cambia (conteo y md5 de las filas)
   mcp/EjecutorHerramientasMcpTest.java          # 501: validación antes de llamar, errores como resultado, transacción de solo lectura de 5 s, registro JSON
   mcp/RegistroMcpIT.java                        # 501: la línea de registro lleva el X-Request-Id del agente y no el token
   mcp/BuscarDiarioMcpIT.java, PlanillasEstadoMcpIT.java  # 501: rango, escape, límite y truncado del diario; estados, días desde la presentación y cifras del REST

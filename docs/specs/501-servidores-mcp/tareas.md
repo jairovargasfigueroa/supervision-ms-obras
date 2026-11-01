@@ -10,4 +10,4 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 - [x] Adaptador `mcp/HerramientasMcpObras`: `avance_obra` (con partidas y material previsto opcional, `truncado` y anotación `readOnlyHint`), reutilizando los casos de uso de 006
 - [x] `buscar_diario` (rango máximo 62 días, búsqueda con escape de `%` y `_`, `truncado` de la lista y de cada texto) y `planillas_estado` (con `diasDesdePresentacion` y `truncado`), ambas con `readOnlyHint`
 - [x] Errores de herramienta (`ARGUMENTO_INVALIDO`, `OBRA_NO_ENCONTRADA`) y registro JSON de cada llamada con `X-Request-Id`
-- [ ] Pruebas: `tools/list` exacto, cifras iguales al REST, argumentos maliciosos, y prueba de solo lectura (ninguna tabla cambia)
+- [x] Pruebas: `tools/list` exacto, cifras iguales al REST, argumentos maliciosos, y prueba de solo lectura (ninguna tabla cambia)
