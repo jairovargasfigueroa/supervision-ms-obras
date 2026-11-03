@@ -8,4 +8,4 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 - [x] Revisar que no quede ninguna dirección fija; agregar `OBRAS_DB_SSLMODE`, `OBRAS_RABBITMQ_SSL` y el perfil `prod` (sin trazas al usuario, registros por la salida estándar)
 - [x] `Dockerfile` en dos etapas y `.dockerignore` (JRE 21, sin `root`, `HEALTHCHECK`, etiqueta OCI); prueba `docker build` + `docker run` con `/salud`
 - [x] Semilla: excepción `SEMILLA_DEMO=si` en la guarda (solo carga; el vaciado sigue prohibido fuera de desarrollo); pruebas
-- [ ] `.github/workflows/ci.yml`: job `prueba` (`./mvnw -B verify`) y job `imagen` (build en PR; *push* a GHCR con `sha-<7>` y `main` en `main`)
+- [x] `.github/workflows/ci.yml`: job `prueba` (`./mvnw -B verify`) y job `imagen` (build en PR; *push* a GHCR con `sha-<7>` y `main` en `main`)
