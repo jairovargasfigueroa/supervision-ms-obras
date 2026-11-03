@@ -1,0 +1,16 @@
+# 601: lo que nunca entra al contexto de la imagen
+.git
+.github
+node_modules
+vendor
+target
+dist
+.env*
+*.log
+coverage
+.venv
+android
+datos
+.idea
+.vscode
+docs
