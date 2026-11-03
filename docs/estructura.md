@@ -51,13 +51,13 @@ src/main/java/com/constructora/obras/
                                    008: aprobar y observar por el cliente, marcar APROBADA con el cobro u OBSERVADA por la saga;
                                    501: presentadaEn, la hora de la última presentación),
                     LineaPlanilla.java (cantidad del periodo y monto), TotalesPlanilla.java (subtotal, anticipo, retención y neto con redondeo HALF_UP a 2),
-                    PlanillaAprobada.java, PlanillaObservada.java (008: eventos; origen CLIENTE o SAGA)
+                    PlanillaAprobada.java, PlanillaObservada.java (008: eventos; origen CLIENTE o SAGA), PlanillaPresentada.java (010: evento al presentar, con reenvio)
     aplicacion/                    # 007 y 008
       puerto/entrada/   ElaborarPlanillaCasoUso.java (crear, guardar, presentar), ConsultarPlanillaCasoUso.java (lista y detalle), PlanillaDetalle.java (líneas con acumulados y porcentajes del contrato),
                         RevisarPlanillaCasoUso.java (008: aprobar y observar),
                         ConsultarPlanillasEstadoCasoUso.java (501: planillas de varias obras por estado, para planillas_estado)
       puerto/salida/    PlanillasEstadoRepositorio.java (501), PlanillaRepositorio.java (además usa ObraRepositorio de obra y FotoAvanceRepositorio de avance: buscar por ids y publicar)
-      servicio/         ElaborarPlanillaServicio.java, ConsultarPlanillaServicio.java, PlanillasDeObra.java (visibilidad, residente asignado y armado del detalle),
+      servicio/         ElaborarPlanillaServicio.java (010: al presentar publica PlanillaPresentada con PublicadorEventos), ConsultarPlanillaServicio.java, PlanillasDeObra.java (visibilidad, residente asignado y armado del detalle),
                         RevisarPlanillaServicio.java (008: cliente de la obra; aprobar crea la saga con SagaAprobacionRepositorio y publica con PublicadorEventos),
                         ConsultarPlanillasEstadoServicio.java (501: solo quien ve todas las obras)
     infraestructura/
@@ -127,7 +127,7 @@ src/test/java/com/constructora/obras/
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
   obra/aplicacion/ConsultarObraServicioTest.java # 006: lista, detalle y material previsto con Reloj fijo y dobles
   planilla/dominio/PlanillaTest.java            # 007: caso fijo (anticipo 10 %, retención 7 %), redondeo, límite en el borde, estados, fotos
-  planilla/aplicacion/ElaborarPlanillaServicioTest.java # 007: casos de uso con dobles (residente asignado, visibilidad, cliente sin borradores, fotos publicadas)
+  planilla/aplicacion/ElaborarPlanillaServicioTest.java # 007: casos de uso con dobles (residente asignado, visibilidad, cliente sin borradores, fotos publicadas); 010: PlanillaPresentada con y sin reenvio, nada si falla
   planilla/aplicacion/RevisarPlanillaServicioTest.java  # 008: aprobar y observar con dobles (DoblesSaga: obras, planillas y sagas en memoria, reloj manual y bus simulado)
   saga/aplicacion/DoblesSaga.java, OrquestadorSagaServicioTest.java # 008: máquina de estados con bus simulado (camino feliz, fallo en cada paso, vencimiento, repetidos, tardíos)
   avance/dominio/FotoAvanceTest.java, avance/aplicacion/RegistrarFotoServicioTest.java, ConsultarFotosServicioTest.java (dobles en DoblesAvance)
@@ -140,7 +140,7 @@ src/test/java/com/constructora/obras/
   obra/infraestructura/web/ObraControllerIT.java # @SpringBootTest + Testcontainers + tokens de prueba
   obra/infraestructura/web/ConsultarObraIT.java # 002 y 006: lista con filtros, indicadores, última planilla y detalle
   obra/infraestructura/web/MaterialPrevistoIT.java # 006: material previsto con y sin planilla, roles y periodo
-  planilla/infraestructura/web/PlanillaIT.java  # 007: pruebas de API de la spec (planilla abierta, periodos, versión, límite, fotos publicadas, roles y cliente)
+  planilla/infraestructura/web/PlanillaIT.java  # 007: pruebas de API de la spec (planilla abierta, periodos, versión, límite, fotos publicadas, roles y cliente); 010: PlanillaPresentada en el outbox
   planilla/infraestructura/web/RevisarPlanillaIT.java # 008: aprobar (202, saga y ReservarSaldo en la cola de Finanzas) y observar, errores, roles, azp y CORS
   planilla/infraestructura/persistencia/PlanillaTablasIT.java # 006, 007 y 008: restricciones de V3, V4 y V5 y lectura de planillas
   saga/infraestructura/mensajeria/SagaAprobacionIT.java # 008: saga con RabbitMQ real (Finanzas y Materiales simulados): camino feliz y avance, fallo con compensación, fallidos, vencimiento y respuestas tardías

@@ -129,7 +129,7 @@ Roles: `maestro` y `residente` asignados, `admin`, `gerente`.
 Roles: `residente` asignado. Recibe `{ "periodo": "2027-03" }`. Devuelve `201` con el detalle (`GET /planillas/{id}`).
 Errores: `409 PLANILLA_ABIERTA_EXISTE` · `422 PERIODO_NO_POSTERIOR` (no es posterior al de la última planilla) · `422 PERIODO_FUTURO` (mes futuro) · `422 OBRA_NO_EN_EJECUCION`.
 - Orden: rol (`403 SIN_PERMISO`, antes que el cuerpo) → `periodo` (`400 DATOS_INVALIDOS` si falta o no es `AAAA-MM`; `errores[].campo = periodo`) → obra visible (`404 OBRA_NO_ENCONTRADA`, también si el id no es un UUID) → residente de esa obra (`403 SIN_PERMISO` si la ve con otro papel) → `OBRA_NO_EN_EJECUCION` → `PLANILLA_ABIERTA_EXISTE` (hay una planilla que no está `APROBADA`) → `PERIODO_NO_POSTERIOR` (`errores[].campo = periodo`) → `PERIODO_FUTURO` (posterior al mes de hoy en `America/La_Paz`).
-- `numero` = el mayor de la obra + 1 (empieza en 1); una línea por partida en 0 y totales en 0; `version: 0`. Devuelve `Location: /planillas/{id}`. No publica eventos (la 010 agregará `PlanillaPresentada` al presentar).
+- `numero` = el mayor de la obra + 1 (empieza en 1); una línea por partida en 0 y totales en 0; `version: 0`. Devuelve `Location: /planillas/{id}`. No publica eventos (`PlanillaPresentada` se publica al presentar, 010).
 
 ### GET /obras/{obraId}/planillas · 006, 007, 008
 Roles: los que pueden ver la obra; `cliente` no recibe `BORRADOR`. Quién llama: el gateway y el servicio de IA en la carga inicial (401), con el token de `ia-reportes` (`gerente`).
@@ -165,7 +165,7 @@ Devuelve `200` con el detalle. Errores: `409 VERSION_DESACTUALIZADA` · `409 PLA
 ### POST /planillas/{id}/presentar · 007
 Roles: `residente` asignado. Recibe `{ "version": 3 }`. Devuelve `200` con el detalle (`PRESENTADA`).
 Errores: `409 VERSION_DESACTUALIZADA` · `409 PLANILLA_NO_EDITABLE` · `422 SUBTOTAL_CERO`.
-- Orden como en `PUT /planillas/{id}`: rol → cuerpo (`version` obligatoria) → planilla visible → residente → `PLANILLA_NO_EDITABLE` → `VERSION_DESACTUALIZADA` → `SUBTOTAL_CERO`. Se presenta desde `BORRADOR` u `OBSERVADA` (corregida; la `observacion` se conserva). Pasa a `PRESENTADA`, sube `version` y marca `publicada_cliente = true` en las fotos adjuntas. Todavía no publica `PlanillaPresentada` (010).
+- Orden como en `PUT /planillas/{id}`: rol → cuerpo (`version` obligatoria) → planilla visible → residente → `PLANILLA_NO_EDITABLE` → `VERSION_DESACTUALIZADA` → `SUBTOTAL_CERO`. Se presenta desde `BORRADOR` u `OBSERVADA` (corregida; la `observacion` se conserva). Pasa a `PRESENTADA`, sube `version` y marca `publicada_cliente = true` en las fotos adjuntas. En la misma transacción publica `PlanillaPresentada` (010) con `reenvio = true` si venía de `OBSERVADA` y `correlacionId` = id de la planilla; si la presentación falla no se publica nada.
 
 ### POST /planillas/{id}/aprobar · 008
 Roles: `cliente` dueño de la obra. Sin cuerpo. Devuelve `202 { "estado": "APROBANDO" }`.
@@ -201,6 +201,7 @@ Sobre, exchange y claves según convenciones.
 | `comando.materiales.ReabrirConsumos` | publica | `planillaId, obraId, periodo` |
 | `evento.obras.PlanillaAprobada` | publica | `planillaId, obraId, periodo, neto, cobroId, lineas[{partidaId, cantidadPeriodo, monto}]` |
 | `evento.obras.PlanillaObservada` | publica | `planillaId, obraId, motivo, origen ("CLIENTE" o "SAGA")` |
+| `evento.obras.PlanillaPresentada` | publica | `planillaId, obraId, numero, periodo ("AAAA-MM"), neto, reenvio (true si venía de OBSERVADA), presentadaEn` (010; la escucha n8n para avisar al cliente por correo) |
 
 ### Cómo publica y consume (002)
 

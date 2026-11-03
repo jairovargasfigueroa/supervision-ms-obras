@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -263,7 +264,8 @@ public final class Planilla {
                     "No se puede presentar una planilla con subtotal 0. Indica las cantidades ejecutadas del periodo.");
         }
         estado = EstadoPlanilla.PRESENTADA;
-        presentadaEn = ahora;
+        // Con la precisión de la base (microsegundos): el evento PlanillaPresentada (010) lleva el mismo valor
+        presentadaEn = ahora.truncatedTo(ChronoUnit.MICROS);
     }
 
     /**
