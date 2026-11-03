@@ -1,10 +1,11 @@
-# 601 · Contenedores y CI/CD · tareas de `services/obras`
+# 601 · Preparar el despliegue · tareas de `services/obras`
 
-Requisitos y diseño: `docs/specs/601-contenedores-ci/` de la carpeta que agrupa los proyectos. Contratos: `docs/contratos.md` de este proyecto.
+Requisitos y diseño: `docs/specs/601-contenedores-ci/` de la carpeta que agrupa los proyectos. Al implementarla, estas tareas reemplazan a `services/obras/docs/specs/601-contenedores-ci/tareas.md` (eran del borrador anterior).
 
 Marca cada tarea al terminarla (con sus pruebas y su commit).
 
-- [ ] Variables propuestas en `application.yml` con valores de desarrollo por defecto: `OBRAS_DB_SSLMODE`, `OBRAS_S3_REGION`, `OBRAS_KEYCLOAK_ISSUER`, `OBRAS_RABBITMQ_HOST`, `OBRAS_RABBITMQ_PORT`, `OBRAS_RABBITMQ_USER`, `OBRAS_RABBITMQ_PASSWORD`, `OBRAS_RABBITMQ_SSL`, `OBRAS_CORS_ORIGENES` (las `OBRAS_DB_*` y `OBRAS_S3_*` ya existen); con `OBRAS_S3_ENDPOINT` vacío usa S3 real
-- [ ] `Dockerfile` (JDK para compilar, `eclipse-temurin:21-jre-alpine` para correr, usuario sin privilegios, `HEALTHCHECK` a `/salud`) y `.dockerignore`
-- [ ] `.github/workflows/ci-cd.yml`: `./mvnw -B verify`, imagen en GHCR con etiquetas `sha-<7>` y `main`, despliegue con `az containerapp update` por OIDC
-- [ ] Comprobar: imagen sin `.env.properties`, `id -u` distinto de 0, `/salud` responde dentro del contenedor
+- [x] Aplicar «Cambios a contratos y datos» que tocan este proyecto (`docs/`, `CLAUDE.md`, `.env.example`)
+- [ ] Revisar que no quede ninguna dirección fija; agregar `OBRAS_DB_SSLMODE`, `OBRAS_RABBITMQ_SSL` y el perfil `prod` (sin trazas al usuario, registros por la salida estándar)
+- [ ] `Dockerfile` en dos etapas y `.dockerignore` (JRE 21, sin `root`, `HEALTHCHECK`, etiqueta OCI); prueba `docker build` + `docker run` con `/salud`
+- [ ] Semilla: excepción `SEMILLA_DEMO=si` en la guarda (solo carga; el vaciado sigue prohibido fuera de desarrollo); pruebas
+- [ ] `.github/workflows/ci.yml`: job `prueba` (`./mvnw -B verify`) y job `imagen` (build en PR; *push* a GHCR con `sha-<7>` y `main` en `main`)
