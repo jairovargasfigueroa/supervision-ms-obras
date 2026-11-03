@@ -1,9 +1,8 @@
-# 010 · Notificaciones · tareas de `services/obras`
+# 010 · Avisos al celular y al cliente · tareas de `services/obras`
 
-Requisitos y diseño: `docs/specs/010-notificaciones/` de la carpeta que agrupa los proyectos. Contratos: `docs/contratos.md` de este proyecto.
+Requisitos y diseño: `docs/specs/010-notificaciones/` de la carpeta que agrupa los proyectos. Al implementarla, estas tareas reemplazan a `services/obras/docs/specs/010-notificaciones/tareas.md` (eran de la versión anterior).
 
 Marca cada tarea al terminarla (con sus pruebas y su commit).
 
-- [ ] `POST /planillas/{id}/presentar`: outbox `evento.obras.PlanillaPresentada` (`planillaId, obraId, numero, periodo, neto, reenvio, presentadaEn`) en la misma transacción; `reenvio = true` si venía de `OBSERVADA`
-- [ ] `PlanillaAprobada` agrega `numero`; `PlanillaObservada` agrega `numero` y `periodo` (siguen en `version: 1`)
-- [ ] Pruebas de la spec (presentar por primera vez y después de una observación; campos nuevos en los dos eventos)
+- [x] Aplicar «Cambios a contratos y datos» que tocan este proyecto (`docs/contratos.md`)
+- [ ] Outbox `evento.obras.PlanillaPresentada` al presentar una planilla (con `reenvio`), en la misma transacción; pruebas
