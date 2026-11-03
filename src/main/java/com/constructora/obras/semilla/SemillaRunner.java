@@ -42,7 +42,11 @@ public class SemillaRunner implements ApplicationRunner, ExitCodeGenerator {
     @Override
     public void run(ApplicationArguments argumentos) {
         try {
-            GuardaSemilla.verificar(entorno.matchesProfiles("prod"), conexion.getJdbcUrl());
+            boolean cargaDemo = ConfiguracionSemilla.cargaDemo(entorno);
+            GuardaSemilla.verificar(entorno.matchesProfiles("prod"), conexion.getJdbcUrl(), cargaDemo);
+            if (cargaDemo) {
+                log.info("Semilla de Obras: carga de demostración permitida con SEMILLA_DEMO=si (solo cargar)");
+            }
             ModoSemilla modo = ModoSemilla.de(entorno.getProperty("semilla.modo", "cargar"));
             FechaRelativa fechas = FechaRelativa.desde(entorno.getProperty("semilla.fecha"), reloj);
             // Sin «D = …»: infra copia a su resumen solo la línea de cierre y RESUMEN_SEMILLA

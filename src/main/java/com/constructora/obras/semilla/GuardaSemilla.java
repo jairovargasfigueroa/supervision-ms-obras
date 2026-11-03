@@ -9,6 +9,10 @@ import org.springframework.boot.ExitCodeGenerator;
  * Guardas de la semilla (docs/datos-prueba.md, sección 12): se niega a cargar o vaciar si el perfil {@code prod} está
  * activo o si la base no es local ({@code localhost}, {@code 127.0.0.1}, {@code ::1} o el contenedor {@code postgres}
  * del Docker Compose de infra).
+ *
+ * <p>601 · Datos de demostración: con el permiso explícito {@code SEMILLA_DEMO=si} el modo {@code cargar} (idempotente)
+ * corre igual en producción o contra una base que no es local. El vaciado ({@code recargar}) sigue prohibido fuera de
+ * desarrollo, sin excepción.
  */
 public final class GuardaSemilla {
 
@@ -25,6 +29,19 @@ public final class GuardaSemilla {
      * @throws SemillaRechazadaException si no se puede correr
      */
     public static void verificar(boolean perfilProd, String urlDatasource) {
+        verificar(perfilProd, urlDatasource, false);
+    }
+
+    /**
+     * @param perfilProd    el perfil prod está activo
+     * @param urlDatasource URL JDBC de la base de Obras
+     * @param cargaDemo     carga de demostración permitida ({@link #cargaDemo}): no se comprueban el perfil ni la base
+     * @throws SemillaRechazadaException si no se puede correr
+     */
+    public static void verificar(boolean perfilProd, String urlDatasource, boolean cargaDemo) {
+        if (cargaDemo) {
+            return;
+        }
         if (perfilProd) {
             throw new SemillaRechazadaException(
                     "La semilla no corre con el perfil prod: los datos de prueba solo se cargan en desarrollo.");
@@ -35,6 +52,18 @@ public final class GuardaSemilla {
                     + "o el contenedor postgres de infra); la base configurada está en «"
                     + host.orElse("(no se pudo leer el host de la URL)") + "».");
         }
+    }
+
+    /**
+     * 601: la carga de demostración está permitida solo con {@code SEMILLA_DEMO=si} y el modo {@code cargar};
+     * {@code recargar} (o un modo desconocido) nunca.
+     *
+     * @param semillaDemo valor de {@code semilla.demo} (variable SEMILLA_DEMO)
+     * @param modo        valor de {@code semilla.modo}
+     */
+    public static boolean cargaDemo(String semillaDemo, String modo) {
+        return semillaDemo != null && "si".equalsIgnoreCase(semillaDemo.strip())
+                && modo != null && ModoSemilla.CARGAR.toString().equalsIgnoreCase(modo.strip());
     }
 
     /** Host de una URL {@code jdbc:postgresql://host[:puerto]/base}; vacío si no tiene esa forma o trae varios hosts. */

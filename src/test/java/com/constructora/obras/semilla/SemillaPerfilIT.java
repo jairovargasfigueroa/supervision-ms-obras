@@ -156,6 +156,30 @@ class SemillaPerfilIT {
                 .rootCause().hasMessageContaining("prod");
     }
 
+    // 601 · Datos de demostración: con SEMILLA_DEMO=si el perfil prod carga (sin duplicar), pero nunca recarga
+    @Test
+    void conElPerfilProdYSemillaDemoSiCargaSinDuplicar() {
+        try (ConfigurableApplicationContext contexto = semilla(List.of("semilla", "prod"), POSTGRES.getJdbcUrl(),
+                "--semilla.demo=si")) {
+            SemillaRunner runner = contexto.getBean(SemillaRunner.class);
+            assertThat(runner.getExitCode()).isZero();
+            assertThat(runner.resumen().modo()).isEqualTo(ModoSemilla.CARGAR);
+            assertThat(runner.resumen().total("obra")).isEqualTo(3);
+        }
+        assertThat(contar("obra")).isEqualTo(3);
+        assertThat(contar("planilla")).isEqualTo(5);
+    }
+
+    @Test
+    void conElPerfilProdYSemillaDemoSiRecargarSeNiegaAntesDeMigrar() {
+        long obras = contar("obra");
+        assertThatThrownBy(() -> semilla(List.of("semilla", "prod"), POSTGRES.getJdbcUrl(), "--semilla.demo=si",
+                "--semilla.modo=recargar").close())
+                .hasRootCauseInstanceOf(SemillaRechazadaException.class)
+                .rootCause().hasMessageContaining("prod");
+        assertThat(contar("obra")).isEqualTo(obras);
+    }
+
     @Test
     void conUnaBaseQueNoEsLocalSeNiegaSinConectarse() {
         assertThatThrownBy(() -> semilla(List.of("semilla"),

@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.constructora.obras.semilla.GuardaSemilla.SemillaRechazadaException;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +36,29 @@ class GuardaSemillaTest {
         assertThatThrownBy(() -> GuardaSemilla.verificar(true, "jdbc:postgresql://localhost:5433/obras_db"))
                 .isInstanceOf(SemillaRechazadaException.class)
                 .hasMessageContaining("prod");
+    }
+
+    // 601 · SEMILLA_DEMO=si: la carga de demostración pasa con el perfil prod y con una base que no es local
+    @Test
+    void laCargaDeDemostracionPasaEnProduccionYConUnaBaseRemota() {
+        assertThatCode(() -> GuardaSemilla.verificar(true,
+                "jdbc:postgresql://obras.abc123.postgres.database.azure.com:5432/obras_db", true))
+                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> GuardaSemilla.verificar(true, "jdbc:postgresql://localhost:5433/obras_db", false))
+                .isInstanceOf(SemillaRechazadaException.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"si,cargar", "SI,cargar", " si ,CARGAR"})
+    void semillaDemoSiConCargarPermiteLaCargaDeDemostracion(String demo, String modo) {
+        assertThat(GuardaSemilla.cargaDemo(demo, modo)).isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"si,recargar", "si,borrar", "si,NULL", "no,cargar", "true,cargar", "'',cargar", "NULL,cargar"},
+            nullValues = "NULL")
+    void sinSemillaDemoSiOConRecargarNoHayExcepcion(String demo, String modo) {
+        assertThat(GuardaSemilla.cargaDemo(demo, modo)).isFalse();
     }
 
     @Test
