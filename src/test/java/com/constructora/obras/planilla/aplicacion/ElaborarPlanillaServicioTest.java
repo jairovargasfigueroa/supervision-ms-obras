@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.constructora.obras.avance.aplicacion.puerto.salida.FotoAvanceRepositorio;
 import com.constructora.obras.avance.dominio.FotoAvance;
 import com.constructora.obras.compartido.dominio.Dinero;
+import com.constructora.obras.compartido.dominio.EventoDominio;
 import com.constructora.obras.compartido.dominio.Pagina;
 import com.constructora.obras.compartido.dominio.Paginacion;
 import com.constructora.obras.compartido.dominio.Periodo;
@@ -27,6 +28,8 @@ import com.constructora.obras.planilla.aplicacion.servicio.ElaborarPlanillaServi
 import com.constructora.obras.planilla.dominio.EstadoPlanilla;
 import com.constructora.obras.planilla.dominio.Planilla;
 import com.constructora.obras.planilla.dominio.Planilla.CantidadLinea;
+import com.constructora.obras.planilla.dominio.PlanillaPresentada;
+import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -42,7 +45,10 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** 007 · Casos de uso de planillas con un Reloj fijo (29/10/2026 en La Paz) y dobles a mano de los puertos. */
+/**
+ * 007 · Casos de uso de planillas con un Reloj fijo (29/10/2026 en La Paz) y dobles a mano de los puertos. 010:
+ * PlanillaPresentada al presentar.
+ */
 class ElaborarPlanillaServicioTest {
 
     private static final Reloj RELOJ = () -> Instant.parse("2026-10-29T16:00:00Z");
@@ -62,7 +68,9 @@ class ElaborarPlanillaServicioTest {
     private final ObrasEnMemoria obras = new ObrasEnMemoria(obra);
     private final PlanillasEnMemoria planillas = new PlanillasEnMemoria();
     private final FotosEnMemoria fotos = new FotosEnMemoria();
-    private final ElaborarPlanillaServicio elaborar = new ElaborarPlanillaServicio(obras, planillas, fotos, RELOJ);
+    private final List<EventoDominio> eventos = new ArrayList<>();
+    private final ElaborarPlanillaServicio elaborar = new ElaborarPlanillaServicio(obras, planillas, fotos,
+            eventos::add, RELOJ);
     private final ConsultarPlanillaServicio consultar = new ConsultarPlanillaServicio(obras, planillas);
 
     private static String codigo(Runnable accion) {
@@ -91,6 +99,45 @@ class ElaborarPlanillaServicioTest {
         assertThat(presentada.planilla().estado()).isEqualTo(EstadoPlanilla.PRESENTADA);
         assertThat(presentada.planilla().presentadaEn()).isEqualTo(RELOJ.ahora());
         assertThat(fotos.fotos.get(foto.id()).publicadaCliente()).isTrue();
+    }
+
+    @Test
+    void alPresentarSePublicaPlanillaPresentadaSinReenvio() {
+        UUID id = elaborar.crear(obra.id(), Periodo.de("2026-10"), residente).planilla().id();
+        elaborar.guardar(new Guardado(id, 0, List.of(new CantidadLinea(losa.id(), new BigDecimal("2.5"))), List.of()),
+                residente);
+        assertThat(eventos).isEmpty();
+
+        elaborar.presentar(id, 1, residente);
+
+        assertThat(eventos).singleElement().isEqualTo(new PlanillaPresentada(id, obra.id(), 1, "2026-10",
+                new BigDecimal("207.50"), false, RELOJ.ahora()));
+        assertThat(eventos.getFirst().correlacionId()).isEqualTo(id);
+        assertThat(eventos.getFirst().tipo()).isEqualTo("PlanillaPresentada");
+    }
+
+    @Test
+    void alVolverAPresentarUnaObservadaElEventoEsReenvio() {
+        Planilla observada = planillas.agregar(obra, 3, "2026-10", EstadoPlanilla.OBSERVADA, new BigDecimal("2.5"));
+
+        elaborar.presentar(observada.id(), 0, residente);
+
+        assertThat(eventos).singleElement().isInstanceOfSatisfying(PlanillaPresentada.class, evento -> {
+            assertThat(evento.reenvio()).isTrue();
+            assertThat(evento.numero()).isEqualTo(3);
+            assertThat(evento.neto()).isEqualByComparingTo("207.50");
+        });
+    }
+
+    @Test
+    void siLaPresentacionFallaNoSePublicaNada() {
+        UUID id = elaborar.crear(obra.id(), Periodo.de("2026-10"), residente).planilla().id();
+        Usuario otroResidente = new Usuario(UUID.randomUUID().toString(), Set.of("residente"));
+
+        assertThat(codigo(() -> elaborar.presentar(id, 0, residente))).isEqualTo("SUBTOTAL_CERO");
+        assertThat(codigo(() -> elaborar.presentar(id, 5, residente))).isEqualTo("VERSION_DESACTUALIZADA");
+        assertThat(codigo(() -> elaborar.presentar(id, 0, otroResidente))).isEqualTo("PLANILLA_NO_ENCONTRADA");
+        assertThat(eventos).isEmpty();
     }
 
     @Test

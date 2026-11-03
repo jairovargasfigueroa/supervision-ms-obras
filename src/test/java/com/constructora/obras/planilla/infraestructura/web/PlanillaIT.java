@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,12 +31,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 007 · Elaborar y presentar planilla, pruebas de API de la spec: planilla abierta (409), periodo futuro y no posterior
  * (422), versión desactualizada (409), fotos publicadas al presentar, más roles, límite, subtotal 0 y lo que ve el
  * cliente. Obra con P-01 Losa 10 m2 × 100 y P-02 Muro 20 m2 × 50 (contrato Bs 2.000, anticipo 10 %, retención 7 %).
- * Los periodos se toman respecto del mes actual en la zona del negocio.
+ * Los periodos se toman respecto del mes actual en la zona del negocio. 010: PlanillaPresentada en el outbox al
+ * presentar (con reenvio) y nada si la presentación falla.
  */
 class PlanillaIT extends PruebaIntegracion {
 
@@ -47,6 +51,8 @@ class PlanillaIT extends PruebaIntegracion {
     private MockMvc mvc;
     @Autowired
     private JdbcTemplate jdbc;
+    @Autowired
+    private JsonMapper json;
 
     private Equipo equipo;
     private UUID obra;
@@ -236,6 +242,7 @@ class PlanillaIT extends PruebaIntegracion {
                 .andExpect(jsonPath("$.codigo").value("VERSION_DESACTUALIZADA"));
         mvc.perform(conToken(get("/planillas/{id}", planilla), residente()))
                 .andExpect(jsonPath("$.lineas[0].cantidadPeriodo").value(1));
+        assertThat(presentadas(planilla)).isEmpty();
     }
 
     @Test
@@ -292,6 +299,22 @@ class PlanillaIT extends PruebaIntegracion {
 
         // 501: presentada_en guarda la hora de la presentación
         assertThat(presentadaEn(planilla)).isBetween(antes, Instant.now().plusSeconds(1));
+        // 010: PlanillaPresentada en el outbox, con el sobre común (losa 1 × 100: neto 100 − 10 − 7 = 83)
+        JsonNode sobre = presentadas(planilla).getFirst();
+        assertThat(sobre.get("tipo").asString()).isEqualTo("PlanillaPresentada");
+        assertThat(sobre.get("version").asInt()).isEqualTo(1);
+        assertThat(sobre.get("origen").asString()).isEqualTo("obras");
+        assertThat(sobre.get("correlacionId").asString()).isEqualTo(planilla.toString());
+        JsonNode datos = sobre.get("datos");
+        assertThat(datos.propertyNames()).containsExactlyInAnyOrder("planillaId", "obraId", "numero", "periodo",
+                "neto", "reenvio", "presentadaEn");
+        assertThat(datos.get("planillaId").asString()).isEqualTo(planilla.toString());
+        assertThat(datos.get("obraId").asString()).isEqualTo(obra.toString());
+        assertThat(datos.get("numero").asInt()).isEqualTo(1);
+        assertThat(datos.get("periodo").asString()).isEqualTo(MES);
+        assertThat(datos.get("neto").decimalValue()).isEqualByComparingTo("83.00");
+        assertThat(datos.get("reenvio").asBoolean()).isFalse();
+        assertThat(Instant.parse(datos.get("presentadaEn").asString())).isEqualTo(presentadaEn(planilla));
         assertThat(publicada(adjunta)).isTrue();
         assertThat(publicada(sinAdjuntar)).isFalse();
         // El cliente desde el portal ve la planilla presentada y solo la foto publicada
@@ -309,6 +332,7 @@ class PlanillaIT extends PruebaIntegracion {
         presentar(planilla, 2, residente())
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("PLANILLA_NO_EDITABLE"));
+        assertThat(presentadas(planilla)).hasSize(1);
     }
 
     @Test
@@ -318,6 +342,7 @@ class PlanillaIT extends PruebaIntegracion {
         presentar(planilla, 0, residente())
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.codigo").value("SUBTOTAL_CERO"));
+        assertThat(presentadas(planilla)).isEmpty();
     }
 
     @Test
@@ -338,6 +363,19 @@ class PlanillaIT extends PruebaIntegracion {
                 .andExpect(jsonPath("$.estado").value("PRESENTADA"));
         // 501: al volver a presentar se guarda la hora nueva
         assertThat(presentadaEn(planilla)).isAfter(Instant.now().minusSeconds(60));
+        // 010: venía de OBSERVADA → reenvio (losa 1 + muro 2 × 50: neto 200 − 20 − 14 = 166)
+        JsonNode datos = presentadas(planilla).getFirst().get("datos");
+        assertThat(datos.get("reenvio").asBoolean()).isTrue();
+        assertThat(datos.get("neto").decimalValue()).isEqualByComparingTo("166.00");
+        assertThat(Instant.parse(datos.get("presentadaEn").asString())).isEqualTo(presentadaEn(planilla));
+    }
+
+    /** Sobres de PlanillaPresentada de esa planilla guardados en el outbox (010). */
+    private List<JsonNode> presentadas(UUID planilla) {
+        return jdbc.queryForList("""
+                select payload::text from outbox_evento
+                where clave = 'evento.obras.PlanillaPresentada' and payload -> 'datos' ->> 'planillaId' = ?""",
+                String.class, planilla.toString()).stream().map(json::readTree).toList();
     }
 
     private Instant presentadaEn(UUID planilla) {
