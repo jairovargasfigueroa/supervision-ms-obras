@@ -6,7 +6,8 @@ spring:
     import: optional:file:.env.properties
 
   datasource:
-    # sslmode (601): prefer en desarrollo; require o verify-full en la nube (OBRAS_DB_SSLMODE)
+    # sslmode (601): prefer en desarrollo; require en la nube (OBRAS_DB_SSLMODE; verify-full no: la imagen no trae el
+    # certificado raíz del proveedor)
     url: jdbc:postgresql://${OBRAS_DB_HOST:localhost}:${OBRAS_DB_PORT:5433}/${OBRAS_DB_NAME:obras_db}?sslmode=${OBRAS_DB_SSLMODE:prefer}
     username: ${OBRAS_DB_USER:obras}
     password: ${OBRAS_DB_PASSWORD}

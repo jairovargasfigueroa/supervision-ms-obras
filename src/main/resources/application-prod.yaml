@@ -19,3 +19,10 @@ spring:
     banner-mode: off
   jpa:
     show-sql: false
+
+# Registros en JSON (formato ECS de Spring Boot), como los demás servicios: cada campo, también el id de la petición
+# del MDC, se puede filtrar en la consola de registros de la nube
+logging:
+  structured:
+    format:
+      console: ecs
