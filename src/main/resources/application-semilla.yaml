@@ -31,5 +31,7 @@ semilla:
   fecha: ${SEMILLA_FECHA:}
   # cargar (solo lo que no existe por id) o recargar (vacía las tablas del negocio y carga)
   modo: ${SEMILLA_MODO:cargar}
+  # 601: «si» permite cargar (nunca recargar) con el perfil prod o una base que no es local (datos de demostración)
+  demo: ${SEMILLA_DEMO:}
   # Cerrar el proceso al terminar (System.exit con el código de salida); las pruebas lo apagan
   salir: true

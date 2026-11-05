@@ -24,7 +24,7 @@ src/main/java/com/constructora/obras/
                     (ConfiguracionRabbit enlaza la cola obras con las respuestas al contrato, 002, y a la saga, 008)
                     MensajeProcesadoEntity.java, MensajeProcesadoJpaRepository.java
       archivos/     ConfiguracionS3.java (OBRAS_S3_*; sin bucket o claves arranca igual y las firmas responden 503),
-                    AlmacenArchivosS3.java (firma con S3Presigner, sin red)
+                    AlmacenArchivosS3.java (firma con S3Presigner, sin red; 601: OBRAS_S3_ENDPOINT para un S3 compatible, con rutas de estilo path)
   obra/                            # un paquete por contexto: obra, avance, planilla, saga, diario (capa 1)
     dominio/        Obra.java, Partida.java, InsumoPrevisto.java, EstadoObra.java, Asignaciones.java, ContratoCopia.java, ObraRegistrada.java (evento), MaterialPrevisto.java (006), Zona.java (401: NORTE, SUR, ESTE, OESTE, CENTRO; opcional)
     aplicacion/
@@ -115,11 +115,14 @@ src/main/java/com/constructora/obras/
                     totales con LineaPlanilla y TotalesPlanilla, número del cobro, comprobaciones del documento),
                     CargaSemilla.java (JdbcTemplate en una transacción, INSERT … ON CONFLICT DO NOTHING; recargar: TRUNCATE
                     de todas las tablas menos flyway_schema_history, sacadas de pg_tables: incluye entrada_diario de la 103), ModoSemilla.java (cargar, recargar),
-                    ResumenSemilla.java (conteos y línea RESUMEN_SEMILLA en JSON para infra), GuardaSemilla.java (perfil prod o base no local)
+                    ResumenSemilla.java (conteos y línea RESUMEN_SEMILLA en JSON para infra), GuardaSemilla.java (perfil prod o base no local;
+                    601: con SEMILLA_DEMO=si el modo cargar pasa igual, recargar nunca)
 src/main/resources/
-  application.yaml, application-dev.yaml, application-test.yaml,
+  application.yaml (601: OBRAS_DB_SSLMODE en la URL de la base, OBRAS_RABBITMQ_SSL, OBRAS_S3_ENDPOINT),
+  application-prod.yaml (601: perfil de la imagen; errores sin traza ni mensaje interno, salud sin detalles, sin .env.properties),
   application-semilla.yaml (011: sin web, listeners con auto-startup false,
-                    obras.mensajeria.publicador-activo y obras.saga.vencimiento-activo en false, semilla.fecha/modo/salir)
+                    obras.mensajeria.publicador-activo y obras.saga.vencimiento-activo en false, semilla.fecha/modo/salir;
+                    601: semilla.demo de SEMILLA_DEMO)
   semilla/obras.json (011: copia de la parte de Obras de docs/datos-prueba.md con fechas relativas a D)
   db/migration/V1__obra.sql (002), V2__foto_avance.sql (005), V3__planilla.sql (006: planilla y linea_planilla), V4__planilla_foto.sql (007), V5__saga_aprobacion.sql (008: saga_aprobacion y outbox_evento.clave), V6__entrada_diario.sql (103: entrada_diario, único obra_id y fecha), V7__obra_zona.sql (401: obra.zona), V8__planilla_presentada_en.sql (501: planilla.presentada_en, la llena «presentar»), V9__foto_avance_deteccion_epp.sql (301: foto_avance.sin_chaleco y version_modelo_epp), ...   # una migración por funcionalidad, nunca se edita una ya aplicada
 src/test/java/com/constructora/obras/
@@ -156,14 +159,24 @@ src/test/java/com/constructora/obras/
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
   compartido/infraestructura/seguridad/SeguridadIT.java
   diario/dominio/EntradaDiarioTest.java         # 103: bordes del texto (9, 10, 2000, 2001), clima, hoy en La Paz con UTC del día siguiente, fecha futura y anterior al inicio
-  semilla/FechaRelativaTest.java, DatosSemillaTest.java, PlanSemillaTest.java, GuardaSemillaTest.java # 011: unitarias (tabla del diseño, totales y cobros del documento, guardas)
-  semilla/SemillaPerfilIT.java                  # 011: la aplicación con el perfil semilla (sin web ni mensajería), dos cargas, recargar, prod y base no local (recargar también vacía entrada_diario)
+  semilla/FechaRelativaTest.java, DatosSemillaTest.java, PlanSemillaTest.java, GuardaSemillaTest.java # 011: unitarias (tabla del diseño, totales y cobros del documento, guardas; 601: SEMILLA_DEMO solo para cargar)
+  semilla/SemillaPerfilIT.java                  # 011: la aplicación con el perfil semilla (sin web ni mensajería), dos cargas, recargar, prod y base no local (recargar también vacía entrada_diario);
+                                                #   601: prod con SEMILLA_DEMO=si carga, prod con SEMILLA_DEMO=si y recargar se niega
   diario/aplicacion/DoblesDiario.java, RegistrarEntradaDiarioServicioTest.java # 103: idempotencia, día repetido (también a la vez), permisos, orden de validación
   diario/aplicacion/ConsultarDiarioServicioTest.java, diario/dominio/RangoDiarioTest.java # 103: rango por defecto en La Paz, límites y permisos de la lista
   diario/infraestructura/web/DiarioIT.java      # 103: pruebas de API de la spec (mismo id, día repetido también a la vez, maestro no asignado, residente, obra no en ejecución, fechas, formato, GET por rol, rango por defecto)
   diario/infraestructura/persistencia/EntradaDiarioTablaIT.java # 103: restricciones de V6 (una entrada por obra y día, clima) y el adaptador (choque sin abortar, rango)
   semilla/DatosPruebaIT.java                    # 011: la API con D = 2026-10-28 (reloj fijo): indicadores, planillas, material previsto, visibilidad y fotos
   ArquitecturaTest.java                         # ArchUnit (501: mcp solo usa casos de uso; Spring AI y el SDK de MCP solo en mcp)
+```
+
+## Imagen y CI (601)
+
+```
+Dockerfile           dos etapas: construir (eclipse-temurin JDK 21, ./mvnw -B package -DskipTests) y final (JRE 21, usuario 10001,
+                     SPRING_PROFILES_ACTIVE=prod, EXPOSE 8081, HEALTHCHECK a /salud, etiqueta org.opencontainers.image.source)
+.dockerignore        .git, target, .env*, *.log y lo demás de la regla común del diseño de la 601
+.github/workflows/ci.yml   job prueba (./mvnw -B verify) y job imagen (build en PR; push a GHCR con sha-<7> y main en main)
 ```
 
 ## Reglas

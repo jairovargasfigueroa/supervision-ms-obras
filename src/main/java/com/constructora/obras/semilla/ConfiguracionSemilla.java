@@ -18,14 +18,20 @@ public class ConfiguracionSemilla {
 
     /**
      * La guarda va antes de las migraciones: con el perfil prod o una base que no es local, el proceso se detiene sin
-     * haber tocado la base.
+     * haber tocado la base (salvo la carga de demostración con SEMILLA_DEMO=si, 601).
      */
     @Bean
     FlywayMigrationStrategy guardaAntesDeMigrar(Environment entorno, JdbcConnectionDetails conexion) {
         return flyway -> {
-            GuardaSemilla.verificar(entorno.matchesProfiles("prod"), conexion.getJdbcUrl());
+            GuardaSemilla.verificar(entorno.matchesProfiles("prod"), conexion.getJdbcUrl(), cargaDemo(entorno));
             flyway.migrate();
         };
+    }
+
+    /** 601: SEMILLA_DEMO=si y modo cargar (GuardaSemilla.cargaDemo). */
+    static boolean cargaDemo(Environment entorno) {
+        return GuardaSemilla.cargaDemo(entorno.getProperty("semilla.demo"),
+                entorno.getProperty("semilla.modo", ModoSemilla.CARGAR.toString()));
     }
 
     @Bean

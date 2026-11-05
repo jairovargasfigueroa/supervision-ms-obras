@@ -64,6 +64,32 @@ class AlmacenArchivosS3Test {
     }
 
     @Test
+    void conEndpointFirmaContraElS3CompatibleConRutasDeEstiloPath() {
+        try (AlmacenArchivosS3 compatible = new AlmacenArchivosS3(ConfiguracionS3.firmador("sa-east-1", BUCKET,
+                "minio-ficticio", "secreta-ficticia", " https://s3.aws.localhost:10443 "), BUCKET)) {
+            String clave = "fotos/" + UUID.randomUUID() + "/" + UUID.randomUUID() + ".jpg";
+
+            URI url = URI.create(compatible.urlSubida(clave, "image/jpeg", Duration.ofMinutes(10)).url());
+
+            assertThat(url.getScheme()).isEqualTo("https");
+            assertThat(url.getHost()).isEqualTo("s3.aws.localhost");
+            assertThat(url.getPort()).isEqualTo(10443);
+            assertThat(url.getPath()).isEqualTo("/" + BUCKET + "/" + clave);
+            assertThat(url.getQuery()).contains("X-Amz-Credential=minio-ficticio/");
+        }
+    }
+
+    @Test
+    void conEndpointVacioFirmaParaAmazonS3() {
+        try (AlmacenArchivosS3 aws = new AlmacenArchivosS3(ConfiguracionS3.firmador("sa-east-1", BUCKET,
+                "AKIAFICTICIA000000", "secreta-ficticia", " "), BUCKET)) {
+            URI url = URI.create(aws.urlDescarga("fotos/a/b.jpg", Duration.ofMinutes(30)).url());
+
+            assertThat(url.getHost()).isEqualTo(BUCKET + ".s3.sa-east-1.amazonaws.com");
+        }
+    }
+
+    @Test
     void sinBucketOSinClavesNoHayFirmadorYResponde503() {
         assertThat(ConfiguracionS3.firmador("sa-east-1", "", "clave", "secreta")).isEmpty();
         assertThat(ConfiguracionS3.firmador("sa-east-1", BUCKET, "", "secreta")).isEmpty();

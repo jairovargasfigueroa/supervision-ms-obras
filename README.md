@@ -36,7 +36,16 @@ $env:SEMILLA_FECHA = '2026-10-28'; .\mvnw.cmd spring-boot:run "-Dspring-boot.run
 - `-q` (Maven sin ruido) y `-Dspring-boot.run.profiles=dev,semilla` (como en `docs/datos-prueba.md`) funcionan igual.
 - Al terminar escribe en el registro, entre otras, dos líneas que infra copia a su resumen (las que contienen «resumen» o «D = AAAA-MM-DD»): `Semilla de Obras terminada · D = 2026-10-28 · modo cargar` y, en una sola línea con el total de cada tabla al terminar (mismo formato que Materiales):
   `RESUMEN_SEMILLA {"servicio":"obras","fecha":"2026-10-28","totales":{"obra":3,"partida":21,"insumo_previsto":58,"foto_avance":10,"planilla":5,"linea_planilla":34,"planilla_foto":5,"outbox_evento":0}}`
-- Código de salida: `0` bien; distinto de `0` si falló (no queda nada a medias) o si la guarda la rechazó: perfil `prod` activo o base que no está en `localhost`, `127.0.0.1`, `::1` ni en el contenedor `postgres` de infra. La guarda va antes de las migraciones.
+- Código de salida: `0` bien; distinto de `0` si falló (no queda nada a medias) o si la guarda la rechazó: perfil `prod` activo o base que no está en `localhost`, `127.0.0.1`, `::1` ni en el contenedor `postgres` de infra. La guarda va antes de las migraciones. Excepción (601, datos de demostración): con `SEMILLA_DEMO=si` el modo `cargar` corre igual; `recargar` se rechaza siempre fuera de desarrollo.
 - No escribe en `outbox_evento`, `mensaje_procesado` ni `saga_aprobacion` y no publica nada en RabbitMQ.
+
+## Imagen (601)
+
+```sh
+docker build -t supervision-ms-obras .
+docker run --rm -p 8081:8081 -e OBRAS_DB_HOST=host.docker.internal -e OBRAS_DB_PASSWORD=… supervision-ms-obras
+```
+
+La imagen corre con el perfil `prod` y se configura solo con las variables `OBRAS_*` (las de `.env.properties.example`). La semilla desde la imagen: `-e SPRING_PROFILES_ACTIVE=prod,semilla -e SEMILLA_DEMO=si -e SEMILLA_FECHA=AAAA-MM-DD`.
 
 Documentación del servicio en [`docs/`](docs/) e instrucciones para el agente en [`CLAUDE.md`](CLAUDE.md).

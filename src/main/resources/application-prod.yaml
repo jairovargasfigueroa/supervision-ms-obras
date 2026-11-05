@@ -1,0 +1,28 @@
+# 601 · Perfil de la imagen (SPRING_PROFILES_ACTIVE=prod). La configuración entra solo por las variables OBRAS_* (la
+# imagen no lleva .env.properties); las migraciones de Flyway se aplican al iniciar, como en desarrollo. Los registros
+# salen por la salida estándar (consola de Spring Boot, sin archivos).
+server:
+  # Errores fuera de los controladores (BasicErrorController): sin traza, sin mensaje interno ni excepción
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-binding-errors: never
+    include-exception: false
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+spring:
+  main:
+    banner-mode: off
+  jpa:
+    show-sql: false
+
+# Registros en JSON (formato ECS de Spring Boot), como los demás servicios: cada campo, también el id de la petición
+# del MDC, se puede filtrar en la consola de registros de la nube
+logging:
+  structured:
+    format:
+      console: ecs
