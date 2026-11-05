@@ -34,9 +34,14 @@ class RegistroMcpIT extends PruebaIntegracion {
 
         String linea = salida.getOut().lines().filter(texto -> texto.contains("\"requestId\":\"" + ejecucion + "\""))
                 .findFirst().orElseThrow(() -> new AssertionError("No se registró la llamada"));
-        Map<String, Object> registro = McpPrueba.json().readValue(linea.substring(linea.indexOf('{')),
-                new TypeReference<Map<String, Object>>() {
-                });
+        TypeReference<Map<String, Object>> tipo = new TypeReference<>() {
+        };
+        Map<String, Object> registro = McpPrueba.json().readValue(linea.substring(linea.indexOf('{')), tipo);
+        // Con el perfil prod (601) la línea es ECS y el registro de la llamada viaja en «message»; una prueba anterior
+        // del mismo proceso que arranca con prod (SemillaPerfilIT) deja ese formato configurado
+        if (registro.get("message") instanceof String mensaje && mensaje.startsWith("{")) {
+            registro = McpPrueba.json().readValue(mensaje, tipo);
+        }
         assertThat(registro).containsEntry("herramienta", "buscar_diario")
                 .containsEntry("argumentos", Map.of("obraId", obra, "limite", 5))
                 .containsEntry("filas", 0).containsKey("duracionMs").containsEntry("error", "OBRA_NO_ENCONTRADA");
