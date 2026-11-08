@@ -24,6 +24,27 @@ Parte de la «Plataforma de supervisión de obras». Si existe `../../CLAUDE.md`
 
 Configuración local: copiar `.env.properties.example` a `.env.properties` y completar. **`.env.properties` nunca se sube.**
 
+Imagen y CI (601, `docs/specs/601-contenedores-ci/` de `supervision-docs`):
+
+```sh
+docker build -t supervision-ms-obras .    # dos etapas: JDK 21 compila (sin pruebas), JRE 21 corre; usuario 10001, HEALTHCHECK a /salud
+docker run --rm -p 8081:8081 -e OBRAS_DB_HOST=… -e OBRAS_DB_PASSWORD=… supervision-ms-obras
+```
+
+- La imagen corre con el perfil `prod` (`SPRING_PROFILES_ACTIVE=prod`, `application-prod.yaml`): errores sin trazas ni mensajes internos, registros solo por la salida estándar y en JSON (formato ECS de Spring Boot). No lleva `.env.properties`: toda la configuración entra por las variables `OBRAS_*` (las de `.env.properties.example`). Aplica las migraciones de Flyway al iniciar.
+- TLS: `OBRAS_DB_SSLMODE` (`prefer` por defecto; `require` en la nube: `verify-full` no, la imagen no trae el certificado raíz del proveedor) y `OBRAS_RABBITMQ_SSL=true` (con `OBRAS_RABBITMQ_PORT=5671`). S3 compatible (MinIO de la producción local): `OBRAS_S3_ENDPOINT` (vacío = Amazon S3). Una CA adicional (la local del ensayo) se pasa sin tocar la imagen: `JAVA_TOOL_OPTIONS="-Djavax.net.ssl.trustStore=/ruta/almacen.p12 -Djavax.net.ssl.trustStorePassword=…"`.
+- La semilla también corre desde la imagen (`SPRING_PROFILES_ACTIVE=prod,semilla`, `SEMILLA_FECHA`): con el perfil `prod` o una base que no es local solo carga si `SEMILLA_DEMO=si`, y `recargar` se rechaza siempre fuera de desarrollo.
+- `.github/workflows/ci.yml`: en cada PR hacia `develop` o `main`, `./mvnw -B verify` y la imagen sin publicar; en cada *push* a `main`, la imagen en GHCR (`ghcr.io/jairovargasfigueroa/supervision-ms-obras`, etiquetas `sha-<7>` y `main`).
+
+Datos de prueba (011, `docs/datos-prueba.md` de `supervision-docs`): perfil `semilla`, sin web ni mensajería; carga y termina. Lo llama `infra/semilla/` con estas líneas exactas, desde esta carpeta (detalle en el README, «Datos de prueba»):
+
+```sh
+SEMILLA_FECHA=AAAA-MM-DD ./mvnw spring-boot:run -Dspring-boot.run.profiles=semilla                                                   # cargar
+SEMILLA_FECHA=AAAA-MM-DD ./mvnw spring-boot:run -Dspring-boot.run.profiles=semilla -Dspring-boot.run.arguments=--semilla.modo=recargar  # vaciar y cargar
+```
+
+En Windows, `mvnw.cmd` con los mismos argumentos entre comillas y `$env:SEMILLA_FECHA = 'AAAA-MM-DD'`. Lee `.env.properties`; código de salida distinto de 0 si falla o la guarda la rechaza (perfil `prod` o base que no es local, salvo `SEMILLA_DEMO=si` en modo `cargar`, 601). Para el resumen de infra (que copia las líneas con «resumen» o «D = AAAA-MM-DD») imprime `Semilla de Obras terminada · D = … · modo …` y una sola línea `RESUMEN_SEMILLA {"servicio":"obras","fecha":"…","totales":{"obra":3,"partida":21,…,"outbox_evento":0}}` (formato de Materiales). Los datos están en `src/main/resources/semilla/obras.json` (copia de `docs/datos-prueba.md`: si cambia, se cambia allí primero). Si una capa agrega tablas o campos a Obras, amplía esta semilla en el mismo trabajo.
+
 ## Arquitectura: DDD + Hexagonal
 
 Paquete raíz `com.constructora.obras`. Estructura prevista por contexto (`obra`, `planilla`, `avance`):

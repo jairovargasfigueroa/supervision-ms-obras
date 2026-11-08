@@ -8,6 +8,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.core.io.Resource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,7 +46,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class ConfiguracionSeguridad {
 
+    /** Solo con servidor web: el perfil semilla (011) arranca sin él y no hay HttpSecurity. */
     @Bean
+    @ConditionalOnWebApplication
     SecurityFilterChain cadenaSeguridad(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
@@ -55,9 +58,24 @@ public class ConfiguracionSeguridad {
                         // Los errores (por ejemplo un 404) se despachan otra vez a /error: no deben pedir token de nuevo
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.GET, "/salud").permitAll()
+                        // 501: herramientas MCP de solo lectura, solo para la service account de ia-agentes. Ningún
+                        // controlador REST acepta agente_ia (cada uno lista sus roles con @PreAuthorize).
+                        .requestMatchers("/mcp", "/mcp/**").hasRole("agente_ia")
+                        // Escrituras solo de un rol: el 403 debe llegar antes que la validación del cuerpo (400),
+                        // que Spring hace antes de entrar al método con @PreAuthorize (convenciones, «Respuestas
+                        // de permiso»). El controlador repite el rol con @PreAuthorize.
+                        .requestMatchers(HttpMethod.POST, "/obras").hasRole("admin")
+                        .requestMatchers(HttpMethod.POST, "/obras/*/fotos", "/obras/*/fotos/url-subida")
+                        .hasAnyRole("maestro", "residente")
+                        .requestMatchers(HttpMethod.POST, "/obras/*/diario").hasRole("maestro")
+                        .requestMatchers(HttpMethod.POST, "/obras/*/planillas", "/planillas/*/presentar")
+                        .hasRole("residente")
+                        .requestMatchers(HttpMethod.PUT, "/planillas/*").hasRole("residente")
+                        .requestMatchers(HttpMethod.POST, "/planillas/*/aprobar", "/planillas/*/observar")
+                        .hasRole("cliente")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(servidor -> servidor
-                        .jwt(Customizer.withDefaults())
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(new ConvertidorRolesKeycloak()))
                         .authenticationEntryPoint(noAutenticado())
                         .accessDeniedHandler(sinPermiso())
                         .withObjectPostProcessor(new ObjectPostProcessor<BearerTokenAuthenticationFilter>() {
