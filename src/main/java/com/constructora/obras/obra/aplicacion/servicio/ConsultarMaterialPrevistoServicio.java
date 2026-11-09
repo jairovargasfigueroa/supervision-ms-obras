@@ -8,7 +8,11 @@ import com.constructora.obras.obra.aplicacion.puerto.entrada.ConsultarObraCasoUs
 import com.constructora.obras.obra.aplicacion.puerto.salida.ObraRepositorio;
 import com.constructora.obras.obra.aplicacion.puerto.salida.PlanillasObraRepositorio;
 import com.constructora.obras.obra.dominio.Obra;
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,5 +42,22 @@ public class ConsultarMaterialPrevistoServicio implements ConsultarMaterialPrevi
         return planillas.cantidadesDelPeriodo(obra.id(), periodo)
                 .map(cantidades -> new Resultado(periodo, true, obra.materialPrevisto(cantidades)))
                 .orElseGet(() -> new Resultado(periodo, false, List.of()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<UUID, Resultado> consultar(Collection<UUID> obraIds, Periodo periodo, Usuario usuario) {
+        List<Obra> permitidas = obras.buscarPorIds(obraIds).stream()
+                .filter(obra -> obra.esVisiblePara(usuario) && obra.puedeVerMaterialPrevisto(usuario))
+                .toList();
+        Map<UUID, Map<UUID, BigDecimal>> cantidades = planillas.cantidadesDelPeriodo(
+                permitidas.stream().map(Obra::id).toList(), periodo);
+        Map<UUID, Resultado> resultados = new HashMap<>();
+        for (Obra obra : permitidas) {
+            Map<UUID, BigDecimal> delPeriodo = cantidades.get(obra.id());
+            resultados.put(obra.id(), delPeriodo == null ? new Resultado(periodo, false, List.of())
+                    : new Resultado(periodo, true, obra.materialPrevisto(delPeriodo)));
+        }
+        return resultados;
     }
 }

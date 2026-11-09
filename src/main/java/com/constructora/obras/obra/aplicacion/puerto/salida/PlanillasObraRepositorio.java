@@ -41,4 +41,11 @@ public interface PlanillasObraRepositorio {
      * @return partidaId → cantidad_periodo, o vacío si la obra no tiene planilla en ese periodo
      */
     Optional<Map<UUID, BigDecimal>> cantidadesDelPeriodo(UUID obraId, Periodo periodo);
+
+    /**
+     * 505 · Como {@link #cantidadesDelPeriodo(UUID, Periodo)} para varias obras, con una sola lectura.
+     *
+     * @return obraId → (partidaId → cantidad_periodo); las obras sin planilla en ese periodo no figuran
+     */
+    Map<UUID, Map<UUID, BigDecimal>> cantidadesDelPeriodo(Collection<UUID> obraIds, Periodo periodo);
 }

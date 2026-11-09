@@ -236,8 +236,8 @@ Ruta: POST /mcp (MCP, HTTP «streamable», sin estado, respuestas JSON; versión
 - Cada herramienta: anotaciones `readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`, `openWorldHint: false`; esquemas de entrada y salida con `additionalProperties: false`; `structuredContent` con la salida y el mismo JSON como texto en `content`; consulta de solo lectura con un tiempo máximo de 5 s.
 - Formatos: `uuid` = texto con formato uuid; `periodo` = `^\d{4}-(0[1-9]|1[0-2])$`; `fecha` = `AAAA-MM-DD`. Hoy en `America/La_Paz`.
 
-### avance_obra {obraId?, periodo?}
-«Devuelve el avance físico y el plazo transcurrido de las obras, al día. Sin obraId devuelve las obras en ejecución ordenadas de la más atrasada a la menos. Con obraId devuelve además sus partidas y, si se indica periodo, el material previsto de ese periodo.»
+### avance_obra {obraId?, periodo?} · 501, 505
+«Devuelve el avance físico y el plazo transcurrido de las obras, al día. Sin obraId devuelve las obras en ejecución ordenadas de la más atrasada a la menos; si además se indica periodo, cada una trae sus partidas con el material previsto de ese periodo. Con obraId devuelve además sus partidas y, si se indica periodo, el material previsto de ese periodo.»
 ```json
 {
   "generadoEn": "2027-03-10T10:00:00Z",
@@ -256,10 +256,17 @@ Ruta: POST /mcp (MCP, HTTP «streamable», sin estado, respuestas JSON; versión
   "truncado": false
 }
 ```
-- Sin `obraId`: obras `EN_EJECUCION`, con `partidas: null`, máximo 50, ordenadas por `diferencia` descendente (`truncado` si hay más).
+- Sin `obraId` ni `periodo`: obras `EN_EJECUCION`, con `partidas: null`, máximo 50, ordenadas por `diferencia` descendente (`truncado` si hay más).
 - Con `obraId`: una sola obra (en cualquier estado) con `partidas` por código (máximo 200; `truncado` si hay más). `materialPrevisto` y `hayPlanillaEnPeriodo` solo si viene `periodo` (si no, `null`), con el cálculo de `GET /obras/{id}/material-previsto`.
+- **Lote (505): `periodo` sin `obraId`.** Las mismas obras `EN_EJECUCION` (máximo 50, mismo orden, `truncado` si hay más) y con los mismos datos de la obra, pero cada una con `partidas` reducidas a `{partidaId, codigo, nombre, materialPrevisto[{materialId, cantidadPrevista}]}` (sin `unidad`, `cantidadContratada`, `ejecutadaAcumulada` ni `avancePct`: esas claves no van), por código. `materialPrevisto` es el de ese periodo, con el mismo cálculo que con una obra; se omiten las partidas cuyo `materialPrevisto` queda vacío (las que no tienen insumos previstos y todas las de una obra sin planilla en el periodo, que trae `partidas: []`). `hayPlanillaEnPeriodo` va `null` (es de una sola obra). La planilla del periodo de todas las obras se lee con una sola consulta.
+  ```json
+  { "generadoEn": "2027-03-10T10:00:00Z", "obras": [{ "obraId": "uuid", "nombre": "Edificio Las Palmas", "estado": "EN_EJECUCION", "fechaInicio": "2026-11-01", "plazoDias": 300, "avancePct": 32.5, "plazoPct": 41.0, "diferencia": 8.5, "enRiesgo": false, "ultimaPlanilla": { "periodo": "2027-02", "estado": "APROBADA" },
+      "partidas": [{ "partidaId": "uuid", "codigo": "P-01", "nombre": "Losa de hormigón armado", "materialPrevisto": [{ "materialId": "id", "cantidadPrevista": 55.0 }] }] }],
+    "hayPlanillaEnPeriodo": null, "truncado": false }
+  ```
+- `outputSchema`: en cada partida solo son obligatorias `partidaId`, `codigo`, `nombre` y `materialPrevisto` (505); las otras cuatro siempre vienen con `obraId`.
 - `diferencia` = `plazoPct − avancePct`; `enRiesgo`, `avancePct` y `plazoPct` como en `GET /obras` (mismos redondeos). `ultimaPlanilla` es `null` si no tiene.
-- Errores: `ARGUMENTO_INVALIDO` (también `periodo` sin `obraId`), `OBRA_NO_ENCONTRADA`.
+- Errores: `ARGUMENTO_INVALIDO`, `OBRA_NO_ENCONTRADA`.
 
 ### buscar_diario {obraId, desde?, hasta?, texto?, limite?}
 «Devuelve las entradas del diario de obra (clima y texto) de una obra en un rango de fechas, opcionalmente filtradas por una palabra. Sirve para buscar la causa de un atraso.»

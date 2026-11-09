@@ -23,6 +23,7 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,26 +77,18 @@ public class HerramientasMcpObras {
 
     @McpTool(name = "avance_obra", generateOutputSchema = true,
             description = "Devuelve el avance físico y el plazo transcurrido de las obras, al día. Sin obraId devuelve"
-                    + " las obras en ejecución ordenadas de la más atrasada a la menos. Con obraId devuelve además sus"
-                    + " partidas y, si se indica periodo, el material previsto de ese periodo.",
+                    + " las obras en ejecución ordenadas de la más atrasada a la menos; si además se indica periodo,"
+                    + " cada una trae sus partidas con el material previsto de ese periodo. Con obraId devuelve además"
+                    + " sus partidas y, si se indica periodo, el material previsto de ese periodo.",
             annotations = @McpAnnotations(title = "Avance de obras", readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
     public AvanceObraSalida avanceObra(
             @McpToolParam(required = false, description = "Id de la obra") String obraId,
-            @McpToolParam(required = false, description = "Mes AAAA-MM; solo junto con obraId") String periodo) {
-        if (periodo != null && obraId == null) {
-            throw ErrorHerramienta.argumentoInvalido("periodo solo se acepta junto con obraId.");
-        }
+            @McpToolParam(required = false, description = "Mes AAAA-MM del material previsto") String periodo) {
         Usuario usuario = usuarioActual.obtener();
         String generadoEn = reloj.ahora().truncatedTo(ChronoUnit.SECONDS).toString();
         if (obraId == null) {
-            List<AvanceObraSalida.Obra> obras = consultarObra
-                    .listar(usuario, new FiltroObras(EstadoObra.EN_EJECUCION, null)).stream()
-                    .map(detalle -> obra(detalle, null))
-                    .sorted(Comparator.comparing(AvanceObraSalida.Obra::diferencia).reversed()
-                            .thenComparing(AvanceObraSalida.Obra::nombre))
-                    .toList();
-            return new AvanceObraSalida(generadoEn, recortar(obras, MAX_OBRAS), null, obras.size() > MAX_OBRAS);
+            return enEjecucion(usuario, periodo == null ? null : Periodo.de(periodo), generadoEn);
         }
         UUID id = UUID.fromString(obraId);
         ObraDetalle detalle = consultarObra.obtener(id, usuario);
@@ -119,6 +112,55 @@ public class HerramientasMcpObras {
                 .toList();
         return new AvanceObraSalida(generadoEn, List.of(obra(detalle, filas)), hayPlanilla,
                 partidas.size() > MAX_PARTIDAS);
+    }
+
+    /**
+     * avance_obra sin obraId: obras en ejecución de la más atrasada a la menos (hasta MAX_OBRAS). Sin periodo van con
+     * partidas null; con periodo (505, lote) cada una con sus partidas reducidas al material previsto del periodo.
+     */
+    private AvanceObraSalida enEjecucion(Usuario usuario, Periodo periodo, String generadoEn) {
+        List<ObraDetalle> ordenadas = consultarObra.listar(usuario, new FiltroObras(EstadoObra.EN_EJECUCION, null))
+                .stream()
+                .sorted(Comparator.comparing(HerramientasMcpObras::diferencia).reversed()
+                        .thenComparing(detalle -> detalle.obra().nombre()))
+                .toList();
+        List<ObraDetalle> devueltas = recortar(ordenadas, MAX_OBRAS);
+        Map<UUID, List<AvanceObraSalida.Partida>> partidas = periodo == null ? Map.of()
+                : partidasDelLote(devueltas, periodo, usuario);
+        List<AvanceObraSalida.Obra> obras = devueltas.stream()
+                .map(detalle -> obra(detalle, periodo == null ? null
+                        : partidas.getOrDefault(detalle.obra().id(), List.of())))
+                .toList();
+        return new AvanceObraSalida(generadoEn, obras, null, ordenadas.size() > MAX_OBRAS);
+    }
+
+    /**
+     * Lote (505): partidas de cada obra, por código, reducidas a partidaId, codigo, nombre y el material previsto del
+     * periodo (el cálculo de GET /obras/{id}/material-previsto). Se omiten las que quedan sin material previsto: las
+     * que no tienen insumos y todas las de una obra sin planilla en el periodo. Una sola lectura de las planillas.
+     */
+    private Map<UUID, List<AvanceObraSalida.Partida>> partidasDelLote(List<ObraDetalle> detalles, Periodo periodo,
+            Usuario usuario) {
+        Map<UUID, ConsultarMaterialPrevistoCasoUso.Resultado> resultados = consultarMaterialPrevisto.consultar(
+                detalles.stream().map(detalle -> detalle.obra().id()).toList(), periodo, usuario);
+        Map<UUID, List<AvanceObraSalida.Partida>> porObra = new HashMap<>();
+        for (ObraDetalle detalle : detalles) {
+            ConsultarMaterialPrevistoCasoUso.Resultado resultado = resultados.get(detalle.obra().id());
+            Map<UUID, List<AvanceObraSalida.MaterialPrevisto>> previsto = resultado == null ? Map.of()
+                    : porPartida(resultado.items());
+            porObra.put(detalle.obra().id(), detalle.obra().partidas().stream()
+                    .filter(partida -> previsto.containsKey(partida.id()))
+                    .sorted(Comparator.comparing(Partida::codigo))
+                    .map(partida -> AvanceObraSalida.Partida.reducida(partida.id().toString(), partida.codigo(),
+                            partida.nombre(), previsto.get(partida.id())))
+                    .toList());
+        }
+        return porObra;
+    }
+
+    /** diferencia = plazoPct − avancePct (lo que la obra va atrasada). */
+    private static BigDecimal diferencia(ObraDetalle detalle) {
+        return detalle.indicadores().plazoPct().subtract(detalle.indicadores().avancePct());
     }
 
     @McpTool(name = "buscar_diario", generateOutputSchema = true,

@@ -28,8 +28,8 @@ src/main/java/com/constructora/obras/
   obra/                            # un paquete por contexto: obra, avance, planilla, saga, diario (capa 1)
     dominio/        Obra.java, Partida.java, InsumoPrevisto.java, EstadoObra.java, Asignaciones.java, ContratoCopia.java, ObraRegistrada.java (evento), MaterialPrevisto.java (006), Zona.java (401: NORTE, SUR, ESTE, OESTE, CENTRO; opcional)
     aplicacion/
-      puerto/entrada/   RegistrarObraCasoUso.java, ConsultarObraCasoUso.java, RegistrarRespuestaContratoCasoUso.java, ObraDetalle.java (indicadores y última planilla), FiltroObras.java (estado y búsqueda de GET /obras), ConsultarMaterialPrevistoCasoUso.java
-      puerto/salida/    ObraRepositorio.java, PublicadorEventos.java, PlanillasObraRepositorio.java (006: lectura de planillas para avance, última planilla y material previsto)
+      puerto/entrada/   RegistrarObraCasoUso.java, ConsultarObraCasoUso.java, RegistrarRespuestaContratoCasoUso.java, ObraDetalle.java (indicadores y última planilla), FiltroObras.java (estado y búsqueda de GET /obras), ConsultarMaterialPrevistoCasoUso.java (505: también de varias obras, para avance_obra por lote)
+      puerto/salida/    ObraRepositorio.java, PublicadorEventos.java, PlanillasObraRepositorio.java (006: lectura de planillas para avance, última planilla y material previsto; 505: cantidades del periodo de varias obras en una consulta)
       servicio/         RegistrarObraServicio.java, ConsultarObraServicio.java, RespuestaContratoServicio.java, ConsultarMaterialPrevistoServicio.java
     infraestructura/
       web/              ObraController.java, dto/RegistrarObraRequest.java, dto/ObraResponse.java, dto/ObraResumenResponse.java, dto/MaterialPrevistoResponse.java, ObraWebMapper.java
@@ -128,7 +128,7 @@ src/main/resources/
 src/test/java/com/constructora/obras/
   obra/dominio/ObraTest.java                    # unitarias del dominio, sin Spring
   obra/aplicacion/RegistrarObraServicioTest.java # con dobles de los puertos
-  obra/aplicacion/ConsultarObraServicioTest.java # 006: lista, detalle y material previsto con Reloj fijo y dobles
+  obra/aplicacion/ConsultarObraServicioTest.java # 006: lista, detalle y material previsto con Reloj fijo y dobles; 505: material previsto de varias obras con una lectura
   planilla/dominio/PlanillaTest.java            # 007: caso fijo (anticipo 10 %, retención 7 %), redondeo, límite en el borde, estados, fotos
   planilla/aplicacion/ElaborarPlanillaServicioTest.java # 007: casos de uso con dobles (residente asignado, visibilidad, cliente sin borradores, fotos publicadas); 010: PlanillaPresentada con y sin reenvio, nada si falla
   planilla/aplicacion/RevisarPlanillaServicioTest.java  # 008: aprobar y observar con dobles (DoblesSaga: obras, planillas y sagas en memoria, reloj manual y bus simulado)
@@ -153,7 +153,7 @@ src/test/java/com/constructora/obras/
   mcp/EjecutorHerramientasMcpTest.java          # 501: validación antes de llamar, errores como resultado, transacción de solo lectura de 5 s, registro JSON
   mcp/RegistroMcpIT.java                        # 501: la línea de registro lleva el X-Request-Id del agente y no el token
   mcp/BuscarDiarioMcpIT.java, PlanillasEstadoMcpIT.java  # 501: rango, escape, límite y truncado del diario; estados, días desde la presentación y cifras del REST
-  mcp/AvanceObraMcpIT.java                      # 501: avance_obra con las cifras de GET /obras, GET /obras/{id} y material previsto; orden, periodo sin obraId y truncado
+  mcp/AvanceObraMcpIT.java                      # 501: avance_obra con las cifras de GET /obras, GET /obras/{id} y material previsto; orden y truncado; 505: lote (periodo sin obraId) con partidas reducidas
   mcp/SeguridadMcpIT.java                       # 501: /mcp sin token 401, personas 403, agente_ia solo con azp ia-agentes 200, agente_ia en REST 403
   soporte/                                      # McpPrueba (cliente JSON-RPC de /mcp, 501), PruebaIntegracion (base de los *IT), ContenedoresPrueba, TokensPrueba, ControladorPruebaRoles (endpoints solo de prueba), ObrasPrueba, PlanillasPrueba (planillas directo en la base), Esperar,
                                                 #   AlmacenArchivosEnMemoria (doble de AlmacenArchivos) y AlmacenArchivosPrueba (lo pone en lugar de S3)
