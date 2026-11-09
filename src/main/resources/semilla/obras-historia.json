@@ -1,0 +1,917 @@
+{
+  "_fuente": "603 · Historia de demostración (Obras): obras 4, 5 y 6. Archivo GENERADO por infra/semilla/historia/generar.mjs; no se edita a mano. Se une a los datos de la 011 con SEMILLA_HISTORIA=si.",
+  "obras": [
+    {
+      "id": "b0000000-0000-4000-8000-000000000004",
+      "nombre": "Edificio de Oficinas Casco Viejo",
+      "ubicacion": "Calle Junín esq. 21 de Mayo, Casco Viejo, Santa Cruz de la Sierra",
+      "zona": "CENTRO",
+      "estado": "EN_EJECUCION",
+      "clienteUsuarioId": "a0000000-0000-4000-8000-000000000007",
+      "residenteUsuarioId": "a0000000-0000-4000-8000-000000000003",
+      "maestroUsuarioId": "a0000000-0000-4000-8000-000000000005",
+      "almaceneroUsuarioId": "a0000000-0000-4000-8000-000000000006",
+      "contratoId": "c0000000-0000-4000-8000-000000000004",
+      "contrato": {
+        "monto": 4156830,
+        "plazoDias": 420,
+        "anticipoPct": 10,
+        "retencionPct": 7
+      },
+      "fechaInicio": "D-185",
+      "partidas": [
+        {
+          "id": "b1000000-0000-4000-8000-000000000401",
+          "codigo": "P-01",
+          "nombre": "Excavación con maquinaria",
+          "unidad": "m3",
+          "cantidadContratada": 1500,
+          "precioUnitario": 46.5,
+          "meses": "M-6",
+          "receta": null
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000402",
+          "codigo": "P-02",
+          "nombre": "Hormigón armado en zapatas",
+          "unidad": "m3",
+          "cantidadContratada": 140,
+          "precioUnitario": 2448,
+          "meses": "M-6..M-5",
+          "receta": "zapatas"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000403",
+          "codigo": "P-03",
+          "nombre": "Hormigón armado en columnas y vigas",
+          "unidad": "m3",
+          "cantidadContratada": 260,
+          "precioUnitario": 3365,
+          "meses": "M-5..M-1",
+          "receta": "columnas"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000404",
+          "codigo": "P-04",
+          "nombre": "Losa alivianada con viguetas",
+          "unidad": "m2",
+          "cantidadContratada": 3200,
+          "precioUnitario": 418.5,
+          "meses": "M-4..M0",
+          "receta": "losa-alivianada"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000405",
+          "codigo": "P-05",
+          "nombre": "Muro de ladrillo de 6 huecos",
+          "unidad": "m2",
+          "cantidadContratada": 4200,
+          "precioUnitario": 134.8,
+          "meses": "M-3..M+3",
+          "receta": "muro"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000406",
+          "codigo": "P-06",
+          "nombre": "Revoque grueso y fino",
+          "unidad": "m2",
+          "cantidadContratada": 6000,
+          "precioUnitario": 61.75,
+          "meses": "M-1..M+5",
+          "receta": "revoque"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000407",
+          "codigo": "P-07",
+          "nombre": "Contrapiso y piso cerámico",
+          "unidad": "m2",
+          "cantidadContratada": 2800,
+          "precioUnitario": 212,
+          "meses": "M+2..M+6",
+          "receta": "piso"
+        }
+      ]
+    },
+    {
+      "id": "b0000000-0000-4000-8000-000000000005",
+      "nombre": "Mercado Municipal Villa 1ro de Mayo",
+      "ubicacion": "Av. Principal de Villa 1ro de Mayo y 7mo anillo, Santa Cruz de la Sierra",
+      "zona": "ESTE",
+      "estado": "EN_EJECUCION",
+      "clienteUsuarioId": "a0000000-0000-4000-8000-000000000009",
+      "residenteUsuarioId": "a0000000-0000-4000-8000-000000000004",
+      "maestroUsuarioId": "a0000000-0000-4000-8000-000000000005",
+      "almaceneroUsuarioId": "a0000000-0000-4000-8000-000000000006",
+      "contratoId": "c0000000-0000-4000-8000-000000000005",
+      "contrato": {
+        "monto": 3733300,
+        "plazoDias": 300,
+        "anticipoPct": 15,
+        "retencionPct": 7
+      },
+      "fechaInicio": "D-215",
+      "partidas": [
+        {
+          "id": "b1000000-0000-4000-8000-000000000501",
+          "codigo": "P-01",
+          "nombre": "Excavación manual para cimientos",
+          "unidad": "m3",
+          "cantidadContratada": 900,
+          "precioUnitario": 68,
+          "meses": "M-7",
+          "receta": null
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000502",
+          "codigo": "P-02",
+          "nombre": "Cimiento de hormigón ciclópeo",
+          "unidad": "m3",
+          "cantidadContratada": 420,
+          "precioUnitario": 985,
+          "meses": "M-7..M-6",
+          "receta": "ciclopeo"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000503",
+          "codigo": "P-03",
+          "nombre": "Hormigón armado en zapatas",
+          "unidad": "m3",
+          "cantidadContratada": 120,
+          "precioUnitario": 2455,
+          "meses": "M-6",
+          "receta": "zapatas"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000504",
+          "codigo": "P-04",
+          "nombre": "Hormigón armado en columnas y vigas",
+          "unidad": "m3",
+          "cantidadContratada": 180,
+          "precioUnitario": 3290,
+          "meses": "M-5..M-3",
+          "receta": "columnas"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000505",
+          "codigo": "P-05",
+          "nombre": "Losa alivianada con viguetas",
+          "unidad": "m2",
+          "cantidadContratada": 2600,
+          "precioUnitario": 410,
+          "meses": "M-3..M-1",
+          "receta": "losa-alivianada"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000506",
+          "codigo": "P-06",
+          "nombre": "Muro de ladrillo de 6 huecos",
+          "unidad": "m2",
+          "cantidadContratada": 3800,
+          "precioUnitario": 132,
+          "meses": "M-2..M+1",
+          "receta": "muro"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000507",
+          "codigo": "P-07",
+          "nombre": "Revoque grueso y fino",
+          "unidad": "m2",
+          "cantidadContratada": 5200,
+          "precioUnitario": 60,
+          "meses": "M0..M+2",
+          "receta": "revoque"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000508",
+          "codigo": "P-08",
+          "nombre": "Contrapiso y piso cerámico",
+          "unidad": "m2",
+          "cantidadContratada": 2400,
+          "precioUnitario": 205,
+          "meses": "M+1..M+2",
+          "receta": "piso"
+        }
+      ]
+    },
+    {
+      "id": "b0000000-0000-4000-8000-000000000006",
+      "nombre": "Condominio Jardines del Urubó",
+      "ubicacion": "Carretera al Urubó km 4, Porongo",
+      "zona": "OESTE",
+      "estado": "EN_EJECUCION",
+      "clienteUsuarioId": "a0000000-0000-4000-8000-000000000007",
+      "residenteUsuarioId": "a0000000-0000-4000-8000-000000000009",
+      "maestroUsuarioId": "a0000000-0000-4000-8000-000000000005",
+      "almaceneroUsuarioId": "a0000000-0000-4000-8000-000000000006",
+      "contratoId": "c0000000-0000-4000-8000-000000000006",
+      "contrato": {
+        "monto": 3466200,
+        "plazoDias": 360,
+        "anticipoPct": 10,
+        "retencionPct": 5
+      },
+      "fechaInicio": "D-158",
+      "partidas": [
+        {
+          "id": "b1000000-0000-4000-8000-000000000601",
+          "codigo": "P-01",
+          "nombre": "Excavación con maquinaria",
+          "unidad": "m3",
+          "cantidadContratada": 1100,
+          "precioUnitario": 46,
+          "meses": "M-5",
+          "receta": null
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000602",
+          "codigo": "P-02",
+          "nombre": "Hormigón armado en zapatas",
+          "unidad": "m3",
+          "cantidadContratada": 110,
+          "precioUnitario": 2440,
+          "meses": "M-5..M-4",
+          "receta": "zapatas"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000603",
+          "codigo": "P-03",
+          "nombre": "Hormigón armado en columnas y vigas",
+          "unidad": "m3",
+          "cantidadContratada": 210,
+          "precioUnitario": 3340,
+          "meses": "M-4..M-1",
+          "receta": "columnas"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000604",
+          "codigo": "P-04",
+          "nombre": "Losa maciza de hormigón armado",
+          "unidad": "m2",
+          "cantidadContratada": 2400,
+          "precioUnitario": 465,
+          "meses": "M-3..M+1",
+          "receta": "losa-maciza"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000605",
+          "codigo": "P-05",
+          "nombre": "Muro de ladrillo de 6 huecos",
+          "unidad": "m2",
+          "cantidadContratada": 3600,
+          "precioUnitario": 133,
+          "meses": "M-2..M+3",
+          "receta": "muro"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000606",
+          "codigo": "P-06",
+          "nombre": "Revoque grueso y fino",
+          "unidad": "m2",
+          "cantidadContratada": 5000,
+          "precioUnitario": 61,
+          "meses": "M0..M+5",
+          "receta": "revoque"
+        },
+        {
+          "id": "b1000000-0000-4000-8000-000000000607",
+          "codigo": "P-07",
+          "nombre": "Contrapiso y piso cerámico",
+          "unidad": "m2",
+          "cantidadContratada": 2600,
+          "precioUnitario": 210,
+          "meses": "M+3..M+6",
+          "receta": "piso"
+        }
+      ]
+    }
+  ],
+  "fotos": [
+    {
+      "id": "f1000000-0000-4000-8000-000000040201",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-02",
+      "tomadaEn": "M-6/20 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040101",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-01",
+      "tomadaEn": "M-6/26 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040202",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-02",
+      "tomadaEn": "M-5/15 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040301",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-03",
+      "tomadaEn": "M-5/13 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040302",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-03",
+      "tomadaEn": "M-4/24 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040401",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-04",
+      "tomadaEn": "M-4/15 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040402",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-04",
+      "tomadaEn": "M-3/14 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040303",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-03",
+      "tomadaEn": "M-3/22 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040403",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-04",
+      "tomadaEn": "M-2/22 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040304",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-03",
+      "tomadaEn": "M-2/21 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040404",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-04",
+      "tomadaEn": "M-1/20 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000040305",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "partida": "P-03",
+      "tomadaEn": "M-1/19 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050101",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-01",
+      "tomadaEn": "M-7/16 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050201",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-02",
+      "tomadaEn": "M-6/23 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050102",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-01",
+      "tomadaEn": "M-6/14 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050202",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-02",
+      "tomadaEn": "M-5/23 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050301",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-03",
+      "tomadaEn": "M-5/23 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050302",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-03",
+      "tomadaEn": "M-4/20 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050203",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-02",
+      "tomadaEn": "M-4/20 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050401",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-04",
+      "tomadaEn": "M-3/22 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050303",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-03",
+      "tomadaEn": "M-3/15 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050402",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-04",
+      "tomadaEn": "M-2/22 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050501",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-05",
+      "tomadaEn": "M-2/14 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050502",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-05",
+      "tomadaEn": "M-1/21 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000050403",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "partida": "P-04",
+      "tomadaEn": "M-1/24 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000060201",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "partida": "P-02",
+      "tomadaEn": "M-5/24 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000060101",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "partida": "P-01",
+      "tomadaEn": "M-5/17 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000060202",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "partida": "P-02",
+      "tomadaEn": "M-4/24 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000060301",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "partida": "P-03",
+      "tomadaEn": "M-4/21 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000060302",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "partida": "P-03",
+      "tomadaEn": "M-3/17 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000060401",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "partida": "P-04",
+      "tomadaEn": "M-3/21 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000060402",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "partida": "P-04",
+      "tomadaEn": "M-2/22 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000060303",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "partida": "P-03",
+      "tomadaEn": "M-2/12 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000060403",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "partida": "P-04",
+      "tomadaEn": "M-1/23 11:00",
+      "publicadaCliente": false
+    },
+    {
+      "id": "f1000000-0000-4000-8000-000000060304",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "partida": "P-03",
+      "tomadaEn": "M-1/20 11:00",
+      "publicadaCliente": false
+    }
+  ],
+  "planillas": [
+    {
+      "id": "d0000000-0000-4000-8000-000000000401",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "numero": 1,
+      "periodo": "M-6",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-01": 1500,
+        "P-02": 49
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000401",
+        "emitidoEn": "D-153 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000040201",
+        "f1000000-0000-4000-8000-000000040101"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000402",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "numero": 2,
+      "periodo": "M-5",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-02": 91,
+        "P-03": 31.2
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000402",
+        "emitidoEn": "D-125 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000040202",
+        "f1000000-0000-4000-8000-000000040301"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000403",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "numero": 3,
+      "periodo": "M-4",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-03": 46.8,
+        "P-04": 320
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000403",
+        "emitidoEn": "D-91 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000040302",
+        "f1000000-0000-4000-8000-000000040401"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000404",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "numero": 4,
+      "periodo": "M-3",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-03": 46.8,
+        "P-04": 480,
+        "P-05": 210
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000404",
+        "emitidoEn": "D-58 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000040402",
+        "f1000000-0000-4000-8000-000000040303"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000405",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "numero": 5,
+      "periodo": "M-2",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-03": 44.2,
+        "P-04": 480,
+        "P-05": 336
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000405",
+        "emitidoEn": "D-32 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000040403",
+        "f1000000-0000-4000-8000-000000040304"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000406",
+      "obraId": "b0000000-0000-4000-8000-000000000004",
+      "numero": 6,
+      "periodo": "M-1",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-03": 39,
+        "P-04": 480,
+        "P-05": 378,
+        "P-06": 180
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000406",
+        "emitidoEn": "D-3 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000040404",
+        "f1000000-0000-4000-8000-000000040305"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000501",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "numero": 1,
+      "periodo": "M-7",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-01": 495
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000501",
+        "emitidoEn": "D-181 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000050101"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000502",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "numero": 2,
+      "periodo": "M-6",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-01": 405,
+        "P-02": 147
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000502",
+        "emitidoEn": "D-157 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000050201",
+        "f1000000-0000-4000-8000-000000050102"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000503",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "numero": 3,
+      "periodo": "M-5",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-02": 189,
+        "P-03": 24
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000503",
+        "emitidoEn": "D-122 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000050202",
+        "f1000000-0000-4000-8000-000000050301"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000504",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "numero": 4,
+      "periodo": "M-4",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-02": 84,
+        "P-03": 60
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000504",
+        "emitidoEn": "D-93 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000050302",
+        "f1000000-0000-4000-8000-000000050203"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000505",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "numero": 5,
+      "periodo": "M-3",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-03": 36,
+        "P-04": 27
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000505",
+        "emitidoEn": "D-63 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000050401",
+        "f1000000-0000-4000-8000-000000050303"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000506",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "numero": 6,
+      "periodo": "M-2",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-04": 21.6,
+        "P-05": 130
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000506",
+        "emitidoEn": "D-28 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000050402",
+        "f1000000-0000-4000-8000-000000050501"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000507",
+      "obraId": "b0000000-0000-4000-8000-000000000005",
+      "numero": 7,
+      "periodo": "M-1",
+      "estado": "OBSERVADA",
+      "cantidades": {
+        "P-04": 18,
+        "P-05": 156,
+        "P-06": 76
+      },
+      "observacion": "Las cantidades de columnas y vigas (18 m³) y de losa alivianada (156 m²) no coinciden con lo verificado en la visita de obra: se midieron unos 13 m³ y 120 m². Corrijan las mediciones y adjunten fotos de los vaciados.",
+      "cobro": null,
+      "fotos": [
+        "f1000000-0000-4000-8000-000000050502",
+        "f1000000-0000-4000-8000-000000050403"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000601",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "numero": 1,
+      "periodo": "M-5",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-01": 1100,
+        "P-02": 33
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000601",
+        "emitidoEn": "D-124 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000060201",
+        "f1000000-0000-4000-8000-000000060101"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000602",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "numero": 2,
+      "periodo": "M-4",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-02": 77,
+        "P-03": 21
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000602",
+        "emitidoEn": "D-90 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000060202",
+        "f1000000-0000-4000-8000-000000060301"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000603",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "numero": 3,
+      "periodo": "M-3",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-03": 25.2,
+        "P-04": 120
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000603",
+        "emitidoEn": "D-61 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000060302",
+        "f1000000-0000-4000-8000-000000060401"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000604",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "numero": 4,
+      "periodo": "M-2",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-03": 21,
+        "P-04": 168,
+        "P-05": 72
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000604",
+        "emitidoEn": "D-34 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000060402",
+        "f1000000-0000-4000-8000-000000060303"
+      ],
+      "presentadaEn": null
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000605",
+      "obraId": "b0000000-0000-4000-8000-000000000006",
+      "numero": 5,
+      "periodo": "M-1",
+      "estado": "APROBADA",
+      "cantidades": {
+        "P-03": 18.9,
+        "P-04": 192,
+        "P-05": 108
+      },
+      "observacion": null,
+      "cobro": {
+        "id": "c2000000-0000-4000-8000-000000000605",
+        "emitidoEn": "D-3 10:00"
+      },
+      "fotos": [
+        "f1000000-0000-4000-8000-000000060403",
+        "f1000000-0000-4000-8000-000000060304"
+      ],
+      "presentadaEn": null
+    }
+  ]
+}

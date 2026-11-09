@@ -31,19 +31,52 @@ public record DatosSemilla(
 
     public static final String RECURSO = "semilla/obras.json";
 
+    /**
+     * 603: historia de demostración (obras 4 a 6, generada por {@code infra/semilla/historia/generar.mjs}). Trae solo
+     * obras, fotos y planillas; el catálogo, las recetas y quién registró las fotos son los de la 011.
+     */
+    public static final String RECURSO_HISTORIA = "semilla/obras-historia.json";
+
     /** Lee el archivo de datos del classpath. Un campo desconocido es un error (protege contra errores al copiar). */
     public static DatosSemilla leer() {
+        return leerRecurso(RECURSO);
+    }
+
+    /**
+     * Los datos de la 011 y, con {@code conHistoria} (603, {@code SEMILLA_HISTORIA=si}), las obras, fotos y planillas de
+     * la historia agregadas a las suyas: todo se valida y se carga junto.
+     */
+    public static DatosSemilla leer(boolean conHistoria) {
+        DatosSemilla base = leer();
+        if (!conHistoria) {
+            return base;
+        }
+        DatosSemilla historia = leerRecurso(RECURSO_HISTORIA);
+        return new DatosSemilla(base.fuente(), base.materiales(), base.recetas(), unir(base.obras(), historia.obras()),
+                unir(base.fotos(), historia.fotos()), base.fotosRegistradasPor(), base.fotosVersionModeloEpp(),
+                unir(base.planillas(), historia.planillas()));
+    }
+
+    private static <T> List<T> unir(List<T> base, List<T> historia) {
+        java.util.ArrayList<T> unidas = new java.util.ArrayList<>(base);
+        if (historia != null) {
+            unidas.addAll(historia);
+        }
+        return List.copyOf(unidas);
+    }
+
+    private static DatosSemilla leerRecurso(String recurso) {
         JsonMapper json = JsonMapper.builder()
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
                 .build();
-        try (InputStream entrada = DatosSemilla.class.getClassLoader().getResourceAsStream(RECURSO)) {
+        try (InputStream entrada = DatosSemilla.class.getClassLoader().getResourceAsStream(recurso)) {
             if (entrada == null) {
-                throw new IllegalStateException("No se encontró " + RECURSO + " en el classpath");
+                throw new IllegalStateException("No se encontró " + recurso + " en el classpath");
             }
             return json.readValue(entrada, DatosSemilla.class);
         } catch (IOException e) {
-            throw new UncheckedIOException("No se pudo leer " + RECURSO, e);
+            throw new UncheckedIOException("No se pudo leer " + recurso, e);
         }
     }
 
