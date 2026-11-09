@@ -33,5 +33,7 @@ semilla:
   modo: ${SEMILLA_MODO:cargar}
   # 601: «si» permite cargar (nunca recargar) con el perfil prod o una base que no es local (datos de demostración)
   demo: ${SEMILLA_DEMO:}
+  # 603: «si» suma la historia de demostración (obras 4 a 6, semilla/obras-historia.json)
+  historia: ${SEMILLA_HISTORIA:}
   # Cerrar el proceso al terminar (System.exit con el código de salida); las pruebas lo apagan
   salir: true
