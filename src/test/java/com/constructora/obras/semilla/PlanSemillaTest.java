@@ -26,6 +26,20 @@ class PlanSemillaTest {
     private final PlanSemilla plan = PlanSemilla.armar(DatosSemilla.leer(), new FechaRelativa(D));
 
     @Test
+    void conLaHistoriaDeDemostracionSumaLasObras4a6YTodoCuadra() {
+        // 603: armar valida presupuesto = contrato, acumulados ≤ contratado, fotos del periodo y cobro solo en APROBADA
+        PlanSemilla conHistoria = PlanSemilla.armar(DatosSemilla.leer(true),
+                new FechaRelativa(LocalDate.parse("2026-11-09")));
+        assertThat(conHistoria.obras()).hasSize(6);
+        assertThat(conHistoria.planillas()).hasSize(23);
+        assertThat(conHistoria.fotos()).hasSize(45);
+        assertThat(conHistoria.planillas().stream().filter(p -> p.cobroId() != null).count()).isEqualTo(20);
+        assertThat(conHistoria.planillas().stream().map(PlanSemilla.FilaPlanilla::cobroNumero).filter(n -> n != null)
+                .distinct().count()).isEqualTo(20);
+        assertThat(DatosSemilla.leer(false)).isEqualTo(DatosSemilla.leer());
+    }
+
+    @Test
     void cantidadesDeFilas() {
         assertThat(plan.obras()).hasSize(3);
         assertThat(plan.partidas()).hasSize(21);

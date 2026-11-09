@@ -45,8 +45,13 @@ public class CargaSemilla {
      * @return cuántas filas se insertaron y cuántas hay en cada tabla al terminar
      */
     public ResumenSemilla ejecutar(ModoSemilla modo, FechaRelativa fechas) {
+        return ejecutar(modo, fechas, false);
+    }
+
+    /** Igual, y con {@code conHistoria} (603) suma la historia de demostración (obras 4 a 6). */
+    public ResumenSemilla ejecutar(ModoSemilla modo, FechaRelativa fechas, boolean conHistoria) {
         Objects.requireNonNull(modo, "modo");
-        PlanSemilla plan = PlanSemilla.armar(DatosSemilla.leer(), fechas);
+        PlanSemilla plan = PlanSemilla.armar(DatosSemilla.leer(conHistoria), fechas);
         return transaccion.execute(estado -> {
             // En la misma transacción: si la carga falla, el vaciado también se deshace
             List<String> vaciadas = modo == ModoSemilla.RECARGAR ? vaciar() : List.of();

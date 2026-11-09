@@ -50,8 +50,11 @@ public class SemillaRunner implements ApplicationRunner, ExitCodeGenerator {
             ModoSemilla modo = ModoSemilla.de(entorno.getProperty("semilla.modo", "cargar"));
             FechaRelativa fechas = FechaRelativa.desde(entorno.getProperty("semilla.fecha"), reloj);
             // Sin «D = …»: infra copia a su resumen solo la línea de cierre y RESUMEN_SEMILLA
-            log.info("Semilla de Obras: empieza con la fecha {} en modo {}", fechas.d(), modo);
-            resumen = carga.ejecutar(modo, fechas);
+            // 603: SEMILLA_HISTORIA=si suma la historia de demostración (obras 4 a 6)
+            boolean conHistoria = "si".equalsIgnoreCase(entorno.getProperty("semilla.historia", "").strip());
+            log.info("Semilla de Obras: empieza con la fecha {} en modo {}{}", fechas.d(), modo,
+                    conHistoria ? " con la historia de demostración (603)" : "");
+            resumen = carga.ejecutar(modo, fechas, conHistoria);
             resumen.lineas().forEach(log::info);
             codigoSalida = 0;
         } catch (SemillaRechazadaException error) {
