@@ -13,6 +13,7 @@ import com.constructora.obras.soporte.PruebaIntegracion;
 import com.constructora.obras.soporte.TokensPrueba;
 import java.math.BigDecimal;
 import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,7 +26,8 @@ import tools.jackson.core.type.TypeReference;
 
 /**
  * 501 · avance_obra: mismas cifras que GET /obras, GET /obras/{id} y GET /obras/{id}/material-previsto (006), orden
- * por diferencia, partidas y material previsto solo con obraId y periodo, y truncado.
+ * por diferencia, partidas y material previsto con obraId y periodo, y truncado. 505 · periodo sin obraId: el lote de
+ * obras en ejecución con las partidas reducidas al material previsto (sin las que no tienen).
  */
 @SuppressWarnings("unchecked")
 class AvanceObraMcpIT extends PruebaIntegracion {
@@ -143,9 +145,69 @@ class AvanceObraMcpIT extends PruebaIntegracion {
     }
 
     @Test
-    void periodoSinObraIdEsArgumentoInvalido() throws Exception {
-        assertThat(McpPrueba.error(McpPrueba.llamar(mvc, "avance_obra", Map.of("periodo", mes.toString()))))
-                .containsEntry("codigo", "ARGUMENTO_INVALIDO");
+    void periodoSinObraIdDevuelveElLoteConLasPartidasReducidasYElMaterialPrevisto() throws Exception {
+        // Plazo cumplido y sin avance (diferencia 100, la mayor) y un nombre que va primero: entran en las 50
+        String prefijo = "0 Lote MCP " + UUID.randomUUID() + " ";
+        UUID conPlanilla = obraAtrasada(prefijo + "A");
+        UUID losaA = PlanillasPrueba.partida(jdbc, conPlanilla, "P-01");
+        UUID muroA = PlanillasPrueba.partida(jdbc, conPlanilla, "P-02");
+        jdbc.update("delete from insumo_previsto where partida_id = ?", muroA);
+        PlanillasPrueba.insertar(jdbc, conPlanilla, 1, mes.toString(), "BORRADOR",
+                Map.of(losaA, new BigDecimal("2"), muroA, BigDecimal.ONE));
+        UUID sinMuro = obraAtrasada(prefijo + "B");
+        PlanillasPrueba.insertar(jdbc, sinMuro, 1, mes.toString(), "PRESENTADA",
+                Map.of(PlanillasPrueba.partida(jdbc, sinMuro, "P-01"), BigDecimal.ONE));
+        UUID sinPlanilla = obraAtrasada(prefijo + "C");
+        PlanillasPrueba.insertar(jdbc, sinPlanilla, 1, mes.minusMonths(1).toString(), "BORRADOR",
+                Map.of(PlanillasPrueba.partida(jdbc, sinPlanilla, "P-01"), BigDecimal.ONE));
+        UUID concluida = obraAtrasada(prefijo + "D");
+        PlanillasPrueba.cambiarEstado(jdbc, concluida, "CONCLUIDA");
+        PlanillasPrueba.insertar(jdbc, concluida, 1, mes.toString(), "APROBADA",
+                Map.of(PlanillasPrueba.partida(jdbc, concluida, "P-01"), BigDecimal.ONE));
+
+        Map<String, Object> lote = McpPrueba.salida(McpPrueba.llamar(mvc, "avance_obra",
+                Map.of("periodo", mes.toString())));
+        Map<String, Object> sinPeriodo = McpPrueba.salida(McpPrueba.llamar(mvc, "avance_obra", Map.of()));
+
+        List<Map<String, Object>> obras = (List<Map<String, Object>>) lote.get("obras");
+        List<Map<String, Object>> obrasSinPeriodo = (List<Map<String, Object>>) sinPeriodo.get("obras");
+        // Mismas obras, mismo orden, mismos datos de la obra y mismo truncado que sin periodo
+        assertThat(obras).extracting(fila -> fila.get("obraId"))
+                .containsExactlyElementsOf(obrasSinPeriodo.stream().map(fila -> fila.get("obraId")).toList())
+                .contains(conPlanilla.toString(), sinMuro.toString(), sinPlanilla.toString())
+                .doesNotContain(concluida.toString(), sinContrato.toString());
+        assertThat(obras).allMatch(fila -> fila.get("estado").equals("EN_EJECUCION"));
+        for (int i = 0; i < obras.size(); i++) {
+            Map<String, Object> conPartidas = new HashMap<>(obras.get(i));
+            assertThat(conPartidas.remove("partidas")).isInstanceOf(List.class);
+            Map<String, Object> esperada = new HashMap<>(obrasSinPeriodo.get(i));
+            esperada.remove("partidas");
+            assertThat(conPartidas).isEqualTo(esperada);
+        }
+        assertThat(lote).containsEntry("hayPlanillaEnPeriodo", null)
+                .containsEntry("truncado", sinPeriodo.get("truncado"));
+        List<String> ids = obras.stream().map(fila -> (String) fila.get("obraId")).toList();
+        assertThat(ids.indexOf(conPlanilla.toString())).isLessThan(ids.indexOf(sinMuro.toString()));
+        assertThat(ids.indexOf(sinMuro.toString())).isLessThan(ids.indexOf(sinPlanilla.toString()));
+
+        // Cada partida solo con partidaId, codigo, nombre y materialPrevisto (nunca vacío)
+        obras.stream().flatMap(fila -> ((List<Map<String, Object>>) fila.get("partidas")).stream())
+                .forEach(partida -> {
+                    assertThat(partida).containsOnlyKeys("partidaId", "codigo", "nombre", "materialPrevisto");
+                    assertThat((List<?>) partida.get("materialPrevisto")).isNotEmpty();
+                });
+        // P-02 sin insumos se omite; P-01 con el material previsto del REST (2 × 1,1 y 2 × 2,5)
+        List<Map<String, Object>> partidasA = partidas(obras, conPlanilla);
+        assertThat(partidasA).extracting(fila -> fila.get("codigo")).containsExactly("P-01");
+        assertThat(partidasA.getFirst()).containsEntry("partidaId", losaA.toString()).containsEntry("nombre", "Losa");
+        assertThat(previsto(partidasA)).containsExactlyInAnyOrderElementsOf(previstoRest(conPlanilla))
+                .containsExactly(List.of(losaA.toString(), "cemento", "2.2"), List.of(losaA.toString(), "fierro", "5"));
+        // P-02 sin medir en la planilla del periodo: va con su material previsto en 0, como con una obra
+        List<Map<String, Object>> partidasB = partidas(obras, sinMuro);
+        assertThat(partidasB).extracting(fila -> fila.get("codigo")).containsExactly("P-01", "P-02");
+        assertThat(previsto(partidasB)).containsExactlyInAnyOrderElementsOf(previstoRest(sinMuro));
+        // Sin planilla en el periodo: ninguna partida tiene material previsto
+        assertThat(partidas(obras, sinPlanilla)).isEmpty();
     }
 
     @Test
@@ -158,9 +220,44 @@ class AvanceObraMcpIT extends PruebaIntegracion {
         }
 
         Map<String, Object> salida = McpPrueba.salida(McpPrueba.llamar(mvc, "avance_obra", Map.of()));
+        Map<String, Object> lote = McpPrueba.salida(McpPrueba.llamar(mvc, "avance_obra",
+                Map.of("periodo", mes.toString())));
 
         assertThat((List<?>) salida.get("obras")).hasSize(HerramientasMcpObras.MAX_OBRAS);
         assertThat(salida).containsEntry("truncado", true);
+        assertThat((List<?>) lote.get("obras")).hasSize(HerramientasMcpObras.MAX_OBRAS);
+        assertThat(lote).containsEntry("truncado", true);
+    }
+
+    /** Obra de dos partidas en ejecución con el plazo cumplido y sin avance aprobado: diferencia 100. */
+    private UUID obraAtrasada(String nombre) throws Exception {
+        UUID id = ObrasPrueba.registrarDosPartidas(mvc, nombre, Equipo.nuevo());
+        PlanillasPrueba.cambiarEstado(jdbc, id, "EN_EJECUCION");
+        PlanillasPrueba.cambiarInicio(jdbc, id, reloj.hoy().minusDays(100));
+        return id;
+    }
+
+    private static List<Map<String, Object>> partidas(List<Map<String, Object>> obras, UUID obraId) {
+        return (List<Map<String, Object>>) buscar(obras, obraId).get("partidas");
+    }
+
+    /** [partidaId, materialId, cantidad sin ceros a la derecha] de cada material previsto de las partidas. */
+    private static List<List<String>> previsto(List<Map<String, Object>> partidas) {
+        return partidas.stream()
+                .flatMap(partida -> ((List<Map<String, Object>>) partida.get("materialPrevisto")).stream()
+                        .map(item -> List.of((String) partida.get("partidaId"), (String) item.get("materialId"),
+                                numero(item, "cantidadPrevista").stripTrailingZeros().toPlainString())))
+                .toList();
+    }
+
+    /** Lo mismo, de GET /obras/{id}/material-previsto del periodo. */
+    private List<List<String>> previstoRest(UUID obraId) throws Exception {
+        List<Map<String, Object>> items = (List<Map<String, Object>>) restObjeto(
+                "/obras/" + obraId + "/material-previsto?periodo=" + mes).get("items");
+        return items.stream()
+                .map(item -> List.of((String) item.get("partidaId"), (String) item.get("materialId"),
+                        numero(item, "cantidadPrevista").stripTrailingZeros().toPlainString()))
+                .toList();
     }
 
     private static Map<String, Object> buscar(List<Map<String, Object>> filas, UUID id) {

@@ -6,4 +6,4 @@ Marca cada tarea al terminarla (con sus pruebas y su commit).
 
 - [x] Aplicar «Cambios a contratos y datos» de Obras: `docs/contratos.md` (`avance_obra` por lote)
 - [x] `avance_obra` con `periodo` sin `obraId`: obras `EN_EJECUCION` (hasta 50) con partidas reducidas (`partidaId`, `codigo`, `nombre`, `materialPrevisto`), omitiendo las que no tienen material previsto
-- [ ] Pruebas: `AvanceObraMcpIT` (lote) y las demás de MCP en verde
+- [x] Pruebas: `AvanceObraMcpIT` (lote) y las demás de MCP en verde
