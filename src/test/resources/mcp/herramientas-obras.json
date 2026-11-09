@@ -1,7 +1,7 @@
 [ {
   "name" : "avance_obra",
   "title" : "Avance de obras",
-  "description" : "Devuelve el avance físico y el plazo transcurrido de las obras, al día. Sin obraId devuelve las obras en ejecución ordenadas de la más atrasada a la menos. Con obraId devuelve además sus partidas y, si se indica periodo, el material previsto de ese periodo.",
+  "description" : "Devuelve el avance físico y el plazo transcurrido de las obras, al día. Sin obraId devuelve las obras en ejecución ordenadas de la más atrasada a la menos; si además se indica periodo, cada una trae sus partidas con el material previsto de ese periodo. Con obraId devuelve además sus partidas y, si se indica periodo, el material previsto de ese periodo.",
   "inputSchema" : {
     "type" : "object",
     "properties" : {
@@ -14,7 +14,7 @@
       "periodo" : {
         "type" : "string",
         "pattern" : "^\\d{4}-(0[1-9]|1[0-2])$",
-        "description" : "Mes AAAA-MM del material previsto. Solo junto con obraId."
+        "description" : "Mes AAAA-MM del material previsto. Sin obraId, el de cada obra en ejecución."
       }
     },
     "additionalProperties" : false
@@ -98,7 +98,7 @@
                     "type" : "string"
                   }
                 },
-                "required" : [ "avancePct", "cantidadContratada", "codigo", "ejecutadaAcumulada", "materialPrevisto", "nombre", "partidaId", "unidad" ],
+                "required" : [ "codigo", "materialPrevisto", "nombre", "partidaId" ],
                 "additionalProperties" : false
               }
             },

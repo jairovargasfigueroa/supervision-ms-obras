@@ -64,4 +64,20 @@ public class PlanillasObraRepositorioJpa implements PlanillasObraRepositorio {
                 .forEach(linea -> cantidades.put(linea.partidaId(), linea.cantidadPeriodo()));
         return Optional.of(cantidades);
     }
+
+    @Override
+    public Map<UUID, Map<UUID, BigDecimal>> cantidadesDelPeriodo(Collection<UUID> obraIds, Periodo periodo) {
+        if (obraIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, Map<UUID, BigDecimal>> porObra = new HashMap<>();
+        for (PlanillaJpaRepository.LineaObraFila fila : jpa.buscarLineasDelPeriodoDeObras(obraIds,
+                periodo.primerDia())) {
+            Map<UUID, BigDecimal> cantidades = porObra.computeIfAbsent(fila.obraId(), id -> new HashMap<>());
+            if (fila.partidaId() != null) {
+                cantidades.put(fila.partidaId(), fila.cantidadPeriodo());
+            }
+        }
+        return porObra;
+    }
 }

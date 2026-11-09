@@ -40,6 +40,18 @@ public interface PlanillaJpaRepository extends JpaRepository<PlanillaEntity, UUI
     List<LineaFila> buscarLineasDelPeriodo(@Param("obraId") UUID obraId, @Param("periodo") LocalDate periodo);
 
     /**
+     * 505 · Líneas de la planilla del periodo de varias obras (cualquier estado), en una sola consulta. Una planilla
+     * sin líneas vuelve como una fila con partidaId y cantidadPeriodo null; las obras sin planilla no figuran.
+     */
+    @Query("""
+            select new com.constructora.obras.planilla.infraestructura.persistencia.PlanillaJpaRepository$LineaObraFila(
+                p.obraId, l.partidaId, l.cantidadPeriodo)
+            from PlanillaEntity p left join p.lineas l
+            where p.obraId in :obraIds and p.periodo = :periodo""")
+    List<LineaObraFila> buscarLineasDelPeriodoDeObras(@Param("obraIds") Collection<UUID> obraIds,
+            @Param("periodo") LocalDate periodo);
+
+    /**
      * Como buscarUltimas, pero sin contar los BORRADOR: lo que ve el cliente desde el portal (007, la lista de
      * planillas tampoco le muestra borradores).
      */
@@ -87,5 +99,8 @@ public interface PlanillaJpaRepository extends JpaRepository<PlanillaEntity, UUI
     }
 
     record LineaFila(UUID partidaId, BigDecimal cantidadPeriodo) {
+    }
+
+    record LineaObraFila(UUID obraId, UUID partidaId, BigDecimal cantidadPeriodo) {
     }
 }

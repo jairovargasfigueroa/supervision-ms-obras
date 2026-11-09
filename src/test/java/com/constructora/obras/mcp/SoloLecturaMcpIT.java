@@ -59,6 +59,7 @@ class SoloLecturaMcpIT extends PruebaIntegracion {
         String id = obra.toString();
         List<Map.Entry<String, Map<String, Object>>> llamadas = List.of(
                 Map.entry("avance_obra", Map.of()),
+                Map.entry("avance_obra", Map.of("periodo", mes.toString())),
                 Map.entry("avance_obra", Map.of("obraId", id, "periodo", mes.toString())),
                 Map.entry("avance_obra", Map.of("obraId", UUID.randomUUID().toString())),
                 Map.entry("buscar_diario", Map.of("obraId", id, "texto", "lluvia")),
