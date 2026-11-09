@@ -2,6 +2,7 @@ package com.constructora.obras.obra.aplicacion.puerto.salida;
 
 import com.constructora.obras.obra.aplicacion.puerto.entrada.FiltroObras;
 import com.constructora.obras.obra.dominio.Obra;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,6 +13,14 @@ public interface ObraRepositorio {
     void guardar(Obra obra);
 
     Optional<Obra> buscarPorId(UUID id);
+
+    /**
+     * 505 · Las obras con esos ids, en cualquier orden; las que no existen no figuran. Por defecto, una por una (el
+     * adaptador JPA las lee juntas).
+     */
+    default List<Obra> buscarPorIds(Collection<UUID> ids) {
+        return ids.stream().map(this::buscarPorId).flatMap(Optional::stream).toList();
+    }
 
     /** Todas las obras que cumplen el filtro, por nombre. */
     List<Obra> listarTodas(FiltroObras filtro);

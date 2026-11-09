@@ -198,6 +198,39 @@ class ConsultarObraServicioTest {
                         error -> assertThat(error.codigo()).isEqualTo("SIN_PERMISO"));
     }
 
+    @Test
+    void materialPrevistoDeVariasObrasConUnaSolaLectura() {
+        Obra casa = obra("Casa Sur", EstadoObra.EN_EJECUCION, new Asignaciones(UUID.randomUUID(), UUID.randomUUID(),
+                UUID.randomUUID(), UUID.randomUUID()));
+        Obra sinPlanilla = obra("Galpón Norte", EstadoObra.EN_EJECUCION, asignaciones);
+        obras.con(obra).con(casa).con(sinPlanilla);
+        Periodo periodo = Periodo.de("2027-02");
+        planillas.periodosPorObra.put(obra.id(), Map.of(periodo, Map.of(losa, new BigDecimal("4"))));
+        // Planilla del periodo sin la partida: la partida cuenta 0
+        planillas.periodosPorObra.put(casa.id(), Map.of(periodo, Map.of()));
+        planillas.periodosPorObra.put(sinPlanilla.id(), Map.of(Periodo.de("2027-01"), Map.of()));
+        ConsultarMaterialPrevistoServicio servicio = new ConsultarMaterialPrevistoServicio(obras, planillas);
+        UUID inexistente = UUID.randomUUID();
+
+        Map<UUID, Resultado> resultados = servicio.consultar(
+                List.of(obra.id(), casa.id(), sinPlanilla.id(), inexistente), periodo, ADMIN);
+
+        assertThat(planillas.lecturasPorLote).isEqualTo(1);
+        assertThat(resultados).containsOnlyKeys(obra.id(), casa.id(), sinPlanilla.id());
+        assertThat(resultados.get(obra.id())).isEqualTo(new Resultado(periodo, true,
+                List.of(new MaterialPrevisto(losa, "cemento", new BigDecimal("4.400")))));
+        assertThat(resultados.get(casa.id()).hayPlanilla()).isTrue();
+        assertThat(resultados.get(casa.id()).items()).extracting(MaterialPrevisto::cantidadPrevista)
+                .containsExactly(new BigDecimal("0.000"));
+        assertThat(resultados.get(sinPlanilla.id())).isEqualTo(new Resultado(periodo, false, List.of()));
+        // Mismo permiso que con una obra: el residente asignado ve las suyas; el maestro, ninguna
+        assertThat(servicio.consultar(List.of(obra.id(), casa.id(), sinPlanilla.id()), periodo,
+                new Usuario(asignaciones.residenteId().toString(), Set.of("residente"))))
+                .containsOnlyKeys(obra.id(), sinPlanilla.id());
+        assertThat(servicio.consultar(List.of(obra.id(), casa.id()), periodo,
+                new Usuario(asignaciones.maestroId().toString(), Set.of("maestro")))).isEmpty();
+    }
+
     /** Filtra y ordena en memoria como lo hace la base (estado exacto, nombre que contiene el texto). */
     private static final class ObrasEnMemoria implements ObraRepositorio {
 
@@ -246,6 +279,9 @@ class ConsultarObraServicioTest {
         private final Map<UUID, PlanillaCorta> ultimas = new HashMap<>();
         private final Map<UUID, PlanillaCorta> ultimasSinBorrador = new HashMap<>();
         private final Map<Periodo, Map<UUID, BigDecimal>> periodos = new HashMap<>();
+        /** 505: obraId → periodo → (partidaId → cantidad), y cuántas veces se leyó por lote. */
+        private final Map<UUID, Map<Periodo, Map<UUID, BigDecimal>>> periodosPorObra = new HashMap<>();
+        private int lecturasPorLote;
 
         @Override
         public Map<UUID, Map<UUID, BigDecimal>> ejecutadaAcumulada(Collection<UUID> obraIds) {
@@ -271,6 +307,19 @@ class ConsultarObraServicioTest {
         @Override
         public Optional<Map<UUID, BigDecimal>> cantidadesDelPeriodo(UUID obraId, Periodo periodo) {
             return Optional.ofNullable(periodos.get(periodo));
+        }
+
+        @Override
+        public Map<UUID, Map<UUID, BigDecimal>> cantidadesDelPeriodo(Collection<UUID> obraIds, Periodo periodo) {
+            lecturasPorLote++;
+            Map<UUID, Map<UUID, BigDecimal>> pedidas = new HashMap<>();
+            for (UUID obraId : obraIds) {
+                Map<UUID, BigDecimal> cantidades = periodosPorObra.getOrDefault(obraId, Map.of()).get(periodo);
+                if (cantidades != null) {
+                    pedidas.put(obraId, cantidades);
+                }
+            }
+            return pedidas;
         }
     }
 }

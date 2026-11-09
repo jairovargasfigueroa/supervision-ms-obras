@@ -26,7 +26,7 @@ final class EsquemasEntradaMcp {
                         },
                         "periodo": {
                           "type": "string", "pattern": "%2$s",
-                          "description": "Mes AAAA-MM del material previsto. Solo junto con obraId."
+                          "description": "Mes AAAA-MM del material previsto. Sin obraId, el de cada obra en ejecución."
                         }
                       },
                       "additionalProperties": false
